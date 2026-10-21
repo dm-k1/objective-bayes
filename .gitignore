@@ -1,0 +1,28 @@
+# R
+.Rhistory
+.RData
+.Rapp.history
+.Ruserdata
+.Rproj.user/
+
+# Simulation output (re-create with the validation scripts)
+validation/results/*.rds
+validation/results/fits/
+
+# Stan / brms build files
+*.exe
+*.o
+*.so
+*.dll
+*_model
+*.hpp
+
+# OS / editors
+.DS_Store
+.vscode/
+
+# Local backup of the original Untitled scripts (kept out of git)
+_backup_original_files_*/
+
+# Stray R graphics output
+Rplots.pdf
