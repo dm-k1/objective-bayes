@@ -184,18 +184,8 @@ par(mfrow = c(1, 1))
 ##   3. draw a random direction: how the effect is divided over predictors
 ##   4. reshape that direction to the predictors' correlations, so that
 ##      correlated predictors are handled automatically
-
-draw_effects_from_prior <- function(number_of_draws, predictor_covariance) {
-  number_of_predictors <- ncol(predictor_covariance)
-  explained_share      <- rbeta(number_of_draws, 0.5, 1)
-  overall_strength     <- sqrt(explained_share / (1 - explained_share))
-  random_numbers <- matrix(rnorm(number_of_draws * number_of_predictors),
-                           number_of_draws, number_of_predictors)
-  directions     <- random_numbers / sqrt(rowSums(random_numbers^2))   # all directions equally likely
-  covariance_root <- chol(predictor_covariance)
-  effects_per_noise <- t(backsolve(covariance_root, t(directions * overall_strength)))
-  list(effects = effects_per_noise, explained_share = explained_share)
-}
+## draw_coefficients_from_possible_range_prior() in R/possible_range.R
+## (Part 4) does exactly these four steps; open the file to read them.
 
 ## The partial correlation a coefficient implies: its unique link with
 ## the outcome after removing what the other predictors explain
@@ -206,8 +196,8 @@ implied_partial_correlation <- function(effects, predictor_covariance, predictor
 }
 
 ## Check: with one predictor, the implied correlation is flat from -1 to 1
-prior_draws_one_predictor <- draw_effects_from_prior(50000, matrix(1))
-hist(implied_partial_correlation(prior_draws_one_predictor$effects, matrix(1), 1),
+prior_draws_one_predictor <- draw_coefficients_from_possible_range_prior(50000, matrix(1))
+hist(implied_partial_correlation(prior_draws_one_predictor, matrix(1), 1),
      breaks = 40, main = "Step 3a: one predictor gives a flat correlation prior",
      xlab = "correlation")
 
@@ -218,9 +208,10 @@ hist(implied_partial_correlation(prior_draws_one_predictor$effects, matrix(1), 1
 ## default (slower to find "no effect", less often fooled by small
 ## real effects) than the one-predictor flat prior does.
 correlations_four_predictors <- matrix(0.4, 4, 4); diag(correlations_four_predictors) <- 1
-prior_draws_four_predictors  <- draw_effects_from_prior(50000, correlations_four_predictors)
+prior_draws_four_predictors  <- draw_coefficients_from_possible_range_prior(
+  50000, correlations_four_predictors)
 partial_correlations_x1 <- implied_partial_correlation(
-  prior_draws_four_predictors$effects, correlations_four_predictors, 1)
+  prior_draws_four_predictors, correlations_four_predictors, 1)
 hist(partial_correlations_x1, breaks = 60,
      main = "Step 3b: one predictor's share when there are 4", xlab = "partial correlation")
 quantile(abs(partial_correlations_x1), c(0.25, 0.5, 0.75))
@@ -241,8 +232,8 @@ quantile(abs(partial_correlations_x1), c(0.25, 0.5, 0.75))
 par(mfrow = c(1, 4))
 for (number_of_predictors in c(1, 2, 4, 10)) {
   uncorrelated    <- diag(number_of_predictors)
-  draws           <- draw_effects_from_prior(50000, uncorrelated)
-  first_predictor <- implied_partial_correlation(draws$effects, uncorrelated, 1)
+  draws           <- draw_coefficients_from_possible_range_prior(50000, uncorrelated)
+  first_predictor <- implied_partial_correlation(draws, uncorrelated, 1)
   hist(first_predictor, breaks = 50, xlim = c(-1, 1), col = "grey85", border = "white",
        main = paste(number_of_predictors, "predictor(s)"), xlab = "partial correlation of x1")
   mtext(sprintf("median |r| = %.2f", median(abs(first_predictor))), cex = 0.8)
@@ -264,12 +255,13 @@ par(mfrow = c(1, 1))
 ##    direction the data actually point in: this is the
 ##    "every direction equally plausible" part
 
-## The function that computes this is log_bayes_factor_vs_intercept_only()
-## in R/possible_range.R. Open that file to read the code: each line is
-## commented, and docs/derivation.md (section 4) explains every step.
+## The function that computes this is
+## log_bayes_factor_possible_range_vs_intercept_only() in R/possible_range.R.
+## Open that file to read the code: each line is commented, and
+## docs/derivation.md (section 4) explains every step.
 ## Its inputs are exactly the three numbers above:
-log_bayes_factor_vs_intercept_only(explained_share = 0.19, sample_size = 60,
-                                   number_of_predictors = 3)
+log_bayes_factor_possible_range_vs_intercept_only(explained_share = 0.19, sample_size = 60,
+                                                  number_of_predictors = 3)
 
 ## -----------------------------------------------------------------
 ## STEP 5. Check the formula against brute force
@@ -280,44 +272,15 @@ log_bayes_factor_vs_intercept_only(explained_share = 0.19, sample_size = 60,
 ## well each predicts the outcome, and average. If this matches Step 4,
 ## the formula is right.
 
-log_bayes_factor_brute_force <- function(predictors, outcome,
-                                         number_of_draws = 20000, draws_per_batch = 2000) {
-  sample_size          <- length(outcome)
-  centered_predictors  <- scale(predictors, scale = FALSE)
-  centered_outcome     <- outcome - mean(outcome)
-  outcome_sum_of_squares <- sum(centered_outcome^2)
-  predictor_covariance   <- crossprod(centered_predictors) / sample_size
-
-  ## The noise level is unknown, so we average over it on a grid
-  ## (written as 1 / noise, which makes the arithmetic simpler)
-  inverse_noise_values <- seq(1e-4, 6 * sqrt(sample_size / outcome_sum_of_squares), length.out = 800)
-  inverse_noise_step   <- inverse_noise_values[2] - inverse_noise_values[1]
-
-  ## How well "no effect" predicts the data
-  log_evidence_null <- log_sum_exp((sample_size - 2) * log(inverse_noise_values) -
-                                   inverse_noise_values^2 * outcome_sum_of_squares / 2) +
-                       log(inverse_noise_step)
-
-  ## How well each drawn coefficient set predicts the data
-  log_evidence_per_draw <- c()
-  for (batch in seq_len(number_of_draws / draws_per_batch)) {
-    effects          <- draw_effects_from_prior(draws_per_batch, predictor_covariance)$effects
-    predicted_values <- centered_predictors %*% t(effects)
-    overlap_with_outcome     <- drop(crossprod(centered_outcome, predicted_values))
-    predicted_sum_of_squares <- colSums(predicted_values^2)
-    log_integrand <- (sample_size - 2) *
-        matrix(log(inverse_noise_values), draws_per_batch, length(inverse_noise_values), byrow = TRUE) -
-      (outer(rep(outcome_sum_of_squares, draws_per_batch), inverse_noise_values^2) -
-       2 * outer(overlap_with_outcome, inverse_noise_values) + predicted_sum_of_squares) / 2
-    log_evidence_per_draw <- c(log_evidence_per_draw,
-                               log_sum_exp_per_row(log_integrand) + log(inverse_noise_step))
-  }
-  log_sum_exp(log_evidence_per_draw) - log(number_of_draws) - log_evidence_null
-}
+## log_bayes_factor_possible_range_by_sampling() in R/possible_range.R
+## (Part 4) does this: the noise level is unknown, so it is averaged over
+## on a grid, for "no effect" and for each drawn coefficient set.
 
 explained_share_full_model <- summary(regression_fit)$r.squared
-c(formula     = log_bayes_factor_vs_intercept_only(explained_share_full_model, sample_size, 3),
-  brute_force = log_bayes_factor_brute_force(predictors, outcome))
+c(formula     = log_bayes_factor_possible_range_vs_intercept_only(explained_share_full_model,
+                                                                  sample_size, 3),
+  brute_force = log_bayes_factor_possible_range_by_sampling(predictors, outcome,
+                                                            number_of_draws = 20000))
 ## These should agree to about 0.05 (on the log scale).
 
 ## -----------------------------------------------------------------
@@ -335,8 +298,10 @@ test_results <- lapply(1:3, function(predictor_index) {
     estimate  = coef(regression_fit)[predictor_index + 1],
     p_value   = summary(regression_fit)$coefficients[predictor_index + 1, 4],
     evidence_for_effect_possible =
-      exp(log_bayes_factor_vs_intercept_only(explained_share_full_model, sample_size, 3) -
-          log_bayes_factor_vs_intercept_only(explained_share_without,    sample_size, 2)),
+      exp(log_bayes_factor_possible_range_vs_intercept_only(explained_share_full_model,
+                                                            sample_size, 3) -
+          log_bayes_factor_possible_range_vs_intercept_only(explained_share_without,
+                                                            sample_size, 2)),
     evidence_for_effect_default =
       linearReg.R2stat(sample_size, 3, explained_share_full_model, simple = TRUE) /
       linearReg.R2stat(sample_size, 2, explained_share_without,    simple = TRUE))
@@ -360,10 +325,10 @@ print(test_results)
 ## everything the prior says is possible, so it is always lower.
 
 
-## support_for_each_effect_size() is in R/possible_range.R. It takes the
+## support_per_partial_correlation() is in R/possible_range.R. It takes the
 ## fitted model and the name of one coefficient (here "predictorsx1", ...).
 support_chart_data <- bind_rows(lapply(colnames(predictors), function(predictor_name)
-  mutate(support_for_each_effect_size(regression_fit, paste0("predictors", predictor_name)),
+  mutate(support_per_partial_correlation(regression_fit, paste0("predictors", predictor_name)),
          predictor = predictor_name)))
 
 ## Best-supported effect size per predictor
@@ -373,14 +338,15 @@ support_chart_data |>
             best_support_vs_zero = max(support_vs_zero)) |>
   print()
 
-## Split the axis into stretches: where does each effect size explain the
+## Split the axis into regions: where does each effect size explain the
 ## data better than zero, worse than zero, or about the same (within a
 ## factor 3)? Read each predictor from left to right.
-## support_verdicts() (also in R/possible_range.R) does this for one predictor.
-support_stretches <- bind_rows(lapply(split(support_chart_data, support_chart_data$predictor),
+## support_regions() (also in R/possible_range.R) does this for one predictor.
+support_regions_per_predictor <- bind_rows(lapply(
+  split(support_chart_data, support_chart_data$predictor),
   function(one_predictor) data.frame(predictor = one_predictor$predictor[1],
-                                     support_verdicts(one_predictor))))
-print(support_stretches)
+                                     support_regions(one_predictor))))
+print(support_regions_per_predictor)
 
 ggplot(support_chart_data, aes(partial_correlation, support_vs_zero)) +
   annotate("rect", xmin = -Inf, xmax = Inf, ymin = 1/3, ymax = 3, alpha = 0.15) +
@@ -396,7 +362,7 @@ ggplot(support_chart_data, aes(partial_correlation, support_vs_zero)) +
 ## -----------------------------------------------------------------
 ## STEP 8. Estimation
 ## -----------------------------------------------------------------
-## For estimates and intervals, use brm_possible() in R/possible_range.R.
+## For estimates and intervals, use fit_possible_range_model() in R/possible_range.R.
 ## Note: with several predictors at a small sample, the prior pulls the
 ## estimates toward zero (in this example about 20% for x1: 0.31 vs 0.39),
 ## because each predictor's share of the fixed R-squared budget is peaked
@@ -411,18 +377,19 @@ confint(regression_fit)
 ##    predictors), the data can't tell models apart, so the Bayes
 ##    factor should be exactly 1.
 sapply(1:4, function(number_of_predictors)
-  exp(log_bayes_factor_vs_intercept_only(1 - 1e-12, number_of_predictors + 1, number_of_predictors)))
+  exp(log_bayes_factor_possible_range_vs_intercept_only(1 - 1e-12, number_of_predictors + 1,
+                                                        number_of_predictors)))
 
 ## b) As the fit becomes perfect, evidence for an effect should grow
 ##    without limit.
 sapply(c(0.9, 0.99, 0.999, 0.9999), function(explained_share)
-  log_bayes_factor_vs_intercept_only(explained_share, 20, 3))
+  log_bayes_factor_possible_range_vs_intercept_only(explained_share, 20, 3))
 
 ## c) When a predictor truly does nothing, evidence for "no effect"
 ##    should keep growing as the sample grows.
 sapply(c(50, 200, 1000, 5000), function(sample_size_check) {
   explained_share_without <- 0.2
   explained_share_with    <- explained_share_without + (1 - explained_share_without) / sample_size_check
-  -(log_bayes_factor_vs_intercept_only(explained_share_with,    sample_size_check, 3) -
-    log_bayes_factor_vs_intercept_only(explained_share_without, sample_size_check, 2))
+  -(log_bayes_factor_possible_range_vs_intercept_only(explained_share_with,    sample_size_check, 3) -
+    log_bayes_factor_possible_range_vs_intercept_only(explained_share_without, sample_size_check, 2))
 })

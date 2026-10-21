@@ -61,7 +61,7 @@ direction after whitening. The closest built-in option,
 prior(R2D2(mean_R2 = 1/3, prec_R2 = 1.5), class = b)   # Beta(1/2, 1) on R2
 ```
 
-is a different prior (see above). That is why `brm_possible()` adds the
+is a different prior (see above). That is why `fit_possible_range_model()` adds the
 possible-range prior as a custom density (`docs/derivation.md`, section 3).
 
 ## Reproduce the table

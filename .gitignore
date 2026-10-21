@@ -26,3 +26,6 @@ _backup_original_files_*/
 
 # Stray R graphics output
 Rplots.pdf
+
+# Figures written by the validation scripts
+validation/results/figures/

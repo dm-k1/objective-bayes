@@ -3,7 +3,7 @@
 This document derives the two formulas that `R/possible_range.R` uses:
 
 1. the prior density on the regression coefficients (used for estimation in brms), and
-2. the closed-form Bayes factor (used by `possible_bayes_factor()`).
+2. the closed-form Bayes factor (used by `bayes_factor_possible_range()`).
 
 Each section ends with the function that implements it.
 
@@ -243,7 +243,7 @@ largest error over 162 settings ($R^2$ from 0.01 to 0.99, $n$ from 10 to
 (`validation/01`, check A1). An even grid was off by up to 28 on the log scale
 at $n = 10{,}000$, $R^2 = 0.99$.
 
-**In the code:** `log_bayes_factor_vs_intercept_only()` in `R/possible_range.R`:
+**In the code:** `log_bayes_factor_possible_range_vs_intercept_only()` in `R/possible_range.R`:
 
 | Code | Formula |
 |---|---|
@@ -271,7 +271,7 @@ The evidence for one coefficient (or a block of columns, such as a factor) is
 the ratio for the model with and without it. Each model uses the prior with
 its own predictors' covariance and its own $k$.
 
-**In the code:** `possible_bayes_factor()` and `possible_bayes_factor_per_term()`.
+**In the code:** `bayes_factor_possible_range()` and `bayes_factor_possible_range_per_term()`.
 
 ---
 

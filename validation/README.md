@@ -14,9 +14,13 @@ Stan chains and simulation cells run in parallel.
 and reused on the next run:
 
 - simulations (02, 03) rerun only when their settings or design change, or
-  when `RERUN_SIMULATION <- TRUE`;
+  when `rerun_simulation <- TRUE`;
 - brms fits (01, check A5) are saved in `validation/results/fits/` and refitted
   only when the model, prior or data change.
+
+**Figures.** 02 and 03 save their figures as PNG files in
+`validation/results/figures/` (not tracked by git); in an interactive session
+they are shown as well.
 
 **Note:** the numbers recorded below come from runs of earlier versions of the
 scripts (same methods, different random-number streams). Rerun 02 and 03 and
@@ -28,7 +32,7 @@ update them before quoting.
 | `02_sim_one_coefficient.R` | One coefficient at a time: flat prior on the partial correlation vs JZS | long |
 | `03_sim_joint_prior.R` | Several predictors: the joint possible-range prior vs JZS, per-coefficient flat r and R2-D2 | long |
 | `comparison_methods.R` | Helper: the comparison methods (JZS, flat partial r, R2-D2) | – |
-| `settings.R` | Helper: parallel cores, cache folders, cached simulation runner, `check()` | – |
+| `settings.R` | Helper: parallel cores, cache folders, cached simulation runner, `record_check()`, `save_figure()` | – |
 
 ## 01. Checks: is everything correct?
 
@@ -102,7 +106,7 @@ and x4 are null. Tested: x1 and x3. 200 replications per cell.
 - Precision-matched thresholds for all four methods in study 03 (as done for
   two methods in 02, section D).
 - An estimation simulation for the joint prior (coverage, bias, RMSE with
-  `brm_possible()`).
+  `fit_possible_range_model()`).
 - Consistency when the number of predictors grows with n (checked
   numerically outside this repository: the joint prior stays consistent, while
   Zellner–Siow with scale 1 fails at k/n = 0.25). Should be added as a script.

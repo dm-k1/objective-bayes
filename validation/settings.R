@@ -3,6 +3,8 @@
 ##   - parallel: use all cores but one (leaves one free for the computer)
 ##   - caching:  simulation results and brms fits are saved in
 ##               validation/results/ and reused when nothing changed
+##   - figures:  saved to validation/results/figures/
+##   - checks:   record_check() and report_checks() for pass/fail summaries
 ## =====================================================================
 
 ## ---- Parallel ----------------------------------------------------------------
@@ -14,7 +16,20 @@ options(mc.cores = number_of_cores)   # brms also uses this: chains run in paral
 ## ---- Cache folders -------------------------------------------------------------
 results_folder <- file.path("validation", "results")
 fits_folder    <- file.path(results_folder, "fits")
-dir.create(fits_folder, recursive = TRUE, showWarnings = FALSE)
+figures_folder <- file.path(results_folder, "figures")
+dir.create(fits_folder,    recursive = TRUE, showWarnings = FALSE)
+dir.create(figures_folder, recursive = TRUE, showWarnings = FALSE)
+
+## ---- Figures -------------------------------------------------------------------
+## Saves a ggplot to validation/results/figures/<name>.png, and also shows it
+## when running interactively. (Under Rscript a printed plot would otherwise
+## end up in Rplots.pdf in the project folder.)
+save_figure <- function(figure, name, width = 10, height = 6) {
+  ggplot2::ggsave(file.path(figures_folder, paste0(name, ".png")), figure,
+                  width = width, height = height, dpi = 150)
+  if (interactive()) print(figure)
+  invisible(figure)
+}
 
 ## ---- Cached, parallel simulation runner ---------------------------------------
 ## Runs `simulate_cell(cell)` for every row of `design`, in parallel, and saves
@@ -54,10 +69,10 @@ run_simulation_grid <- function(design, simulate_cell, results_file, settings,
 }
 
 ## ---- Pass/fail checks ------------------------------------------------------------
-## check() records one check and prints PASS or FAIL; report_checks() prints the
-## summary and stops with an error if anything failed.
+## record_check() records one check and prints PASS or FAIL; report_checks()
+## prints the summary and stops with an error if anything failed.
 check_results <- data.frame(check = character(), passed = logical(), details = character())
-check <- function(name, passed, details = "") {
+record_check <- function(name, passed, details = "") {
   passed <- isTRUE(passed)
   check_results[nrow(check_results) + 1, ] <<- list(name, passed, details)
   cat(sprintf("[%s] %-55s %s\n", if (passed) "PASS" else "FAIL", name, details))

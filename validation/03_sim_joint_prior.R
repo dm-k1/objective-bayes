@@ -1,116 +1,163 @@
 ## =====================================================================
 ##  Validation 03: the joint possible-range prior vs alternatives
-##  4 correlated predictors; x1's effect varies, x3 is always null.
+##  4 correlated predictors; x1's slope varies, x3 is always null.
 ##  Methods: JZS default, joint possible-range prior (this project),
-##  per-coefficient flat partial r, R2-D2 with the same R-squared prior.
+##  per-coefficient flat partial correlation, R2-D2 with the same
+##  R-squared prior.
 ##
 ##  Run from the project folder. The simulation runs in parallel and is
-##  cached: it only reruns when its settings change (or RERUN_SIMULATION = TRUE).
+##  cached: it only reruns when its settings change (or rerun_simulation = TRUE).
+##  Figures are saved to validation/results/figures/.
 ## =====================================================================
 library(dplyr)
 library(purrr)
 library(tidyr)
 library(ggplot2)
+
 source("R/possible_range.R")
 source("validation/comparison_methods.R")
-
-source("validation/settings.R")   # parallel cores + cached simulation runner
+source("validation/settings.R")   # parallel cores, cached simulation runner, record_check()
 
 results_file     <- file.path(results_folder, "sim_joint_prior.rds")
-RERUN_SIMULATION <- FALSE   # TRUE forces a rerun even if cached results match
+rerun_simulation <- FALSE   # TRUE forces a rerun even if cached results match
 
-## ---- Settings --------------------------------------------------------
-K_PRED  <- 4
-EFFECTS <- c(0, 0.1, 0.2, 0.3, 0.5)
-OTHER   <- c(0.3, 0, 0)
-TEST    <- c(1, 3)
-NS      <- c(20, 50, 100, 200, 500)
-RHO     <- c(0, 0.5)
-REPS    <- 200
-RSCALE  <- sqrt(2) / 4
+## ---- Settings ------------------------------------------------------------
+number_of_predictors   <- 4
+slopes_of_x1           <- c(0, 0.1, 0.2, 0.3, 0.5)
+slopes_of_x2_to_x4     <- c(0.3, 0, 0)
+tested_predictors      <- c(1, 3)
+sample_sizes           <- c(20, 50, 100, 200, 500)
+predictor_correlations <- c(0, 0.5)               # equicorrelation between all predictors
+replications_per_cell  <- 200
+jzs_scale              <- sqrt(2) / 4
 
+## R2-D2 prior draws, shared by all datasets (full and reduced models)
 set.seed(99)
-draws_k  <- draw_r2d2_prior(K_PRED)       # shared prior draws (full model)
-draws_k1 <- draw_r2d2_prior(K_PRED - 1)   # shared prior draws (reduced models)
+r2d2_draws_full    <- draw_from_r2d2_prior(number_of_predictors)
+r2d2_draws_reduced <- draw_from_r2d2_prior(number_of_predictors - 1)
 
-## ---- Monte Carlo check: two independent draw sets, same dataset -----
+## ---- Monte Carlo check: two independent draw sets, same dataset ---------
+## The R2-D2 Bayes factor is a Monte Carlo average, so two independent sets
+## of prior draws should give nearly the same answer. Criterion: within 0.1
+## on the log scale.
 set.seed(5)
-Xt <- matrix(rnorm(100 * 4), 100); yt <- drop(Xt %*% c(0.2, 0.3, 0, 0)) + rnorm(100)
-Xtc <- scale(Xt, scale = FALSE); ytc <- yt - mean(yt)
-c(draws_A = log_bayes_factor_r2d2(Xtc, ytc, draw_r2d2_prior(4)),
-  draws_B = log_bayes_factor_r2d2(Xtc, ytc, draw_r2d2_prior(4)))   # should differ by < ~0.1
+check_predictors <- matrix(rnorm(100 * 4), 100)
+check_outcome    <- drop(check_predictors %*% c(0.2, 0.3, 0, 0)) + rnorm(100)
+centered_check_predictors <- scale(check_predictors, scale = FALSE)
+centered_check_outcome    <- check_outcome - mean(check_outcome)
+log_bf_draw_set_a <- log_bayes_factor_r2d2_vs_intercept_only(
+  centered_check_predictors, centered_check_outcome, draw_from_r2d2_prior(4))
+log_bf_draw_set_b <- log_bayes_factor_r2d2_vs_intercept_only(
+  centered_check_predictors, centered_check_outcome, draw_from_r2d2_prior(4))
+record_check("R2-D2 Monte Carlo error (two draw sets)",
+             abs(log_bf_draw_set_a - log_bf_draw_set_b) < 0.1,
+             sprintf("log BF %.3f vs %.3f", log_bf_draw_set_a, log_bf_draw_set_b))
 
-## ---- One dataset -----------------------------------------------------
-sim_one <- function(b1, n, rho) {
-  Sig  <- matrix(rho, K_PRED, K_PRED); diag(Sig) <- 1
-  beta <- c(b1, OTHER)
-  X    <- matrix(rnorm(n * K_PRED), n) %*% chol(Sig)
-  y    <- drop(X %*% beta) + rnorm(n, sd = sqrt(1 - drop(t(beta) %*% Sig %*% beta)))
-  Xc   <- scale(X, scale = FALSE); yc <- y - mean(y)
+## ---- One dataset ---------------------------------------------------------
+simulate_one_dataset <- function(slope_of_x1, sample_size, predictor_correlation) {
+  predictor_covariance <- matrix(predictor_correlation, number_of_predictors, number_of_predictors)
+  diag(predictor_covariance) <- 1
+  true_slopes <- c(slope_of_x1, slopes_of_x2_to_x4)
+  predictors  <- matrix(rnorm(sample_size * number_of_predictors), sample_size) %*%
+                 chol(predictor_covariance)
+  noise_sd    <- sqrt(1 - drop(t(true_slopes) %*% predictor_covariance %*% true_slopes))
+  outcome     <- drop(predictors %*% true_slopes) + rnorm(sample_size, sd = noise_sd)
+  centered_predictors <- scale(predictors, scale = FALSE)
+  centered_outcome    <- outcome - mean(outcome)
 
-  fit    <- lm(y ~ X)
-  R2f    <- summary(fit)$r.squared
-  lbf_jf <- log_bayes_factor_vs_intercept_only(R2f, n, K_PRED)
-  lbf_rf <- log_bayes_factor_r2d2(Xc, yc, draws_k)
+  full_fit       <- lm(outcome ~ predictors)
+  r_squared_full <- summary(full_fit)$r.squared
+  log_bf_possible_range_full <- log_bayes_factor_possible_range_vs_intercept_only(
+    r_squared_full, sample_size, number_of_predictors)
+  log_bf_r2d2_full <- log_bayes_factor_r2d2_vs_intercept_only(
+    centered_predictors, centered_outcome, r2d2_draws_full)
 
-  map_dfr(TEST, function(j) {
-    R2r <- summary(lm(y ~ X[, -j]))$r.squared
-    tibble(coef  = paste0("x", j), truth = beta[j],
-           method = c("JZS default", "joint possible",
-                      "per-coefficient flat r", "R2-D2 matched"),
-           BF10  = c(bayes_factor_jzs(R2f, R2r, n, K_PRED, rscale = RSCALE),
-                     exp(lbf_jf - log_bayes_factor_vs_intercept_only(R2r, n, K_PRED - 1)),
-                     bayes_factor_flat_partial_r(fit, j, X),
-                     exp(lbf_rf - log_bayes_factor_r2d2(Xc[, -j, drop = FALSE], yc, draws_k1))))
+  map_dfr(tested_predictors, function(tested) {
+    r_squared_without <- summary(lm(outcome ~ predictors[, -tested]))$r.squared
+    log_bf_possible_range_without <- log_bayes_factor_possible_range_vs_intercept_only(
+      r_squared_without, sample_size, number_of_predictors - 1)
+    log_bf_r2d2_without <- log_bayes_factor_r2d2_vs_intercept_only(
+      centered_predictors[, -tested, drop = FALSE], centered_outcome, r2d2_draws_reduced)
+    tibble(coefficient = paste0("x", tested),
+           true_slope  = true_slopes[tested],
+           method      = c("JZS default", "joint possible range",
+                           "flat partial correlation", "R2-D2 matched"),
+           BF10        = c(bayes_factor_jzs_one_coefficient(r_squared_full, r_squared_without,
+                                                            sample_size, number_of_predictors,
+                                                            rscale = jzs_scale),
+                           exp(log_bf_possible_range_full - log_bf_possible_range_without),
+                           bayes_factor_flat_partial_correlation(full_fit, tested, predictors),
+                           exp(log_bf_r2d2_full - log_bf_r2d2_without)))
   })
 }
 
-## ---- Run (parallel; cached until the settings change) -----------------
-sims <- run_simulation_grid(
-  expand_grid(b1 = EFFECTS, n = NS, rho = RHO),
-  results_file = results_file, rerun = RERUN_SIMULATION,
-  settings = list(REPS = REPS, K_PRED = K_PRED, OTHER = OTHER, TEST = TEST, RSCALE = RSCALE),
+## ---- Run (parallel; cached until the settings change) --------------------
+simulation_runs <- run_simulation_grid(
+  expand_grid(slope_of_x1           = slopes_of_x1,
+              sample_size           = sample_sizes,
+              predictor_correlation = predictor_correlations),
+  results_file = results_file, rerun = rerun_simulation,
+  settings = list(replications_per_cell = replications_per_cell,
+                  number_of_predictors = number_of_predictors,
+                  slopes_of_x2_to_x4 = slopes_of_x2_to_x4,
+                  tested_predictors = tested_predictors, jzs_scale = jzs_scale),
   simulate_cell = function(cell) {
-    map_dfr(seq_len(REPS), function(i)
-      mutate(sim_one(cell$b1, cell$n, cell$rho), rep = i)) |>
-      mutate(b1 = cell$b1, n = cell$n, rho = cell$rho, .before = 1)
+    map_dfr(seq_len(replications_per_cell), function(replication)
+      mutate(simulate_one_dataset(cell$slope_of_x1, cell$sample_size, cell$predictor_correlation),
+             replication = replication)) |>
+      mutate(slope_of_x1 = cell$slope_of_x1, sample_size = cell$sample_size,
+             predictor_correlation = cell$predictor_correlation, .before = 1)
   })
 
-## ---- Summaries ---------------------------------------------------------
-summ <- sims |>
-  mutate(correct        = ifelse(truth == 0, BF10 < 1/3, BF10 > 3),
-         mislead        = ifelse(truth == 0, BF10 > 3,  BF10 < 1/3),
-         mislead_strong = ifelse(truth == 0, BF10 > 10, BF10 < 1/10)) |>
-  group_by(coef, rho, b1, n, method) |>
-  summarise(correct_3  = mean(correct),
-            mislead_3  = mean(mislead),
-            mislead_10 = mean(mislead_strong),
-            n_runs     = n(), .groups = "drop")
+## ---- Summaries -------------------------------------------------------------
+cell_summaries <- simulation_runs |>
+  mutate(correct           = ifelse(true_slope == 0, BF10 < 1/3, BF10 > 3),
+         misleading        = ifelse(true_slope == 0, BF10 > 3,   BF10 < 1/3),
+         misleading_strong = ifelse(true_slope == 0, BF10 > 10,  BF10 < 1/10)) |>
+  group_by(coefficient, predictor_correlation, slope_of_x1, sample_size, method) |>
+  summarise(correct_3     = mean(correct),
+            misleading_3  = mean(misleading),
+            misleading_10 = mean(misleading_strong),
+            runs          = n(), .groups = "drop")
 
-## x1: effect varies
-summ |> filter(coef == "x1") |>
-  select(rho, b1, n, method, correct_3, mislead_3, mislead_10) |>
-  arrange(rho, b1, n, method) |> print(n = Inf)
+## x1: slope varies
+cell_summaries |>
+  filter(coefficient == "x1") |>
+  select(predictor_correlation, slope_of_x1, sample_size, method,
+         correct_3, misleading_3, misleading_10) |>
+  arrange(predictor_correlation, slope_of_x1, sample_size, method) |>
+  print(n = Inf)
 
-## x3: always null (pooled over x1 effect sizes)
-sims |> filter(coef == "x3") |>
-  group_by(rho, n, method) |>
-  summarise(null_found   = mean(BF10 < 1/3),
-            false_effect = mean(BF10 > 3),
-            false_strong = mean(BF10 > 10), .groups = "drop") |>
-  arrange(rho, n, method) |> print(n = Inf)
+## x3: always null (pooled over the slopes of x1)
+simulation_runs |>
+  filter(coefficient == "x3") |>
+  group_by(predictor_correlation, sample_size, method) |>
+  summarise(null_found          = mean(BF10 < 1/3),
+            false_effect        = mean(BF10 > 3),
+            strong_false_effect = mean(BF10 > 10), .groups = "drop") |>
+  arrange(predictor_correlation, sample_size, method) |>
+  print(n = Inf)
 
-cols <- c(`JZS default` = "grey40", `joint possible` = "#d95f02",
-          `per-coefficient flat r` = "#1b9e77", `R2-D2 matched` = "#7570b3")
+## ---- Figures ---------------------------------------------------------------
+method_colours <- c(`JZS default` = "grey40", `joint possible range` = "#d95f02",
+                    `flat partial correlation` = "#1b9e77", `R2-D2 matched` = "#7570b3")
+x1_summaries   <- filter(cell_summaries, coefficient == "x1")
+facets_by_cell <- facet_grid(predictor_correlation ~ slope_of_x1, labeller = label_both)
 
-ggplot(filter(summ, coef == "x1"), aes(n, correct_3, colour = method)) +
-  geom_line(linewidth = 0.9) + geom_point() +
-  scale_x_log10(breaks = NS) + scale_colour_manual(values = cols) +
-  facet_grid(rho ~ b1, labeller = label_both) +
-  labs(y = "P(BF > 3 for the true hypothesis)", title = "x1: correct evidence")
+save_figure(
+  ggplot(x1_summaries, aes(sample_size, correct_3, colour = method)) +
+    geom_line(linewidth = 0.9) + geom_point() +
+    scale_x_log10(breaks = sample_sizes) + scale_colour_manual(values = method_colours) +
+    facets_by_cell +
+    labs(x = "n", y = "P(BF > 3 for the true hypothesis)", title = "x1: correct evidence"),
+  "03_correct_evidence_x1")
 
-ggplot(filter(summ, coef == "x1"), aes(n, mislead_3, colour = method)) +
-  geom_line(linewidth = 0.9) + geom_point() +
-  scale_x_log10(breaks = NS) + scale_colour_manual(values = cols) +
-  facet_grid(rho ~ b1, labeller = label_both) +
-  labs(y = "P(BF > 3 for the wrong hypothesis)", title = "x1: misleading evidence")
+save_figure(
+  ggplot(x1_summaries, aes(sample_size, misleading_3, colour = method)) +
+    geom_line(linewidth = 0.9) + geom_point() +
+    scale_x_log10(breaks = sample_sizes) + scale_colour_manual(values = method_colours) +
+    facets_by_cell +
+    labs(x = "n", y = "P(BF > 3 for the wrong hypothesis)", title = "x1: misleading evidence"),
+  "03_misleading_evidence_x1")
+
+report_checks()

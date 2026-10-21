@@ -29,13 +29,18 @@ relative to it), then:
 source("R/possible_range.R")   # light: brms is only loaded when you fit
 library(brms)                  # for summary(), plot(), ... on fitted models
 
-fit  <- brm_possible(y ~ x1 + x2 + x3, my_data)    # estimation (brms)
+fit <- fit_possible_range_model(y ~ x1 + x2 + x3, my_data)        # estimation (brms)
 summary(fit)
 
-possible_bayes_factor_per_term(y ~ x1 + x2 + x3, my_data)   # BF per term
-possible_bayes_factor(fit, brm_possible(y ~ x2 + x3, my_data))  # any two models
-possible_bayes_factor(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))  # no Stan needed
+bayes_factor_possible_range_per_term(y ~ x1 + x2 + x3, my_data)    # BF per term
+bayes_factor_possible_range(fit, fit_possible_range_model(y ~ x2 + x3, my_data))  # any two models
+bayes_factor_possible_range(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))        # no Stan needed
 ```
+
+Function names follow one pattern: `bayes_factor_<method>[_<scope>]` for
+Bayes factors (the comparison methods in `validation/comparison_methods.R`
+too, e.g. `bayes_factor_jzs_one_coefficient()`), and a verb (`fit_`,
+`build_`, `draw_`) for functions that do something.
 
 Requirements: R ≥ 4.3, brms with the cmdstanr backend (CmdStan installed).
 Optional: BayesFactor (JZS comparison), dplyr/purrr/tidyr/ggplot2 (tutorial
@@ -45,7 +50,7 @@ and validation scripts).
 
 | Path | What it is |
 |---|---|
-| `R/possible_range.R` | The method: `brm_possible()` (estimation), `possible_bayes_factor()` and `possible_bayes_factor_per_term()` (closed-form Bayes factors), `support_for_each_effect_size()` and `support_verdicts()` (reporting) |
+| `R/possible_range.R` | The method: `fit_possible_range_model()` (estimation), `bayes_factor_possible_range()` and `bayes_factor_possible_range_per_term()` (closed-form Bayes factors), `support_per_partial_correlation()` and `support_regions()` (reporting), `draw_coefficients_from_possible_range_prior()` and `log_bayes_factor_possible_range_by_sampling()` (prior sampling, used by the tutorial and the checks) |
 | `vignettes/possible_range_vignette.R` | How to use it on a dataset, start to finish |
 | `tutorial/tutorial_step_by_step.R` | Why the method works, step by step, without a math background |
 | `tutorial/posterior_by_hand.R` | The posterior and Bayes factor computed by hand on a grid (one predictor), with a plot per step |
@@ -60,7 +65,7 @@ Supported: linear regression with a normal outcome, an intercept and fixed
 effects. That includes continuous predictors, factors (tested as one block),
 interactions, polynomials and spline columns.
 
-Not (yet) supported, and `brm_possible()` stops for some of these:
+Not (yet) supported, and `fit_possible_range_model()` stops for some of these:
 
 - group-level (random) effects: the R² budget would need to include the
   group-level variance (cf. the R2D2M2 prior of Aguilar & Bürkner, 2023);
@@ -76,12 +81,12 @@ Points of attention:
   coefficients. Occasional divergent transitions can result; use
   `control = list(adapt_delta = 0.99)`. If they persist, see
   `archive/stan_unit_vector_model.R` for a parameterization without that peak.
-- `possible_bayes_factor_per_term()` removes one term at a time. Testing a
+- `bayes_factor_possible_range_per_term()` removes one term at a time. Testing a
   main effect while its interaction stays in the model follows the usual
   marginality caveats.
 - Do not use `brms::hypothesis()` for Bayes factors with this prior: brms
   cannot sample from a custom prior, so Savage–Dickey does not work. Use
-  `possible_bayes_factor()`.
+  `bayes_factor_possible_range()`.
 
 ## Related work
 

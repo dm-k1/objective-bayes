@@ -29,7 +29,7 @@
 ## =====================================================================
 source("R/possible_range.R")
 source("validation/comparison_methods.R")   # flat-r Bayes factor for B1
-source("validation/settings.R")             # parallel cores, cache folders, check()
+source("validation/settings.R")             # parallel cores, cache folders, record_check()
 
 run_bridge_sampling_check <- TRUE    # set FALSE to skip A5 (needs CmdStan)
 
@@ -53,7 +53,7 @@ cache_folder <- fits_folder
 ## Directions enter through the angle phi between a direction and the data's
 ## direction; only (0, pi/2) is needed (phi and pi - phi give the same t^2).
 ## The weight of each angle is sin(phi)^(k-2), normalized exactly.
-log_direction_average_exact <- function(scaled_share, sample_size, number_of_predictors) {
+log_direction_average_by_integration <- function(scaled_share, sample_size, number_of_predictors) {
   half_n_minus_one <- (sample_size - 1) / 2
   log_value_at_zero <- -half_n_minus_one * log1p(-scaled_share)   # largest possible value
   if (number_of_predictors == 1) return(log_value_at_zero)          # only t^2 = 1
@@ -67,7 +67,8 @@ log_direction_average_exact <- function(scaled_share, sample_size, number_of_pre
   ## When the evidence is strong the integrand is a narrow peak near angle 0,
   ## of width about sqrt((1 - z) / (2 m z)). Splitting the interval at a few
   ## multiples of that width makes sure integrate() sees the peak.
-  peak_width <- if (scaled_share > 0) sqrt((1 - scaled_share) / (2 * half_n_minus_one * scaled_share)) else Inf
+  peak_width <- if (scaled_share > 0)
+    sqrt((1 - scaled_share) / (2 * half_n_minus_one * scaled_share)) else Inf
   inner_breaks <- c(3, 10, 40) * peak_width
   break_points <- c(0, inner_breaks[inner_breaks < pi / 2], pi / 2)
   pieces <- vapply(seq_len(length(break_points) - 1), function(i)
@@ -77,7 +78,8 @@ log_direction_average_exact <- function(scaled_share, sample_size, number_of_pre
 }
 
 ## ---- Full Bayes factor vs intercept only -----------------------------------------
-log_bayes_factor_ground_truth <- function(explained_share, sample_size, number_of_predictors) {
+log_bayes_factor_possible_range_by_integration <- function(explained_share, sample_size,
+                                                           number_of_predictors) {
   if (number_of_predictors == 0) return(0)
 
   ## log of the integrand over u = log(g) (includes the Jacobian g)
@@ -85,7 +87,8 @@ log_bayes_factor_ground_truth <- function(explained_share, sample_size, number_o
     g <- exp(u)
     log(sample_size / 2) - 2 * u - sample_size / (2 * g) + u -      # IG(1, n/2) density, times g
       0.5 * log1p(g) +
-      log_direction_average_exact(explained_share * g / (1 + g), sample_size, number_of_predictors)
+      log_direction_average_by_integration(explained_share * g / (1 + g), sample_size,
+                                           number_of_predictors)
   }, numeric(1))
 
   ## find the peak, then integrate exp(log_integrand - peak) around it
@@ -131,21 +134,21 @@ sweep_settings <- subset(sweep_settings, sample_size > number_of_predictors + 1)
 message("Ground truth for ", nrow(sweep_settings), " settings (adaptive integration) ...")
 sweep_values <- parallel::mclapply(seq_len(nrow(sweep_settings)), function(row) {
   s <- sweep_settings[row, ]
-  c(code         = log_bayes_factor_vs_intercept_only(s$explained_share, s$sample_size,
-                                                      s$number_of_predictors),
-    ground_truth = log_bayes_factor_ground_truth(s$explained_share, s$sample_size,
-                                                 s$number_of_predictors))
+  c(code         = log_bayes_factor_possible_range_vs_intercept_only(s$explained_share, s$sample_size,
+                                                                     s$number_of_predictors),
+    ground_truth = log_bayes_factor_possible_range_by_integration(s$explained_share, s$sample_size,
+                                                                  s$number_of_predictors))
 }, mc.cores = number_of_cores)
 sweep_settings <- cbind(sweep_settings, do.call(rbind, sweep_values))
 sweep_settings$error <- abs(sweep_settings$code - sweep_settings$ground_truth)
 
 ordinary <- abs(sweep_settings$ground_truth) < 50     # |log BF| < 50: the range that matters in practice
-check(sprintf("A1a. ground truth, ordinary evidence (%d settings)", sum(ordinary)),
-      max(sweep_settings$error[ordinary]) < 1e-3,
-      sprintf("largest error %.1e", max(sweep_settings$error[ordinary])))
-check(sprintf("A1b. ground truth, all settings (%d)", nrow(sweep_settings)),
-      max(sweep_settings$error) < 1e-3,
-      sprintf("largest error %.1e", max(sweep_settings$error)))
+record_check(sprintf("A1a. ground truth, ordinary evidence (%d settings)", sum(ordinary)),
+             max(sweep_settings$error[ordinary]) < 1e-3,
+             sprintf("largest error %.1e", max(sweep_settings$error[ordinary])))
+record_check(sprintf("A1b. ground truth, all settings (%d)", nrow(sweep_settings)),
+             max(sweep_settings$error) < 1e-3,
+             sprintf("largest error %.1e", max(sweep_settings$error)))
 
 cat("\nSettings with the largest errors:\n")
 print(head(sweep_settings[order(-sweep_settings$error), ], 6), row.names = FALSE, digits = 6)
@@ -157,51 +160,8 @@ cat("\n")
 ## =====================================================================
 ## Brute force uses no formula: draw coefficient sets from the prior, see
 ## how well each predicts the outcome (noise level averaged on a grid), and
-## average. Criterion: agreement within 0.05 on the log scale.
-
-draw_effects_from_prior <- function(number_of_draws, predictor_covariance) {
-  number_of_predictors <- ncol(predictor_covariance)
-  explained_share  <- rbeta(number_of_draws, 0.5, 1)
-  overall_strength <- sqrt(explained_share / (1 - explained_share))
-  random_numbers   <- matrix(rnorm(number_of_draws * number_of_predictors),
-                             number_of_draws, number_of_predictors)
-  directions       <- random_numbers / sqrt(rowSums(random_numbers^2))
-  covariance_root  <- chol(predictor_covariance)
-  t(backsolve(covariance_root, t(directions * overall_strength)))
-}
-
-log_bayes_factor_brute_force <- function(predictors, outcome,
-                                         number_of_draws = 40000, draws_per_batch = 2000) {
-  sample_size            <- length(outcome)
-  centered_predictors    <- scale(predictors, scale = FALSE)
-  centered_outcome       <- outcome - mean(outcome)
-  outcome_sum_of_squares <- sum(centered_outcome^2)
-  predictor_covariance   <- crossprod(centered_predictors) / sample_size
-
-  ## the noise level is unknown: average over it on a grid (as 1 / noise)
-  inverse_noise_values <- seq(1e-4, 6 * sqrt(sample_size / outcome_sum_of_squares), length.out = 800)
-  inverse_noise_step   <- inverse_noise_values[2] - inverse_noise_values[1]
-  log_inverse_noise    <- log(inverse_noise_values)
-
-  log_evidence_null <- log_sum_exp((sample_size - 2) * log_inverse_noise -
-                                   inverse_noise_values^2 * outcome_sum_of_squares / 2) +
-                       log(inverse_noise_step)
-
-  log_evidence_per_draw <- numeric(0)
-  for (batch in seq_len(number_of_draws / draws_per_batch)) {
-    effects          <- draw_effects_from_prior(draws_per_batch, predictor_covariance)
-    predicted_values <- centered_predictors %*% t(effects)
-    overlap_with_outcome     <- drop(crossprod(centered_outcome, predicted_values))
-    predicted_sum_of_squares <- colSums(predicted_values^2)
-    log_integrand <- (sample_size - 2) *
-        matrix(log_inverse_noise, draws_per_batch, length(inverse_noise_values), byrow = TRUE) -
-      (outer(rep(outcome_sum_of_squares, draws_per_batch), inverse_noise_values^2) -
-       2 * outer(overlap_with_outcome, inverse_noise_values) + predicted_sum_of_squares) / 2
-    log_evidence_per_draw <- c(log_evidence_per_draw,
-                               log_sum_exp_per_row(log_integrand) + log(inverse_noise_step))
-  }
-  log_sum_exp(log_evidence_per_draw) - log(number_of_draws) - log_evidence_null
-}
+## average: log_bayes_factor_possible_range_by_sampling() in R/possible_range.R.
+## Criterion: agreement within 0.05 on the log scale.
 
 brute_force_cases <- list(
   list(label = "k = 3, tutorial data", predictors = predictors, outcome = outcome),
@@ -213,12 +173,12 @@ brute_force_cases <- list(
 
 set.seed(1)
 for (case in brute_force_cases) {
-  closed_form <- log_bayes_factor_vs_intercept_only(
-    explained_share_of(case$predictors, case$outcome), length(case$outcome), ncol(case$predictors))
-  brute_force <- log_bayes_factor_brute_force(case$predictors, case$outcome)
-  check(paste("A2. brute force,", case$label),
-        abs(closed_form - brute_force) < 0.05,
-        sprintf("closed %.3f, brute %.3f", closed_form, brute_force))
+  closed_form <- log_bayes_factor_possible_range_vs_intercept_only(
+    sample_r_squared(case$predictors, case$outcome), length(case$outcome), ncol(case$predictors))
+  brute_force <- log_bayes_factor_possible_range_by_sampling(case$predictors, case$outcome)
+  record_check(paste("A2. brute force,", case$label),
+               abs(closed_form - brute_force) < 0.05,
+               sprintf("closed %.3f, brute %.3f", closed_form, brute_force))
 }
 
 
@@ -228,25 +188,26 @@ for (case in brute_force_cases) {
 ## The BF should not depend on units or on how the same predictors are
 ## written. Criterion: identical up to 1e-8 (relative).
 
-bf_original <- possible_bayes_factor_per_term(y ~ x1 + x2 + x3, example_data)$BF10
+bf_original <- bayes_factor_possible_range_per_term(y ~ x1 + x2 + x3, example_data)$BF10
 
 rescaled_data <- transform(example_data, x1 = 100 * x1 + 7, x2 = -0.01 * x2, x3 = x3 - 50)
-bf_rescaled <- possible_bayes_factor_per_term(y ~ x1 + x2 + x3, rescaled_data)$BF10
-check("A3a. rescaling and shifting predictors", max(abs(bf_rescaled / bf_original - 1)) < 1e-8,
-      sprintf("largest relative difference %.1e", max(abs(bf_rescaled / bf_original - 1))))
+bf_rescaled <- bayes_factor_possible_range_per_term(y ~ x1 + x2 + x3, rescaled_data)$BF10
+record_check("A3a. rescaling and shifting predictors", max(abs(bf_rescaled / bf_original - 1)) < 1e-8,
+             sprintf("largest relative difference %.1e", max(abs(bf_rescaled / bf_original - 1))))
 
 outcome_rescaled <- transform(example_data, y = 1000 * y - 3)
-bf_outcome <- possible_bayes_factor_per_term(y ~ x1 + x2 + x3, outcome_rescaled)$BF10
-check("A3b. rescaling the outcome", max(abs(bf_outcome / bf_original - 1)) < 1e-8,
-      sprintf("largest relative difference %.1e", max(abs(bf_outcome / bf_original - 1))))
+bf_outcome <- bayes_factor_possible_range_per_term(y ~ x1 + x2 + x3, outcome_rescaled)$BF10
+record_check("A3b. rescaling the outcome", max(abs(bf_outcome / bf_original - 1)) < 1e-8,
+             sprintf("largest relative difference %.1e", max(abs(bf_outcome / bf_original - 1))))
 
 recoded_data <- transform(example_data, sum_12 = x1 + x2, difference_12 = x1 - x2)
-bf_full_original <- possible_bayes_factor(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data))
-bf_full_recoded  <- possible_bayes_factor(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
-                                          lm(y ~ 1, recoded_data))
-check("A3c. recoding predictors (same model, other columns)",
-      abs(bf_full_recoded / bf_full_original - 1) < 1e-8,
-      sprintf("original %.4f, recoded %.4f", bf_full_original, bf_full_recoded))
+bf_full_original <- bayes_factor_possible_range(lm(y ~ x1 + x2 + x3, example_data),
+                                                lm(y ~ 1, example_data))
+bf_full_recoded  <- bayes_factor_possible_range(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
+                                                lm(y ~ 1, recoded_data))
+record_check("A3c. recoding predictors (same model, other columns)",
+             abs(bf_full_recoded / bf_full_original - 1) < 1e-8,
+             sprintf("original %.4f, recoded %.4f", bf_full_original, bf_full_recoded))
 
 
 ## =====================================================================
@@ -255,8 +216,8 @@ check("A3c. recoding predictors (same model, other columns)",
 ## Criterion: within 0.1% of the recorded values 18.696, 0.3827, 1.5872
 ## (computed with the packed direction grid).
 recorded <- c(x1 = 18.696, x2 = 0.3827, x3 = 1.5872)
-check("A4. tutorial Bayes factors", all(abs(bf_original / recorded - 1) < 1e-3),
-      paste(sprintf("%.4f", bf_original), collapse = " "))
+record_check("A4. tutorial Bayes factors", all(abs(bf_original / recorded - 1) < 1e-3),
+             paste(sprintf("%.4f", bf_original), collapse = " "))
 
 
 ## =====================================================================
@@ -280,21 +241,20 @@ if (run_bridge_sampling_check) {
     list(label = "A5b. bridge sampling, factor as a block", cache_name = "checkA5B",
          full = y_group ~ x1 + group, reduced = y_group ~ x1))
 
-  for (case in bridge_cases) {
-    full_fit <- brm_possible(case$full, example_data, iter = 10000, seed = 2, refresh = 0,
+  ## same sampler settings for every fit; cached per case and model
+  fit_for_bridge_sampling <- function(formula, cache_file)
+    fit_possible_range_model(formula, example_data, iter = 10000, seed = 2, refresh = 0,
                              save_pars = save_pars(all = TRUE),
                              control = list(adapt_delta = 0.99),
-                             file = file.path(cache_folder, paste0(case$cache_name, "_full")),
-                             file_refit = "on_change")
-    reduced_fit <- brm_possible(case$reduced, example_data, iter = 10000, seed = 2, refresh = 0,
-                                save_pars = save_pars(all = TRUE),
-                                control = list(adapt_delta = 0.99),
-                                file = file.path(cache_folder, paste0(case$cache_name, "_reduced")),
-                                file_refit = "on_change")
+                             file = file.path(cache_folder, cache_file), file_refit = "on_change")
+
+  for (case in bridge_cases) {
+    full_fit    <- fit_for_bridge_sampling(case$full,    paste0(case$cache_name, "_full"))
+    reduced_fit <- fit_for_bridge_sampling(case$reduced, paste0(case$cache_name, "_reduced"))
     bridge <- bayes_factor(full_fit, reduced_fit, silent = TRUE)$bf
-    closed <- possible_bayes_factor(lm(case$full, example_data), lm(case$reduced, example_data))
-    check(case$label, abs(log(bridge) - log(closed)) < 0.1,
-          sprintf("bridge %.3f, closed %.3f", bridge, closed))
+    closed <- bayes_factor_possible_range(lm(case$full, example_data), lm(case$reduced, example_data))
+    record_check(case$label, abs(log(bridge) - log(closed)) < 0.1,
+                 sprintf("bridge %.3f, closed %.3f", bridge, closed))
   }
 }
 
@@ -316,11 +276,12 @@ set.seed(3)
 for (true_slope in c(0, 0.2, 0.4)) {
   x <- rnorm(100); y <- true_slope * x + rnorm(100)
   one_predictor_fit <- lm(y ~ x)
-  closed_form <- exp(log_bayes_factor_vs_intercept_only(summary(one_predictor_fit)$r.squared, 100, 1))
-  flat_r      <- bayes_factor_flat_partial_r(one_predictor_fit, 1, matrix(x))
-  check(sprintf("B1. k = 1 vs flat partial r, slope %.1f", true_slope),
-        abs(closed_form / flat_r - 1) < 0.03,
-        sprintf("closed %.3f, flat r %.3f", closed_form, flat_r))
+  closed_form <- exp(log_bayes_factor_possible_range_vs_intercept_only(
+    summary(one_predictor_fit)$r.squared, 100, 1))
+  flat_r      <- bayes_factor_flat_partial_correlation(one_predictor_fit, 1, matrix(x))
+  record_check(sprintf("B1. k = 1 vs flat partial r, slope %.1f", true_slope),
+               abs(closed_form / flat_r - 1) < 0.03,
+               sprintf("closed %.3f, flat r %.3f", closed_form, flat_r))
 }
 
 
@@ -331,17 +292,17 @@ for (true_slope in c(0, 0.2, 0.4)) {
 ## a) Predictive matching: with one more observation than predictors the
 ##    data can't tell the models apart, so BF = 1. Criterion: within 0.001.
 matching <- sapply(1:6, function(k)
-  exp(log_bayes_factor_vs_intercept_only(1 - 1e-12, k + 1, k)))
-check("B2a. predictive matching (k = 1-6)", all(abs(matching - 1) < 1e-3),
-      paste(sprintf("%.4f", matching), collapse = " "))
+  exp(log_bayes_factor_possible_range_vs_intercept_only(1 - 1e-12, k + 1, k)))
+record_check("B2a. predictive matching (k = 1-6)", all(abs(matching - 1) < 1e-3),
+             paste(sprintf("%.4f", matching), collapse = " "))
 
 ## b) Information consistency: as the fit becomes perfect, evidence for an
 ##    effect grows without limit. Criterion: strictly increasing, and above
 ##    log BF = 50 at R2 = 0.9999.
 information <- sapply(c(0.9, 0.99, 0.999, 0.9999), function(r2)
-  log_bayes_factor_vs_intercept_only(r2, 20, 3))
-check("B2b. information consistency", all(diff(information) > 0) && information[4] > 50,
-      paste(sprintf("%.1f", information), collapse = " "))
+  log_bayes_factor_possible_range_vs_intercept_only(r2, 20, 3))
+record_check("B2b. information consistency", all(diff(information) > 0) && information[4] > 50,
+             paste(sprintf("%.1f", information), collapse = " "))
 
 ## c) Consistency under the null, by simulation: x3 truly does nothing.
 ##    The median log BF01 for x3 should grow with n at a rate of about
@@ -353,15 +314,15 @@ median_log_bf01 <- sapply(sample_sizes, function(n) {
   median(replicate(200, {
     x <- matrix(rnorm(n * 3), n)
     y <- drop(x %*% c(0.3, 0.2, 0)) + rnorm(n)
-    -(log_bayes_factor_vs_intercept_only(explained_share_of(x, y), n, 3) -
-      log_bayes_factor_vs_intercept_only(explained_share_of(x[, 1:2], y), n, 2))
+    -(log_bayes_factor_possible_range_vs_intercept_only(sample_r_squared(x, y), n, 3) -
+      log_bayes_factor_possible_range_vs_intercept_only(sample_r_squared(x[, 1:2], y), n, 2))
   }))
 })
 slope_against_log_n <- coef(lm(median_log_bf01 ~ log(sample_sizes)))[[2]]
-check("B2c. consistency under the null (simulated)",
-      all(diff(median_log_bf01) > 0) && slope_against_log_n > 0.35 && slope_against_log_n < 0.65,
-      sprintf("median log BF01 %s; slope %.2f",
-              paste(sprintf("%.2f", median_log_bf01), collapse = " "), slope_against_log_n))
+record_check("B2c. consistency under the null (simulated)",
+             all(diff(median_log_bf01) > 0) && slope_against_log_n > 0.35 && slope_against_log_n < 0.65,
+             sprintf("median log BF01 %s; slope %.2f",
+                     paste(sprintf("%.2f", median_log_bf01), collapse = " "), slope_against_log_n))
 
 
 ## =====================================================================
