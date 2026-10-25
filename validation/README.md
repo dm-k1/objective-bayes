@@ -30,7 +30,7 @@ update them before quoting.
 |---|---|---|
 | `01_checks.R` | Is everything correct? Part A: calculator (ground truth by `integrate()` over a sweep of R², n and k; brute force; invariance; tutorial values; brms). Part B: default properties (k = 1, predictive matching, information and null consistency). One pass/fail summary | a few minutes (brms part cached) |
 | `02_sim_one_coefficient.R` | One coefficient at a time: flat prior on the partial correlation vs JZS | long |
-| `03_sim_joint_prior.R` | Several predictors: the joint possible-range prior vs JZS, per-coefficient flat r and R2-D2 | long |
+| `03_sim_joint_prior.R` | Several predictors: the joint flat-R prior vs JZS, per-coefficient flat r and R2-D2 | long |
 | `comparison_methods.R` | Helper: the comparison methods (JZS, flat partial r, R2-D2) | – |
 | `settings.R` | Helper: parallel cores, cache folders, cached simulation runner, `record_check()`, `save_figure()` | – |
 
@@ -71,10 +71,10 @@ correlation between x and z 0 or 0.5, 200 replications per cell.
 
 Main findings:
 
-- **Testing:** at n ≥ 100 the two are equivalent once the flat-r null threshold
+- **Testing:** at n ≥ 100 the two are equivalent once the flat partial r null threshold
   is raised to about BF₀₁ > 4–4.5 (instead of 3); this is the precision-matching
   analysis in section D.
-- **Small samples:** the flat-r prior gives much more evidence for the null,
+- **Small samples:** the flat partial r prior gives much more evidence for the null,
   including for small real effects. It finds nulls faster but calls small
   effects null more often. This follows from its prior putting less weight near
   zero than JZS (tutorial Step 1).
@@ -92,7 +92,7 @@ and x4 are null. Tested: x1 and x3. 200 replications per cell.
 |---|---|---|
 | per-coefficient flat r | fastest | most often |
 | JZS default | 0.61 | 0.19 |
-| joint possible-range | 0.41 | 0.03 |
+| joint flat-R | 0.41 | 0.03 |
 | R2-D2 (same R² prior) | 0.16 | almost never |
 
 - For real effects the joint prior is practically identical to JZS.
@@ -106,7 +106,7 @@ and x4 are null. Tested: x1 and x3. 200 replications per cell.
 - Precision-matched thresholds for all four methods in study 03 (as done for
   two methods in 02, section D).
 - An estimation simulation for the joint prior (coverage, bias, RMSE with
-  `fit_possible_range_model()`).
+  `fit_flat_r_model()`).
 - Consistency when the number of predictors grows with n (checked
   numerically outside this repository: the joint prior stays consistent, while
   Zellner–Siow with scale 1 fails at k/n = 0.25). Should be added as a script.

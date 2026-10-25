@@ -1,7 +1,7 @@
 ## =====================================================================
-##  Validation 03: the joint possible-range prior vs alternatives
+##  Validation 03: the joint flat-R prior vs alternatives
 ##  4 correlated predictors; x1's slope varies, x3 is always null.
-##  Methods: JZS default, joint possible-range prior (this project),
+##  Methods: JZS default, joint flat-R prior (this project),
 ##  per-coefficient flat partial correlation, R2-D2 with the same
 ##  R-squared prior.
 ##
@@ -14,7 +14,7 @@ library(purrr)
 library(tidyr)
 library(ggplot2)
 
-source("R/possible_range.R")
+source("R/flat_r.R")
 source("validation/comparison_methods.R")
 source("validation/settings.R")   # parallel cores, cached simulation runner, record_check()
 
@@ -67,25 +67,25 @@ simulate_one_dataset <- function(slope_of_x1, sample_size, predictor_correlation
 
   full_fit       <- lm(outcome ~ predictors)
   r_squared_full <- summary(full_fit)$r.squared
-  log_bf_possible_range_full <- log_bayes_factor_possible_range_vs_intercept_only(
+  log_bf_flat_r_full <- log_bayes_factor_flat_r_vs_intercept_only(
     r_squared_full, sample_size, number_of_predictors)
   log_bf_r2d2_full <- log_bayes_factor_r2d2_vs_intercept_only(
     centered_predictors, centered_outcome, r2d2_draws_full)
 
   map_dfr(tested_predictors, function(tested) {
     r_squared_without <- summary(lm(outcome ~ predictors[, -tested]))$r.squared
-    log_bf_possible_range_without <- log_bayes_factor_possible_range_vs_intercept_only(
+    log_bf_flat_r_without <- log_bayes_factor_flat_r_vs_intercept_only(
       r_squared_without, sample_size, number_of_predictors - 1)
     log_bf_r2d2_without <- log_bayes_factor_r2d2_vs_intercept_only(
       centered_predictors[, -tested, drop = FALSE], centered_outcome, r2d2_draws_reduced)
     tibble(coefficient = paste0("x", tested),
            true_slope  = true_slopes[tested],
-           method      = c("JZS default", "joint possible range",
+           method      = c("JZS default", "joint flat-R",
                            "flat partial correlation", "R2-D2 matched"),
            BF10        = c(bayes_factor_jzs_one_coefficient(r_squared_full, r_squared_without,
                                                             sample_size, number_of_predictors,
                                                             rscale = jzs_scale),
-                           exp(log_bf_possible_range_full - log_bf_possible_range_without),
+                           exp(log_bf_flat_r_full - log_bf_flat_r_without),
                            bayes_factor_flat_partial_correlation(full_fit, tested, predictors),
                            exp(log_bf_r2d2_full - log_bf_r2d2_without)))
   })
@@ -139,7 +139,7 @@ simulation_runs |>
   print(n = Inf)
 
 ## ---- Figures ---------------------------------------------------------------
-method_colours <- c(`JZS default` = "grey40", `joint possible range` = "#d95f02",
+method_colours <- c(`JZS default` = "grey40", `joint flat-R` = "#d95f02",
                     `flat partial correlation` = "#1b9e77", `R2-D2 matched` = "#7570b3")
 x1_summaries   <- filter(cell_summaries, coefficient == "x1")
 facets_by_cell <- facet_grid(predictor_correlation ~ slope_of_x1, labeller = label_both)

@@ -260,7 +260,7 @@ legend("bottomright", bty = "n", lty = c(1, 2, 3), lwd = c(2, 2, 1),
                   "no difference from 'no effect'"))
 
 ## Same number from the closed form in the method file
-source("R/possible_range.R")
-closed_form_bayes_factor <- exp(log_bayes_factor_possible_range_vs_intercept_only(cor(x, y)^2,
+source("R/flat_r.R")
+closed_form_bayes_factor <- exp(log_bayes_factor_flat_r_vs_intercept_only(cor(x, y)^2,
                                                                                   sample_size, 1))
 c(grid = grid_bayes_factor, closed_form = closed_form_bayes_factor)

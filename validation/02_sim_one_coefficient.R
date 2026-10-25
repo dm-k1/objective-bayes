@@ -1,13 +1,13 @@
 ## =====================================================================
 ##  Validation 02: one coefficient at a time
 ##  JZS default vs a flat prior on the partial correlation (the
-##  one-predictor case of the possible-range idea), two predictors
+##  one-predictor case of the flat-R idea), two predictors
 ##  (x and a covariate z).
 ##
 ##   A. simulation   true slope x sample size x predictor correlation
 ##   B. summaries    misleading / correct evidence, coverage, bias
 ##   C. confusion and calibration in different "worlds" of true effects
-##   D. precision matching: which null threshold makes the flat-r null
+##   D. precision matching: which null threshold makes the flat partial r null
 ##      calls as reliable as JZS's?
 ##
 ##  Run from the project folder. Section A runs in parallel and is cached:
@@ -19,7 +19,7 @@ library(purrr)
 library(tidyr)
 library(ggplot2)
 
-source("R/possible_range.R")
+source("R/flat_r.R")
 source("validation/comparison_methods.R")   # JZS and flat partial correlation
 source("validation/settings.R")             # parallel cores, cached simulation runner, save_figure()
 

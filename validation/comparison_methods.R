@@ -1,12 +1,12 @@
 ## =====================================================================
 ##  Comparison methods used in the validation simulations
-##  (the possible-range method itself lives in R/possible_range.R)
+##  (the flat-R method itself lives in R/flat_r.R)
 ##
 ##   - JZS default (BayesFactor / JASP)
 ##   - per-coefficient flat prior on one partial correlation
 ##   - R2-D2 with the same R-squared prior, Dirichlet split
 ##
-##  Names follow R/possible_range.R: bayes_factor_<method>[_<scope>].
+##  Names follow R/flat_r.R: bayes_factor_<method>[_<scope>].
 ## =====================================================================
 
 ## ---- JZS default: one coefficient, model with vs without it ----------

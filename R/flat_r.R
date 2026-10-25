@@ -1,6 +1,8 @@
 ## =====================================================================
-##  The possible-range prior for linear regression
+##  The flat-R prior for linear regression
 ##  "Define what's possible, not what you expect"
+##
+##  P(b) = P(total) x P(this combination | total) x unit conversion
 ##
 ##  Prior:
 ##    - explained share of variance (R-squared) ~ Beta(1/2, 1), the same
@@ -10,12 +12,12 @@
 ##      plausible, relative to how the predictors correlate
 ##    - flat intercept, Jeffreys prior on the noise level
 ##
-##  PART 1. Estimation      fit_possible_range_model()            (brms, standard output)
-##  PART 2. Bayes factors   bayes_factor_possible_range()         (closed form, any two models)
-##                          bayes_factor_possible_range_per_term()
+##  PART 1. Estimation      fit_flat_r_model()            (brms, standard output)
+##  PART 2. Bayes factors   bayes_factor_flat_r()         (closed form, any two models)
+##                          bayes_factor_flat_r_per_term()
 ##  PART 3. Reporting       support_per_partial_correlation(), support_regions()
-##  PART 4. Prior sampling  draw_coefficients_from_possible_range_prior(),
-##                          log_bayes_factor_possible_range_by_sampling() (slow check)
+##  PART 4. Prior sampling  draw_coefficients_from_flat_r_prior(),
+##                          log_bayes_factor_flat_r_by_sampling() (slow check)
 ##
 ##  Naming: bayes_factor_<method>[_<scope>] for Bayes factors (the
 ##  comparison methods in validation/comparison_methods.R follow the same
@@ -26,7 +28,7 @@
 ##  polynomials, spline columns). Not yet: group-level (random) effects,
 ##  other families, distributional models. See README.md.
 ## =====================================================================
-## brms is only needed for estimation (fit_possible_range_model). It is
+## brms is only needed for estimation (fit_flat_r_model). It is
 ## called as brms::... instead of library(brms), so sourcing this file for
 ## the Bayes factor functions is fast and does not need brms or Stan. For
 ## summary(), plot(), bayes_R2() etc. on a fitted model, load brms
@@ -36,54 +38,71 @@
 ## =====================================================================
 ##  PART 1. ESTIMATION
 ## =====================================================================
-## The prior written as a density on the coefficients. Whiten the
-## coefficients (noise units, predictors decorrelated); call the length
-## of the result s. Then density ~ (1 + s^2)^(-3/2) / s^(k-1):
-## the first part is R-squared ~ Beta(1/2, 1), the second makes every
-## direction equally plausible.
+## The prior as a density on the coefficients, in one sentence:
+##   P(b) = P(total) x P(this combination | total) x unit conversion
+##   1. P(total)                        flat on R, per unit of f
+##                                      (f = length of b in noise units, Cohen's f)
+##   2. P(this combination | total)     every split equally likely:
+##                                      1 / size of all combinations with this total
+##   3. unit conversion                 from noise units to the units of b
+## Derivation and simulation checks: docs/derivation.md, tutorial/.
 
-possible_range_stan_code <- "
-  real possible_range_lpdf(vector b, real sigma, matrix covariance_root) {
+flat_r_stan_code <- "
+  // P(b) = P(total) x P(this combination | total) x unit conversion
+  real flat_r_lpdf(vector b, real sigma, matrix predictor_covariance) {
     int k = rows(b);
-    vector[k] whitened = covariance_root' * b / sigma;
-    real length_squared = dot_self(whitened);
-    return -1.5 * log1p(length_squared)
-           - 0.5 * (k - 1) * log(length_squared)
-           - (log(2) + 0.5 * k * log(pi()) - lgamma(0.5 * k))
-           + sum(log(diagonal(covariance_root))) - k * log(sigma);
+
+    // The total: length of b in noise units (Cohen's f)
+    real f_squared = quad_form(predictor_covariance, b) / square(sigma);
+    real f = sqrt(f_squared);
+
+    // 1. P(total): flat on R, per unit of f
+    real log_p_total = -1.5 * log1p(f_squared);
+
+    // 2. P(this combination | total): 1 / size of all combinations with this total
+    //    = 1 / surface of a sphere with radius f in k dimensions
+    real log_size_of_all_combinations = log(2) + 0.5 * k * log(pi()) - lgamma(0.5 * k)
+                                        + (k - 1) * log(f);
+    real log_p_combination_given_total = -log_size_of_all_combinations;
+
+    // 3. Unit conversion: from noise units to the units of b
+    real log_conversion = 0.5 * log_determinant(predictor_covariance) - k * log(sigma);
+
+    // log of (1 x 2 x 3)
+    return log_p_total + log_p_combination_given_total + log_conversion;
   }
 "
 
 ## Builds the brms prior for a formula: each model uses its own predictors'
 ## covariance, so the prior adapts to correlated predictors automatically.
-build_possible_range_prior <- function(formula, data) {
+build_flat_r_prior <- function(formula, data) {
   predictors <- model.matrix(formula, data)[, -1, drop = FALSE]
   neutral_priors <- brms::set_prior("", class = "Intercept") +   # flat intercept
                     brms::set_prior("", class = "sigma")         # Jeffreys term added below
   if (ncol(predictors) == 0)
     return(list(prior = neutral_priors + brms::set_prior("target += -log(sigma);", check = FALSE),
                 stanvars = NULL))
-  centered_predictors <- scale(predictors, scale = FALSE)
-  covariance_root <- t(chol(crossprod(centered_predictors) / nrow(centered_predictors)))
+  centered_predictors  <- scale(predictors, scale = FALSE)
+  predictor_covariance <- crossprod(centered_predictors) / nrow(centered_predictors)
   list(
     prior = neutral_priors + brms::set_prior(
-      "target += possible_range_lpdf(b | sigma, covariance_root) - log(sigma);",
+      "target += flat_r_lpdf(b | sigma, predictor_covariance) - log(sigma);",
       check = FALSE),
-    stanvars = brms::stanvar(scode = possible_range_stan_code, block = "functions") +
-               brms::stanvar(covariance_root, name = "covariance_root"))
+    stanvars = brms::stanvar(scode = flat_r_stan_code, block = "functions") +
+               brms::stanvar(predictor_covariance, name = "predictor_covariance"))
 }
 
 ## Fit exactly like brm(): summary(), plot(), pp_check(), bayes_R2(),
 ## loo() all work as usual. Extra arguments go to brm(). The family may
 ## be given, but only gaussian with the identity link is supported.
-fit_possible_range_model <- function(formula, data, family = gaussian(), ...) {
+fit_flat_r_model <- function(formula, data, family = gaussian(), ...) {
   if (any(grepl("|", deparse(formula), fixed = TRUE)))
-    stop("fit_possible_range_model() supports fixed effects only (no group-level terms like (1 | g)).")
+    stop("fit_flat_r_model() supports fixed effects only (no group-level terms like (1 | g)).")
   if (is.character(family)) family <- get(family, mode = "function")
   if (is.function(family))  family <- family()
   if (!identical(family$family, "gaussian") || !identical(family$link, "identity"))
-    stop("fit_possible_range_model() supports the gaussian family with the identity link only.")
-  prior_parts <- build_possible_range_prior(formula, data)
+    stop("fit_flat_r_model() supports the gaussian family with the identity link only.")
+  prior_parts <- build_flat_r_prior(formula, data)
   brms::brm(formula, data = data, family = gaussian(),
             prior = prior_parts$prior, stanvars = prior_parts$stanvars,
             backend = getOption("brms.backend", "cmdstanr"), ...)
@@ -115,7 +134,7 @@ sample_r_squared <- function(predictor_columns, outcome) {
 }
 
 ## Log Bayes factor: model with k predictors vs intercept only
-log_bayes_factor_possible_range_vs_intercept_only <- function(explained_share, sample_size,
+log_bayes_factor_flat_r_vs_intercept_only <- function(explained_share, sample_size,
                                                               number_of_predictors,
                                                               grid_points_scale = 800,
                                                               grid_points_direction = 200) {
@@ -173,15 +192,15 @@ extract_predictors_and_outcome <- function(model) {
   list(predictors = predictors, outcome = outcome)
 }
 
-## Bayes factor of model A against model B (fit_possible_range_model() or lm() fits)
-bayes_factor_possible_range <- function(model_a, model_b) {
+## Bayes factor of model A against model B (fit_flat_r_model() or lm() fits)
+bayes_factor_flat_r <- function(model_a, model_b) {
   parts_a <- extract_predictors_and_outcome(model_a)
   parts_b <- extract_predictors_and_outcome(model_b)
   if (!isTRUE(all.equal(parts_a$outcome, parts_b$outcome)))
     stop("Both models need the same outcome and the same data rows.")
   sample_size <- length(parts_a$outcome)
   log_bayes_factor_of <- function(parts)
-    log_bayes_factor_possible_range_vs_intercept_only(
+    log_bayes_factor_flat_r_vs_intercept_only(
       sample_r_squared(parts$predictors, parts$outcome), sample_size, ncol(parts$predictors))
   exp(log_bayes_factor_of(parts_a) - log_bayes_factor_of(parts_b))
 }
@@ -189,12 +208,12 @@ bayes_factor_possible_range <- function(model_a, model_b) {
 ## Bayes factor for every term of a model: with vs without that term.
 ## Factors and interactions are tested as a block. Uses lm() only to
 ## build the reduced models' design matrices; nothing is estimated.
-bayes_factor_possible_range_per_term <- function(formula, data) {
+bayes_factor_flat_r_per_term <- function(formula, data) {
   full_model <- lm(formula, data)
   term_labels <- attr(terms(formula), "term.labels")
   evidence_for_effect <- sapply(term_labels, function(term) {
     reduced_model <- lm(update(formula, paste(". ~ . -", term)), data)
-    bayes_factor_possible_range(full_model, reduced_model)
+    bayes_factor_flat_r(full_model, reduced_model)
   })
   data.frame(term = term_labels,
              BF10 = evidence_for_effect,          # evidence for an effect
@@ -256,27 +275,28 @@ support_regions <- function(support_table, band = 3) {
 ## validation/01_checks.R (as an independent check of the closed form).
 
 ## One coefficient set per row, in units of the noise:
-##   1. draw the explained share (R-squared) from Beta(1/2, 1)
-##   2. turn it into an overall effect strength
-##   3. draw a random direction: how the effect is divided over predictors
-##   4. reshape that direction to the predictors' covariance, so that
-##      correlated predictors are handled automatically
-draw_coefficients_from_possible_range_prior <- function(number_of_draws, predictor_covariance) {
-  number_of_predictors <- ncol(predictor_covariance)
-  explained_share      <- rbeta(number_of_draws, 0.5, 1)
-  overall_strength     <- sqrt(explained_share / (1 - explained_share))
-  random_numbers <- matrix(rnorm(number_of_draws * number_of_predictors),
-                           number_of_draws, number_of_predictors)
-  directions     <- random_numbers / sqrt(rowSums(random_numbers^2))   # all directions equally likely
-  covariance_root <- chol(predictor_covariance)
-  t(backsolve(covariance_root, t(directions * overall_strength)))
+##   1. draw the overall correlation, flat from -1 to 1
+##   2. turn it into explained / unexplained variance
+##   3. draw a random direction: how the effect is divided over predictors.
+##      Normal draws with covariance solve(Sigma) have no preferred direction
+##      in terms of explained variance, so correlated predictors are handled
+##   4. scale each direction so its explained variance is exactly the drawn amount
+draw_coefficients_from_flat_r_prior <- function(number_of_draws, predictor_covariance) {
+  number_of_predictors       <- ncol(predictor_covariance)
+  overall_correlation        <- runif(number_of_draws, min = -1, max = 1)
+  explained_over_unexplained <- overall_correlation^2 / (1 - overall_correlation^2)
+  directions <- MASS::mvrnorm(number_of_draws, mu = rep(0, number_of_predictors),
+                              Sigma = solve(predictor_covariance))
+  directions <- matrix(directions, number_of_draws, number_of_predictors)   # keep a matrix when k = 1
+  explained_now <- rowSums((directions %*% predictor_covariance) * directions)
+  sqrt(explained_over_unexplained / explained_now) * directions
 }
 
-## The same log Bayes factor as log_bayes_factor_possible_range_vs_intercept_only(),
+## The same log Bayes factor as log_bayes_factor_flat_r_vs_intercept_only(),
 ## without the formula: draw coefficient sets from the prior, see how well
 ## each predicts the outcome (the noise level averaged on a grid), and
 ## average. Slow and noisy (Monte Carlo); agrees to about 0.05 on the log scale.
-log_bayes_factor_possible_range_by_sampling <- function(predictors, outcome,
+log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
                                                         number_of_draws = 40000,
                                                         draws_per_batch = 2000) {
   sample_size            <- length(outcome)
@@ -299,7 +319,7 @@ log_bayes_factor_possible_range_by_sampling <- function(predictors, outcome,
   ## how well each drawn coefficient set predicts the data
   log_evidence_per_draw <- numeric(0)
   for (batch in seq_len(number_of_draws / draws_per_batch)) {
-    coefficients     <- draw_coefficients_from_possible_range_prior(draws_per_batch, predictor_covariance)
+    coefficients     <- draw_coefficients_from_flat_r_prior(draws_per_batch, predictor_covariance)
     predicted_values <- centered_predictors %*% t(coefficients)
     overlap_with_outcome     <- drop(crossprod(centered_outcome, predicted_values))
     predicted_sum_of_squares <- colSums(predicted_values^2)

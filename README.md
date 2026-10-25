@@ -1,4 +1,4 @@
-# Objective Bayes for linear regression: the possible-range prior
+# Objective Bayes for linear regression: the flat-R prior
 
 > Define what's possible, not what you expect.
 
@@ -26,15 +26,15 @@ Set the working directory to the project folder (all scripts use paths
 relative to it), then:
 
 ```r
-source("R/possible_range.R")   # light: brms is only loaded when you fit
+source("R/flat_r.R")   # light: brms is only loaded when you fit
 library(brms)                  # for summary(), plot(), ... on fitted models
 
-fit <- fit_possible_range_model(y ~ x1 + x2 + x3, my_data)        # estimation (brms)
+fit <- fit_flat_r_model(y ~ x1 + x2 + x3, my_data)        # estimation (brms)
 summary(fit)
 
-bayes_factor_possible_range_per_term(y ~ x1 + x2 + x3, my_data)    # BF per term
-bayes_factor_possible_range(fit, fit_possible_range_model(y ~ x2 + x3, my_data))  # any two models
-bayes_factor_possible_range(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))        # no Stan needed
+bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)    # BF per term
+bayes_factor_flat_r(fit, fit_flat_r_model(y ~ x2 + x3, my_data))  # any two models
+bayes_factor_flat_r(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))        # no Stan needed
 ```
 
 Function names follow one pattern: `bayes_factor_<method>[_<scope>]` for
@@ -50,8 +50,8 @@ and validation scripts).
 
 | Path | What it is |
 |---|---|
-| `R/possible_range.R` | The method: `fit_possible_range_model()` (estimation), `bayes_factor_possible_range()` and `bayes_factor_possible_range_per_term()` (closed-form Bayes factors), `support_per_partial_correlation()` and `support_regions()` (reporting), `draw_coefficients_from_possible_range_prior()` and `log_bayes_factor_possible_range_by_sampling()` (prior sampling, used by the tutorial and the checks) |
-| `vignettes/possible_range_vignette.R` | How to use it on a dataset, start to finish |
+| `R/flat_r.R` | The method: `fit_flat_r_model()` (estimation), `bayes_factor_flat_r()` and `bayes_factor_flat_r_per_term()` (closed-form Bayes factors), `support_per_partial_correlation()` and `support_regions()` (reporting), `draw_coefficients_from_flat_r_prior()` and `log_bayes_factor_flat_r_by_sampling()` (prior sampling, used by the tutorial and the checks) |
+| `vignettes/flat_r_vignette.R` | How to use it on a dataset, start to finish |
 | `tutorial/tutorial_step_by_step.R` | Why the method works, step by step, without a math background |
 | `tutorial/posterior_by_hand.R` | The posterior and Bayes factor computed by hand on a grid (one predictor), with a plot per step |
 | `docs/derivation.md` | The math: the prior density on the coefficients and the closed-form Bayes factor, step by step |
@@ -65,7 +65,7 @@ Supported: linear regression with a normal outcome, an intercept and fixed
 effects. That includes continuous predictors, factors (tested as one block),
 interactions, polynomials and spline columns.
 
-Not (yet) supported, and `fit_possible_range_model()` stops for some of these:
+Not (yet) supported, and `fit_flat_r_model()` stops for some of these:
 
 - group-level (random) effects: the R² budget would need to include the
   group-level variance (cf. the R2D2M2 prior of Aguilar & Bürkner, 2023);
@@ -81,12 +81,12 @@ Points of attention:
   coefficients. Occasional divergent transitions can result; use
   `control = list(adapt_delta = 0.99)`. If they persist, see
   `archive/stan_unit_vector_model.R` for a parameterization without that peak.
-- `bayes_factor_possible_range_per_term()` removes one term at a time. Testing a
+- `bayes_factor_flat_r_per_term()` removes one term at a time. Testing a
   main effect while its interaction stays in the model follows the usual
   marginality caveats.
 - Do not use `brms::hypothesis()` for Bayes factors with this prior: brms
   cannot sample from a custom prior, so Savage–Dickey does not work. Use
-  `bayes_factor_possible_range()`.
+  `bayes_factor_flat_r()`.
 
 ## Related work
 

@@ -8,14 +8,14 @@ are not the same prior, not even with one predictor.
 
 ### 1. How R² becomes coefficients
 
-| | Possible-range prior (this project) | R2-D2 (brms `R2D2()`, Zhang et al. 2022) |
+| | Flat-R prior (this project) | R2-D2 (brms `R2D2()`, Zhang et al. 2022) |
 |---|---|---|
 | Given a drawn R² | the size of the effect is **fixed** by it; only the direction is random | R² sets the **variance** of a normal distribution for the coefficients |
 | Consequence | the R² implied by the coefficients follows Beta(½, 1) exactly | the implied R² does **not** follow Beta(½, 1): the normal draw can land well below or above it |
 
 ### 2. How the total is split over predictors
 
-| | Possible-range prior | R2-D2 |
+| | Flat-R prior | R2-D2 |
 |---|---|---|
 | Split | uniform direction, measured after whitening the predictors (accounts for their correlations) | Dirichlet split per predictor, scaled by each predictor's own SD |
 | Correlated predictors | handled in the prior | not taken into account in the split |
@@ -25,14 +25,14 @@ are not the same prior, not even with one predictor.
 With one predictor there is nothing to split, so only difference 1 matters.
 Implied prior on the correlation r (1,000,000 draws each):
 
-| | Possible-range (flat r) | brms R2D2 with Beta(½, 1) |
+| | Flat-R (flat r) | brms R2D2 with Beta(½, 1) |
 |---|---|---|
 | P(\|r\| < 0.1) | 0.10 | **0.25** |
 | P(\|r\| < 0.5) | 0.50 | **0.65** |
 | P(\|r\| > 0.9) | 0.10 | 0.08 |
 | median \|r\| | 0.50 | **0.31** |
 
-The possible-range prior is exactly flat on the correlation ("every value
+The flat-R prior is exactly flat on the correlation ("every value
 equally plausible"). R2-D2 with "the same" R² prior puts 2.5 times as much
 weight on near-zero correlations: it leans toward small effects.
 
@@ -44,7 +44,7 @@ In the joint simulation (`validation/03_sim_joint_prior.R`, 4 predictors),
 R2-D2 with Beta(½, 1) and Dirichlet(½):
 
 - found true nulls slowest: P(BF₀₁ > 3) for the null predictor at n = 200 was
-  0.16, against 0.41 for the possible-range prior and 0.61 for JZS;
+  0.16, against 0.41 for the flat-R prior and 0.61 for JZS;
 - almost never called a small real effect null;
 - had slightly more power with correlated predictors.
 
@@ -61,8 +61,8 @@ direction after whitening. The closest built-in option,
 prior(R2D2(mean_R2 = 1/3, prec_R2 = 1.5), class = b)   # Beta(1/2, 1) on R2
 ```
 
-is a different prior (see above). That is why `fit_possible_range_model()` adds the
-possible-range prior as a custom density (`docs/derivation.md`, section 3).
+is a different prior (see above). That is why `fit_flat_r_model()` adds the
+flat-R prior as a custom density (`docs/derivation.md`, section 3).
 
 ## Reproduce the table
 
@@ -70,7 +70,7 @@ possible-range prior as a custom density (`docs/derivation.md`, section 3).
 set.seed(1)
 number_of_draws <- 1e6
 
-## Possible-range prior, one predictor: flat on the correlation
+## Flat-R prior, one predictor: flat on the correlation
 correlation_possible <- runif(number_of_draws, -1, 1)
 
 ## brms-style R2D2, one predictor: R2 ~ Beta(1/2, 1) sets the variance
@@ -85,7 +85,7 @@ summarise_correlation <- function(r) c(
   abs_above_0.9 = mean(abs(r) > 0.9),
   median_abs    = median(abs(r)))
 
-round(rbind(possible_range = summarise_correlation(correlation_possible),
+round(rbind(flat_r = summarise_correlation(correlation_possible),
             r2d2           = summarise_correlation(correlation_r2d2)), 3)
 ```
 

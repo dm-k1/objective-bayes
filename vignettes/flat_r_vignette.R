@@ -1,9 +1,9 @@
 ## =====================================================================
-##  Vignette: the possible-range prior in practice
+##  Vignette: the flat-R prior in practice
 ##  Fit with brms, then Bayes factors for any model comparison.
 ##  Run with the project folder as working directory.
 ## =====================================================================
-source("R/possible_range.R")
+source("R/flat_r.R")
 library(brms)   # for summary(), bayes_R2(), pp_check(), plot() on the fitted models
 options(mc.cores = max(1, parallel::detectCores() - 1))   # chains in parallel, one core left free
 
@@ -21,7 +21,7 @@ my_data$y  <- 0.3 * my_data$x1 + 0.2 * my_data$x2 + rnorm(sample_size)
 my_data$x4 <- rnorm(sample_size)
 
 ## ---- 2. Estimation: fit like any brms model -------------------------
-full_model <- fit_possible_range_model(y ~ x1 + x2 + x3, my_data,
+full_model <- fit_flat_r_model(y ~ x1 + x2 + x3, my_data,
                                        chains = 4, iter = 2000, seed = 1, refresh = 0)
 summary(full_model)              # estimates, intervals, Rhat, ESS
 bayes_R2(full_model)             # explained share
@@ -32,17 +32,17 @@ plot(full_model)                 # trace plots and posteriors
 confint(lm(y ~ x1 + x2 + x3, my_data))
 
 ## ---- 3. Bayes factor per predictor ----------------------------------
-bayes_factor_possible_range_per_term(y ~ x1 + x2 + x3, my_data)
+bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)
 
 ## ---- 4. Comparing any two models ------------------------------------
-without_x1 <- fit_possible_range_model(y ~ x2 + x3, my_data, chains = 4, seed = 1, refresh = 0)
-other_set  <- fit_possible_range_model(y ~ x4,      my_data, chains = 4, seed = 1, refresh = 0)
+without_x1 <- fit_flat_r_model(y ~ x2 + x3, my_data, chains = 4, seed = 1, refresh = 0)
+other_set  <- fit_flat_r_model(y ~ x4,      my_data, chains = 4, seed = 1, refresh = 0)
 
-bayes_factor_possible_range(full_model, without_x1)   # nested: evidence for x1
-bayes_factor_possible_range(full_model, other_set)    # non-nested comparison
+bayes_factor_flat_r(full_model, without_x1)   # nested: evidence for x1
+bayes_factor_flat_r(full_model, other_set)    # non-nested comparison
 
 ## Works on plain lm() fits too, without running Stan:
-bayes_factor_possible_range(lm(y ~ x1 + x2 + x3, my_data), lm(y ~ 1, my_data))
+bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, my_data), lm(y ~ 1, my_data))
 
 ## ---- 5. What a null Bayes factor rests on ---------------------------
 ## Which effect sizes can the data not tell apart from zero? (x2 here)
