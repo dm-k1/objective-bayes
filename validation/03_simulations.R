@@ -1,9 +1,16 @@
 ## =====================================================================
-##  Validation 03: the joint flat-R prior vs alternatives
-##  4 correlated predictors; x1's slope varies, x3 is always null.
-##  Methods: JZS default, joint flat-R prior (this project),
-##  per-coefficient flat partial correlation, R2-D2 with the same
-##  R-squared prior.
+##  Validation 03: how does the flat-R prior behave across many datasets?
+##  4 correlated predictors; x1's slope varies, x2 = 0.3, x3 and x4 are null.
+##  Tested: x1 (effect varies) and x3 (always null). 200 replications per cell.
+##
+##  Methods (all Bayes factors for one coefficient, model with vs without it):
+##   - JZS default (BayesFactor / JASP)
+##   - joint flat-R (this project)
+##   - flat partial correlation, one coefficient at a time
+##   - R2-D2 with the same R-squared prior, Dirichlet split
+##
+##  Uses the closed-form Bayes factor: brms per dataset would take days. That
+##  the closed form matches brms is checked in validation/02_bayes_factor.R (A3).
 ##
 ##  Run from the project folder. The simulation runs in parallel and is
 ##  cached: it only reruns when its settings change (or rerun_simulation = TRUE).

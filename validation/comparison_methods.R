@@ -57,6 +57,7 @@ bayes_factor_flat_partial_correlation <- function(lm_fit, predictor_index, predi
 }
 
 ## Posterior mean and 95% interval, for the slope and the partial correlation
+## (used by archive/sim_one_coefficient_flat_partial_r.R)
 posterior_flat_partial_correlation <- function(lm_fit, predictor_index, predictors) {
   grid <- likelihood_over_partial_correlation_grid(lm_fit, predictor_index, predictors)
   posterior_weights <- grid$likelihood / sum(grid$likelihood)   # flat prior: posterior ~ likelihood

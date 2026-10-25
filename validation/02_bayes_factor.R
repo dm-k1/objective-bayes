@@ -1,39 +1,29 @@
 ## =====================================================================
-##  Validation 01: is everything correct?
+##  Validation 02: is the Bayes factor right?
 ##  One script, one pass/fail summary. Every check has an explicit criterion;
 ##  the script stops with an error if anything failed.
 ##
-##  PART A. Calculator: is the closed-form Bayes factor computed correctly?
-##    The Bayes factor depends only on R-squared, n and k, so these inputs are
-##    swept directly (extremes included) instead of simulating datasets.
-##    A1. against the ground truth (adaptive integration with integrate())
-##        over a sweep of R-squared, n and k; lists where the code's grid is
-##        not accurate enough
-##    A2. against brute force: draw from the prior and average (an
-##        independent check of the formula itself), k = 1, 3, 5
-##    A3. invariance: rescaling or recoding predictors leaves the BF unchanged
-##    A4. reproduces the tutorial's Bayes factors (catches accidental changes)
-##    A5. the brms prior and the closed form describe the same prior (bridge
-##        sampling; optional, needs CmdStan): continuous predictor, and a
-##        factor tested as a block
+##  PART A. Correctness
+##    A1. the grid computes the formula: against adaptive integration
+##        (integrate()) over a sweep of R-squared, n and k, extremes included
+##    A2. invariance: rescaling or recoding predictors leaves the BF unchanged
+##    A3. the formula is the right one: closed form vs brms bridge sampling
+##        with the Stan prior (continuous predictor; factor tested as a block)
 ##
-##  PART B. Default properties: does the method behave as a default should?
-##    B1. one predictor: agrees with the per-coefficient flat partial r Bayes factor
-##    B2a. predictive matching (n = k + 1 gives BF = 1)
-##    B2b. information consistency (BF grows without limit as R2 -> 1)
-##    B2c. consistency under the null (log BF01 grows like 1/2 log n),
-##         by simulating null data
+##  PART B. Properties of a good default (Bayarri et al., 2012)
+##    B1. predictive matching (n = k + 1 gives BF = 1)
+##    B2. information consistency (BF grows without limit as R2 -> 1)
+##    B3. consistency under the null (log BF01 grows like 1/2 log n), simulated
 ##
-##  Run from the project folder: Rscript validation/01_checks.R
-##  A few minutes; the brms part (A5) is cached after the first run.
+##  Run from the project folder: Rscript validation/02_bayes_factor.R
+##  A few minutes; the brms fits (A3) are cached after the first run.
 ## =====================================================================
 source("R/flat_r.R")
-source("validation/comparison_methods.R")   # flat partial r Bayes factor for B1
 source("validation/settings.R")             # parallel cores, cache folders, record_check()
 
-run_bridge_sampling_check <- TRUE    # set FALSE to skip A5 (needs CmdStan)
+run_bridge_sampling_check <- TRUE    # set FALSE to skip A3 (needs CmdStan)
 
-## brms fits from A5 are cached in validation/results/fits/ and reused on the
+## brms fits from A3 are cached in validation/results/fits/ and reused on the
 ## next run. They are refitted automatically when the model code, the prior or
 ## the data change (file_refit = "on_change"). Delete the files to force a refit.
 cache_folder <- fits_folder
@@ -51,12 +41,12 @@ cache_folder <- fits_folder
 
 ## ---- Average over directions, for one value of g ----------------------------
 ## Directions enter through the angle phi between a direction and the data's
-## direction; only (0, pi/2) is needed (phi and pi - phi give the same t^2).
+## direction; only (0, pi/2) is needed (phi and pi - phi give the same alignment c^2).
 ## The weight of each angle is sin(phi)^(k-2), normalized exactly.
 log_direction_average_by_integration <- function(scaled_share, sample_size, number_of_predictors) {
   half_n_minus_one <- (sample_size - 1) / 2
   log_value_at_zero <- -half_n_minus_one * log1p(-scaled_share)   # largest possible value
-  if (number_of_predictors == 1) return(log_value_at_zero)          # only t^2 = 1
+  if (number_of_predictors == 1) return(log_value_at_zero)          # only c^2 = 1
 
   log_total_weight <- 0.5 * log(pi) - log(2) +
     lgamma((number_of_predictors - 1) / 2) - lgamma(number_of_predictors / 2)
@@ -82,10 +72,10 @@ log_bayes_factor_flat_r_by_integration <- function(explained_share, sample_size,
                                                            number_of_predictors) {
   if (number_of_predictors == 0) return(0)
 
-  ## log of the integrand over u = log(g) (includes the Jacobian g)
-  log_integrand <- function(log_g) vapply(log_g, function(u) {
-    g <- exp(u)
-    log(sample_size / 2) - 2 * u - sample_size / (2 * g) + u -      # IG(1, n/2) density, times g
+  ## log of the integrand over log(g) (includes the factor g, because the step is in log g)
+  log_integrand <- function(log_g_values) vapply(log_g_values, function(log_g) {
+    g <- exp(log_g)
+    log(sample_size / 2) - 2 * log_g - sample_size / (2 * g) + log_g -   # IG(1, n/2) density, times g
       0.5 * log1p(g) +
       log_direction_average_by_integration(explained_share * g / (1 + g), sample_size,
                                            number_of_predictors)
@@ -103,7 +93,7 @@ log_bayes_factor_flat_r_by_integration <- function(explained_share, sample_size,
 }
 
 
-## ---- Example data (same as the tutorial and vignette) ---------------------
+## ---- Example data (same as the vignette) ---------------------
 set.seed(42)
 sample_size <- 60
 predictor_correlations <- matrix(0.4, 3, 3); diag(predictor_correlations) <- 1
@@ -113,10 +103,8 @@ outcome <- drop(predictors %*% c(0.3, 0.2, 0)) + rnorm(sample_size)
 example_data <- data.frame(predictors, y = outcome)
 
 
-
-
 ## #####################################################################
-##  PART A. CALCULATOR
+##  PART A. CORRECTNESS
 ## #####################################################################
 
 ## =====================================================================
@@ -156,34 +144,7 @@ cat("\n")
 
 
 ## =====================================================================
-## A2. Closed form vs brute force
-## =====================================================================
-## Brute force uses no formula: draw coefficient sets from the prior, see
-## how well each predicts the outcome (noise level averaged on a grid), and
-## average: log_bayes_factor_flat_r_by_sampling() in R/flat_r.R.
-## Criterion: agreement within 0.05 on the log scale.
-
-brute_force_cases <- list(
-  list(label = "k = 3, tutorial data", predictors = predictors, outcome = outcome),
-  local({ set.seed(11); x <- matrix(rnorm(80), 80, 1)
-          list(label = "k = 1, n = 80", predictors = x, outcome = drop(0.3 * x) + rnorm(80)) }),
-  local({ set.seed(12); x <- matrix(rnorm(100 * 5), 100) %*% chol(0.3 + 0.7 * diag(5))
-          list(label = "k = 5, n = 100, correlated", predictors = x,
-               outcome = drop(x %*% c(0.2, 0, 0.1, 0, 0)) + rnorm(100)) }))
-
-set.seed(1)
-for (case in brute_force_cases) {
-  closed_form <- log_bayes_factor_flat_r_vs_intercept_only(
-    sample_r_squared(case$predictors, case$outcome), length(case$outcome), ncol(case$predictors))
-  brute_force <- log_bayes_factor_flat_r_by_sampling(case$predictors, case$outcome)
-  record_check(paste("A2. brute force,", case$label),
-               abs(closed_form - brute_force) < 0.05,
-               sprintf("closed %.3f, brute %.3f", closed_form, brute_force))
-}
-
-
-## =====================================================================
-## A3. Invariance
+## A2. Invariance
 ## =====================================================================
 ## The BF should not depend on units or on how the same predictors are
 ## written. Criterion: identical up to 1e-8 (relative).
@@ -192,12 +153,12 @@ bf_original <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)$BF10
 
 rescaled_data <- transform(example_data, x1 = 100 * x1 + 7, x2 = -0.01 * x2, x3 = x3 - 50)
 bf_rescaled <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, rescaled_data)$BF10
-record_check("A3a. rescaling and shifting predictors", max(abs(bf_rescaled / bf_original - 1)) < 1e-8,
+record_check("A2a. rescaling and shifting predictors", max(abs(bf_rescaled / bf_original - 1)) < 1e-8,
              sprintf("largest relative difference %.1e", max(abs(bf_rescaled / bf_original - 1))))
 
 outcome_rescaled <- transform(example_data, y = 1000 * y - 3)
 bf_outcome <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, outcome_rescaled)$BF10
-record_check("A3b. rescaling the outcome", max(abs(bf_outcome / bf_original - 1)) < 1e-8,
+record_check("A2b. rescaling the outcome", max(abs(bf_outcome / bf_original - 1)) < 1e-8,
              sprintf("largest relative difference %.1e", max(abs(bf_outcome / bf_original - 1))))
 
 recoded_data <- transform(example_data, sum_12 = x1 + x2, difference_12 = x1 - x2)
@@ -205,26 +166,17 @@ bf_full_original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data),
                                                 lm(y ~ 1, example_data))
 bf_full_recoded  <- bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
                                                 lm(y ~ 1, recoded_data))
-record_check("A3c. recoding predictors (same model, other columns)",
+record_check("A2c. recoding predictors (same model, other columns)",
              abs(bf_full_recoded / bf_full_original - 1) < 1e-8,
              sprintf("original %.4f, recoded %.4f", bf_full_original, bf_full_recoded))
 
 
 ## =====================================================================
-## A4. Reproduces the tutorial
-## =====================================================================
-## Criterion: within 0.1% of the recorded values 18.696, 0.3827, 1.5872
-## (computed with the packed direction grid).
-recorded <- c(x1 = 18.696, x2 = 0.3827, x3 = 1.5872)
-record_check("A4. tutorial Bayes factors", all(abs(bf_original / recorded - 1) < 1e-3),
-             paste(sprintf("%.4f", bf_original), collapse = " "))
-
-
-## =====================================================================
-## A5. Closed form vs brms bridge sampling
+## A3. Closed form vs brms bridge sampling
 ## =====================================================================
 ## The brms prior (a Stan density on the coefficients) and the closed form
-## must describe the same prior. Bridge sampling is noisy: criterion is
+## must describe the same prior. This is the check of the formula itself
+## (A1 only checks that the grid computes the formula accurately). Bridge sampling is noisy: criterion is
 ## agreement within 10% (0.1 on the log scale).
 ## Case A: a continuous predictor (x1). Case B: a 3-level factor tested
 ## as a block, so dummy-coded columns are covered too.
@@ -236,9 +188,9 @@ if (run_bridge_sampling_check) {
   example_data$y_group <- example_data$y + c(a = 0, b = 0.5, c = -0.3)[as.character(example_data$group)]
 
   bridge_cases <- list(
-    list(label = "A5a. bridge sampling, continuous x1", cache_name = "checkA5A",
+    list(label = "A3a. bridge sampling, continuous x1", cache_name = "checkA3a",
          full = y ~ x1 + x2 + x3, reduced = y ~ x2 + x3),
-    list(label = "A5b. bridge sampling, factor as a block", cache_name = "checkA5B",
+    list(label = "A3b. bridge sampling, factor as a block", cache_name = "checkA3b",
          full = y_group ~ x1 + group, reduced = y_group ~ x1))
 
   ## same sampler settings for every fit; cached per case and model
@@ -260,51 +212,32 @@ if (run_bridge_sampling_check) {
 
 
 
+
+
 ## #####################################################################
-##  PART B. DEFAULT PROPERTIES
+##  PART B. PROPERTIES OF A GOOD DEFAULT
 ## #####################################################################
 
 ## =====================================================================
-## B1. One predictor: agrees with the per-coefficient flat partial r Bayes factor
-## =====================================================================
-## The closed form with k = 1 is flat on the correlation. The per-coefficient
-## version (validation/comparison_methods.R) is an independent calculation of
-## the same idea, but it plugs in the estimated noise level, so it is an
-## approximation. Criterion: agreement within 3% (relative).
-
-set.seed(3)
-for (true_slope in c(0, 0.2, 0.4)) {
-  x <- rnorm(100); y <- true_slope * x + rnorm(100)
-  one_predictor_fit <- lm(y ~ x)
-  closed_form <- exp(log_bayes_factor_flat_r_vs_intercept_only(
-    summary(one_predictor_fit)$r.squared, 100, 1))
-  flat_partial_r <- bayes_factor_flat_partial_correlation(one_predictor_fit, 1, matrix(x))
-  record_check(sprintf("B1. k = 1 vs flat partial r, slope %.1f", true_slope),
-               abs(closed_form / flat_partial_r - 1) < 0.03,
-               sprintf("closed %.3f, flat partial r %.3f", closed_form, flat_partial_r))
-}
-
-
-## =====================================================================
-## B2. Properties of a good default
+## B. Properties of a good default
 ## =====================================================================
 
-## a) Predictive matching: with one more observation than predictors the
+## B1. Predictive matching: with one more observation than predictors the
 ##    data can't tell the models apart, so BF = 1. Criterion: within 0.001.
 matching <- sapply(1:6, function(k)
   exp(log_bayes_factor_flat_r_vs_intercept_only(1 - 1e-12, k + 1, k)))
-record_check("B2a. predictive matching (k = 1-6)", all(abs(matching - 1) < 1e-3),
+record_check("B1. predictive matching (k = 1-6)", all(abs(matching - 1) < 1e-3),
              paste(sprintf("%.4f", matching), collapse = " "))
 
-## b) Information consistency: as the fit becomes perfect, evidence for an
+## B2. Information consistency: as the fit becomes perfect, evidence for an
 ##    effect grows without limit. Criterion: strictly increasing, and above
 ##    log BF = 50 at R2 = 0.9999.
 information <- sapply(c(0.9, 0.99, 0.999, 0.9999), function(r2)
   log_bayes_factor_flat_r_vs_intercept_only(r2, 20, 3))
-record_check("B2b. information consistency", all(diff(information) > 0) && information[4] > 50,
+record_check("B2. information consistency", all(diff(information) > 0) && information[4] > 50,
              paste(sprintf("%.1f", information), collapse = " "))
 
-## c) Consistency under the null, by simulation: x3 truly does nothing.
+## B3. Consistency under the null, by simulation: x3 truly does nothing.
 ##    The median log BF01 for x3 should grow with n at a rate of about
 ##    1/2 log n. Criterion: increasing in n, and slope against log n
 ##    between 0.35 and 0.65.
@@ -319,7 +252,7 @@ median_log_bf01 <- sapply(sample_sizes, function(n) {
   }))
 })
 slope_against_log_n <- coef(lm(median_log_bf01 ~ log(sample_sizes)))[[2]]
-record_check("B2c. consistency under the null (simulated)",
+record_check("B3. consistency under the null (simulated)",
              all(diff(median_log_bf01) > 0) && slope_against_log_n > 0.35 && slope_against_log_n < 0.65,
              sprintf("median log BF01 %s; slope %.2f",
                      paste(sprintf("%.2f", median_log_bf01), collapse = " "), slope_against_log_n))

@@ -16,8 +16,7 @@
 ##  PART 2. Bayes factors   bayes_factor_flat_r()         (closed form, any two models)
 ##                          bayes_factor_flat_r_per_term()
 ##  PART 3. Reporting       support_per_partial_correlation(), support_regions()
-##  PART 4. Prior sampling  draw_coefficients_from_flat_r_prior(),
-##                          log_bayes_factor_flat_r_by_sampling() (slow check)
+##  PART 4. Prior draws     draw_coefficients_from_flat_r_prior()
 ##
 ##  Naming: bayes_factor_<method>[_<scope>] for Bayes factors (the
 ##  comparison methods in validation/comparison_methods.R follow the same
@@ -45,7 +44,8 @@
 ##   2. P(this combination | total)     every split equally likely:
 ##                                      1 / size of all combinations with this total
 ##   3. unit conversion                 from noise units to the units of b
-## Derivation and simulation checks: docs/derivation.md, tutorial/.
+## Where each factor comes from: docs/1_from_behaviour.md and docs/2_how_it_calculates.md.
+## Checked in brms: validation/01_prior_in_brms.R.
 
 flat_r_stan_code <- "
   // P(b) = P(total) x P(this combination | total) x unit conversion
@@ -112,6 +112,9 @@ fit_flat_r_model <- function(formula, data, family = gaussian(), ...) {
 ## =====================================================================
 ##  PART 2. BAYES FACTORS (closed form)
 ## =====================================================================
+## In one sentence: the Bayes factor with k predictors is the one-predictor
+## Bayes factor, averaged over every direction the effect could take
+## (docs/2_how_it_calculates.md, section 6).
 ## Every model gets an exact Bayes factor against the intercept-only
 ## model; any two models then compare by dividing. Works for nested and
 ## non-nested models, as long as both use the same outcome and rows.
@@ -135,20 +138,23 @@ sample_r_squared <- function(predictor_columns, outcome) {
 
 ## Log Bayes factor: model with k predictors vs intercept only
 log_bayes_factor_flat_r_vs_intercept_only <- function(explained_share, sample_size,
-                                                              number_of_predictors,
-                                                              grid_points_scale = 800,
-                                                              grid_points_direction = 200) {
+                                                      number_of_predictors,
+                                                      grid_points_g = 800,
+                                                      grid_points_direction = 200) {
   if (number_of_predictors == 0) return(0)
   if (sample_size < number_of_predictors + 1)
     stop("Need at least one more observation than predictors.")
 
-  ## average over an overall scale, weighted by the prior
-  log_scale_values  <- seq(log(1e-6), log(1e10), length.out = grid_points_scale)
-  scale_values      <- exp(log_scale_values)
-  log_scale_step    <- log_scale_values[2] - log_scale_values[1]
-  log_scale_weights <- log(sample_size / 2) - log_scale_values - sample_size / (2 * scale_values)
+  ## 1. Average over g: the one-predictor prior written as a mixture of
+  ##    normal priors with variance g (g ~ Inverse-Gamma(1, n/2)), on a log-g grid.
+  ##    The weight is the IG density times g (the step is in log g).
+  log_g_values  <- seq(log(1e-6), log(1e10), length.out = grid_points_g)
+  g_values      <- exp(log_g_values)
+  log_g_step    <- log_g_values[2] - log_g_values[1]
+  log_g_weights <- log(sample_size / 2) - log_g_values - sample_size / (2 * g_values)
 
-  ## average over every direction, compared with the direction the data point in
+  ## 2. Average over directions: only the alignment matters, the cosine of the
+  ##    angle between a direction and the direction the data point in
   if (number_of_predictors == 1) {
     alignment_squared     <- 1
     log_direction_weights <- 0
@@ -170,13 +176,14 @@ log_bayes_factor_flat_r_vs_intercept_only <- function(explained_share, sample_si
                              log(angle_steps) - log_total_weight
   }
 
-  shrink_factor  <- scale_values / (1 + scale_values)
+  shrink_factor  <- g_values / (1 + g_values)
   log_fit_matrix <- -(sample_size - 1) / 2 *
     log1p(-pmin(explained_share, 1 - 1e-12) * outer(shrink_factor, alignment_squared)) +
-    matrix(log_direction_weights, grid_points_scale, length(alignment_squared), byrow = TRUE)
+    matrix(log_direction_weights, grid_points_g, length(alignment_squared), byrow = TRUE)
 
-  log_sum_exp(log_scale_weights - 0.5 * log1p(scale_values) +
-              log_sum_exp_per_row(log_fit_matrix)) + log(log_scale_step)
+  ## 3. The one-predictor Bayes factor for each (g, alignment), averaged
+  log_sum_exp(log_g_weights - 0.5 * log1p(g_values) +
+              log_sum_exp_per_row(log_fit_matrix)) + log(log_g_step)
 }
 
 ## Pull predictors and outcome out of a brms or lm fit
@@ -269,66 +276,27 @@ support_regions <- function(support_table, band = 3) {
 
 
 ## =====================================================================
-##  PART 4. PRIOR SAMPLING
+##  PART 4. PRIOR DRAWS
 ## =====================================================================
-## Used by the tutorial (to show what the prior implies) and by
-## validation/01_checks.R (as an independent check of the closed form).
+## The prior as a recipe, the same sentence read forwards. Used by
+## docs/1_from_behaviour.md (to show what the prior implies) and by
+## validation/01_prior_in_brms.R (to compare with what brms samples).
 
-## One coefficient set per row, in units of the noise:
-##   1. draw the overall correlation, flat from -1 to 1
-##   2. turn it into explained / unexplained variance
-##   3. draw a random direction: how the effect is divided over predictors.
-##      Normal draws with covariance solve(Sigma) have no preferred direction
-##      in terms of explained variance, so correlated predictors are handled
-##   4. scale each direction so its explained variance is exactly the drawn amount
+## One coefficient set per row, in units of the noise (sigma = 1):
+##   1. P(total):  draw the overall correlation R, flat; Cohen's f^2 = R^2 / (1 - R^2)
+##   2. P(combination | total): draw a direction with no preference. Normal
+##      draws with covariance solve(Sigma) have no preferred direction in terms
+##      of explained variance, so correlated predictors are handled
+##   3. scale each direction so its f^2 is exactly the drawn amount
+## (Drawing R from -1 to 1 or from 0 to 1 gives the same R^2; the sign is
+## carried by the direction.)
 draw_coefficients_from_flat_r_prior <- function(number_of_draws, predictor_covariance) {
-  number_of_predictors       <- ncol(predictor_covariance)
-  overall_correlation        <- runif(number_of_draws, min = -1, max = 1)
-  explained_over_unexplained <- overall_correlation^2 / (1 - overall_correlation^2)
+  number_of_predictors <- ncol(predictor_covariance)
+  overall_correlation  <- runif(number_of_draws, min = -1, max = 1)
+  f_squared            <- overall_correlation^2 / (1 - overall_correlation^2)
   directions <- MASS::mvrnorm(number_of_draws, mu = rep(0, number_of_predictors),
                               Sigma = solve(predictor_covariance))
   directions <- matrix(directions, number_of_draws, number_of_predictors)   # keep a matrix when k = 1
-  explained_now <- rowSums((directions %*% predictor_covariance) * directions)
-  sqrt(explained_over_unexplained / explained_now) * directions
-}
-
-## The same log Bayes factor as log_bayes_factor_flat_r_vs_intercept_only(),
-## without the formula: draw coefficient sets from the prior, see how well
-## each predicts the outcome (the noise level averaged on a grid), and
-## average. Slow and noisy (Monte Carlo); agrees to about 0.05 on the log scale.
-log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
-                                                        number_of_draws = 40000,
-                                                        draws_per_batch = 2000) {
-  sample_size            <- length(outcome)
-  centered_predictors    <- scale(predictors, scale = FALSE)
-  centered_outcome       <- outcome - mean(outcome)
-  outcome_sum_of_squares <- sum(centered_outcome^2)
-  predictor_covariance   <- crossprod(centered_predictors) / sample_size
-
-  ## the noise level is unknown: average over it on a grid (written as
-  ## 1 / noise, which makes the arithmetic simpler)
-  inverse_noise_values <- seq(1e-4, 6 * sqrt(sample_size / outcome_sum_of_squares), length.out = 800)
-  inverse_noise_step   <- inverse_noise_values[2] - inverse_noise_values[1]
-  log_inverse_noise    <- log(inverse_noise_values)
-
-  ## how well "no effect" predicts the data
-  log_evidence_null <- log_sum_exp((sample_size - 2) * log_inverse_noise -
-                                   inverse_noise_values^2 * outcome_sum_of_squares / 2) +
-                       log(inverse_noise_step)
-
-  ## how well each drawn coefficient set predicts the data
-  log_evidence_per_draw <- numeric(0)
-  for (batch in seq_len(number_of_draws / draws_per_batch)) {
-    coefficients     <- draw_coefficients_from_flat_r_prior(draws_per_batch, predictor_covariance)
-    predicted_values <- centered_predictors %*% t(coefficients)
-    overlap_with_outcome     <- drop(crossprod(centered_outcome, predicted_values))
-    predicted_sum_of_squares <- colSums(predicted_values^2)
-    log_integrand <- (sample_size - 2) *
-        matrix(log_inverse_noise, draws_per_batch, length(inverse_noise_values), byrow = TRUE) -
-      (outer(rep(outcome_sum_of_squares, draws_per_batch), inverse_noise_values^2) -
-       2 * outer(overlap_with_outcome, inverse_noise_values) + predicted_sum_of_squares) / 2
-    log_evidence_per_draw <- c(log_evidence_per_draw,
-                               log_sum_exp_per_row(log_integrand) + log(inverse_noise_step))
-  }
-  log_sum_exp(log_evidence_per_draw) - log(number_of_draws) - log_evidence_null
+  f_squared_of_direction <- rowSums((directions %*% predictor_covariance) * directions)
+  sqrt(f_squared / f_squared_of_direction) * directions
 }

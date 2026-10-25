@@ -1,6 +1,6 @@
-## ARCHIVED: direct cmdstanr version of the possible-range model, using a
+## ARCHIVED: direct cmdstanr version of the flat-R model, using a
 ## unit-vector parameterization (explained share + direction). Superseded
-## by brm_possible() in R/possible_range.R. Kept as a fallback: if brms
+## by fit_flat_r_model() in R/flat_r.R. Kept as a fallback: if brms
 ## shows persistent divergent transitions (the prior has a sharp peak at
 ## all-zero coefficients), this parameterization avoids that peak.
 
