@@ -22,9 +22,8 @@ And the Bayes factor in one sentence:
 > **The Bayes factor with $k$ predictors is the one-predictor Bayes factor,
 > averaged over every direction the effect could take.**
 
-Sections 1–5 build the density (used by brms for estimation), sections 6–7 the
-Bayes factor (used by `bayes_factor_flat_r()`). Each section ends with the code
-that implements it.
+Sections 1–5 build the density, section 6 shows how estimation samples it, and
+sections 7–8 build the Bayes factor (used by `bayes_factor_flat_r()`).
 
 ---
 
@@ -86,8 +85,6 @@ Equal slices of $R$ cover longer and longer stretches of $f$ (because $R$
 saturates near 1), so the same probability is spread thinner per unit of $f$.
 (Check: $\int_0^\infty (1+f^2)^{-3/2} df = [\,f/\sqrt{1+f^2}\,]_0^\infty = 1$.)
 
-**In the code:** `log_p_total = -1.5 * log1p(f_squared)`.
-
 ---
 
 ## 3. Factor 2: P(this combination | total), every split equally likely
@@ -117,13 +114,9 @@ distribution with 2 degrees of freedom and scale $1/\sqrt2$ on $\beta/\sigma$.
 
 **The peak at zero.** For $k \ge 2$ the size $A_k f^{k-1}$ goes to 0 as
 $f \to 0$, so the density per point has an infinitely high (but integrable)
-peak at $\beta = 0$. With many predictors brms under-samples that peak
-without warnings (`validation/README.md`, open problem);
-`archive/stan_unit_vector_model.R` samples $(\rho^2,$ direction$)$ directly
-and avoids the peak.
-
-**In the code:**
-`log_p_combination_given_total = -(log(2) + 0.5 * k * log(pi()) - lgamma(0.5 * k) + (k - 1) * log(f))`.
+peak at $\beta = 0$. A sampler that moves through $\beta$ directly misses
+that peak for larger $k$, without warnings; that is why estimation samples
+$R$ and the direction instead (section 6).
 
 ---
 
@@ -140,8 +133,6 @@ $$
 It is the same for every $\beta$. In real units the circles of factor 2 become
 tilted ellipses (different spreads and correlations between predictors).
 
-**In the code:** `log_conversion = 0.5 * log_determinant(predictor_covariance) - k * log(sigma)`.
-
 ---
 
 ## 5. The whole density
@@ -154,25 +145,44 @@ $$
 \qquad f^2 = \frac{\beta^\top\Sigma\beta}{\sigma^2} .
 $$
 
-**In the code:** the Stan function `flat_r_lpdf` in `R/flat_r.R` returns the
-sum of `log_p_total`, `log_p_combination_given_total` and `log_conversion`;
-`target += -log(sigma)` adds the noise prior.
-
 **Drawing from the prior** is the same sentence read forwards:
 `draw_coefficients_from_flat_r_prior()` draws $R$ flat (factor 1), a direction
-with no preference in explained variance (factor 2), and scales it to length $f$.
-
-**Checks.** The formula and the drawing recipe describe the same prior:
-counting draws in small squares gives the formula's density (figure below,
-correlated predictors, so factor 3 is tested too). And brms, sampling from
-`flat_r_lpdf` itself, gives back the flat $R$ and the per-predictor shares
-(`validation/01_prior_in_brms.R`).
+with no preference in explained variance (factor 2), and scales it to length $f$
+(factor 3). Counting those draws in small squares gives the formula's density
+(figure below; correlated predictors, so factor 3 is tested too).
 
 ![](figures/5_formula_vs_draws.png)
 
 ---
 
-## 6. The closed-form Bayes factor
+## 6. Estimation: sampling in the prior's own coordinates
+
+The density above is what the prior *says*; it is not how estimation should
+*sample* it. Near $\beta = 0$ the density has the peak of section 3, and a
+sampler that moves through $\beta$ steps over it without warning (with 8
+predictors it draws far too few small effects).
+
+So `R/flat_r.stan` samples the parameters the prior is built from:
+
+| Parameter | Prior | Factor |
+|---|---|---|
+| `R` | flat on (0, 1) (on (−1, 1) when $k = 1$: the sign) | 1 |
+| `direction` | uniform on the sphere (Stan's `unit_vector`) | 2 |
+| `sigma`, `alpha` | $1/\sigma$, flat | |
+
+and computes $\beta = \sigma f\, L^{-\top} d$, with $f = R/\sqrt{1-R^2}$, $d$
+the direction and $L$ a square root of $\Sigma$ (Cholesky). Then
+$\beta^\top \Sigma \beta = \sigma^2 f^2$, so the length is right (factor 3).
+Here a matrix root *is* needed: it turns a uniform direction in explained
+variance into predictor units. Which root does not matter.
+
+In these coordinates there is no peak. `validation/01_prior_and_posterior.R`
+checks that the prior comes out right for $k$ = 1, 3 and 8, and that the
+posterior is calibrated (simulation-based calibration, $k = 8$).
+
+---
+
+## 7. The closed-form Bayes factor
 
 We want the Bayes factor of the model with $k$ predictors against the
 intercept-only model,
@@ -293,7 +303,7 @@ the log scale (`validation/02_bayes_factor.R`, check A1).
 
 ---
 
-## 7. Comparing any two models
+## 8. Comparing any two models
 
 Every model's Bayes factor is taken against the same intercept-only model,
 with the same priors on $\alpha$ and $\sigma$. So for any two models A and B
@@ -308,21 +318,20 @@ the ratio for the model with and without it. Each model uses the prior with
 its own predictors' covariance and its own $k$.
 
 Everything except $g$ and $c$ integrates out exactly, so the Bayes factor needs
-no MCMC. Posterior estimates do, which is why estimation goes through brms.
-Both routes describe the same prior: brms bridge sampling agrees with the
-closed form (`validation/02_bayes_factor.R`, check A3).
+no MCMC. It agrees with a brute-force Bayes factor that draws from the prior and
+uses no formula (`validation/02_bayes_factor.R`, check A3).
 
 **In the code:** `bayes_factor_flat_r()` and `bayes_factor_flat_r_per_term()`.
 
 ---
 
-## 8. Properties
+## 9. Properties
 
 Checked numerically in `validation/02_bayes_factor.R`, not proved:
 
 | Property | Meaning | Check |
 |---|---|---|
-| Invariance | BF depends only on $R^2$, $n$, $k$: unaffected by units or linear recoding of predictors | by construction (§6); A2 |
+| Invariance | BF depends only on $R^2$, $n$, $k$: unaffected by units or linear recoding of predictors | by construction (§7); A2 |
 | Predictive matching | with $n = k + 1$ observations the data can't separate the models: BF = 1 | B1 |
 | Information consistency | BF → ∞ as $R^2 \to 1$ | B2 |
 | Model-selection consistency | under the null, $\log \mathrm{BF}_{01}$ grows like $\tfrac12 \log n$ | B3 |
@@ -332,7 +341,7 @@ Proofs (for example along the lines of Bayarri et al., 2012) are still open.
 
 ---
 
-## 9. Assumptions and limits
+## 10. Assumptions and limits
 
 - Normal errors, fixed effects, an intercept.
 - The prior uses the **sample** covariance of the predictors (it conditions

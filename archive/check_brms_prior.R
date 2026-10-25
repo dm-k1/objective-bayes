@@ -1,7 +1,10 @@
+## ARCHIVED: checked the brms version of the prior (archive/brms_prior.R).
+## Found that sampling the coefficients misses the peak at zero for k = 8
+## (P3: KS distance 0.074, P1/P2/P4 passed), which led to R/flat_r.stan.
 ## =====================================================================
 ##  Validation 01: does the brms model carry the prior the docs describe?
 ##
-##  The Stan code brms generates for fit_flat_r_model() is sampled with its
+##  The Stan code brms generates for the brms prior is sampled with its
 ##  likelihood switched off, so the draws come from flat_r_lpdf itself. They
 ##  are compared with what the prior should give. This checks the Stan code
 ##  directly, including that it compiles.
@@ -23,10 +26,11 @@
 ##  and R-squared, do not depend on the noise level, so any proper choice
 ##  gives the same answer.
 ##
-##  Run from the project folder: Rscript validation/01_prior_in_brms.R
+##  Run from the project folder: Rscript archive/check_brms_prior.R
 ##  A few minutes (three models compile).
 ## =====================================================================
-source("R/flat_r.R")
+source("R/flat_r.R")            # draw_coefficients_from_flat_r_prior()
+source("archive/brms_prior.R")  # build_flat_r_prior()
 source("validation/settings.R")   # parallel cores, cache folders, record_check()
 library(brms)
 

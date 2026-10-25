@@ -52,15 +52,16 @@ R2-D2 with "the same" $R^2$ prior puts 2.5 times as much weight on near-zero
 correlations: it leans toward small effects. So it finds true nulls more
 slowly and rarely calls a small real effect null (`validation/03_simulations.R`).
 
-brms has no built-in way to express "flat on $R$ with an even split"; the
-closest built-in option,
+brms's closest built-in option,
 
 ```r
 prior(R2D2(mean_R2 = 1/3, prec_R2 = 1.5), class = b)   # Beta(1/2, 1) on R2
 ```
 
-is the different prior above. That is why `fit_flat_r_model()` adds the
-flat-R prior as a custom Stan density ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 5).
+is the different prior above. A custom brms prior can state the flat-R density,
+but brms samples the coefficients directly and misses the prior's peak at zero
+for larger $k$. That is why `fit_flat_r_model()` uses its own Stan model,
+sampled in $R$ and a direction ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 6).
 
 Reproduce the one-predictor table:
 

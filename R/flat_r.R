@@ -3,110 +3,124 @@
 ##  "Define what's possible, not what you expect"
 ##
 ##  P(b) = P(total) x P(this combination | total) x unit conversion
+##         flat on R   every split equally likely   noise units -> data units
 ##
-##  Prior:
-##    - explained share of variance (R-squared) ~ Beta(1/2, 1), the same
-##      for any number of predictors (one predictor: flat on the
-##      correlation from -1 to 1, Jeffreys' default)
-##    - every way of dividing the effect over the predictors equally
-##      plausible, relative to how the predictors correlate
-##    - flat intercept, Jeffreys prior on the noise level
+##  PART 1. Estimation      fit_flat_r_model()   (Stan; print, loo, pp_check)
+##  PART 2. Bayes factors   bayes_factor_flat_r(), bayes_factor_flat_r_per_term()
+##  PART 3. Prior draws     draw_coefficients_from_flat_r_prior()
 ##
-##  PART 1. Estimation      fit_flat_r_model()            (brms, standard output)
-##  PART 2. Bayes factors   bayes_factor_flat_r()         (closed form, any two models)
-##                          bayes_factor_flat_r_per_term()
-##  PART 3. Reporting       support_per_partial_correlation(), support_regions()
-##  PART 4. Prior draws     draw_coefficients_from_flat_r_prior()
+##  Why it works: docs/1_from_behaviour.md. How it calculates:
+##  docs/2_how_it_calculates.md. Supported: linear regression with a normal
+##  outcome, an intercept and fixed effects (see README.md).
 ##
-##  Naming: bayes_factor_<method>[_<scope>] for Bayes factors (the
-##  comparison methods in validation/comparison_methods.R follow the same
-##  pattern); verbs (fit_, build_, draw_) for functions that do something.
-##
-##  Supported: linear regression with a normal outcome, an intercept and
-##  fixed effects (continuous predictors, factors, interactions,
-##  polynomials, spline columns). Not yet: group-level (random) effects,
-##  other families, distributional models. See README.md.
+##  Needs: MASS. For estimation also cmdstanr (or rstan), posterior, loo,
+##  bayesplot. The Bayes factors need no Stan.
 ## =====================================================================
-## brms is only needed for estimation (fit_flat_r_model). It is
-## called as brms::... instead of library(brms), so sourcing this file for
-## the Bayes factor functions is fast and does not need brms or Stan. For
-## summary(), plot(), bayes_R2() etc. on a fitted model, load brms
-## yourself: library(brms).
 
 
 ## =====================================================================
 ##  PART 1. ESTIMATION
 ## =====================================================================
-## The prior as a density on the coefficients, in one sentence:
-##   P(b) = P(total) x P(this combination | total) x unit conversion
-##   1. P(total)                        flat on R, per unit of f
-##                                      (f = length of b in noise units, Cohen's f)
-##   2. P(this combination | total)     every split equally likely:
-##                                      1 / size of all combinations with this total
-##   3. unit conversion                 from noise units to the units of b
-## Where each factor comes from: docs/1_from_behaviour.md and docs/2_how_it_calculates.md.
-## Checked in brms: validation/01_prior_in_brms.R.
+## The Stan model (R/flat_r.stan) samples the prior in its own coordinates:
+## R (flat) and a direction (uniform), with the coefficients computed from
+## them. Sampling the coefficients directly misses the peak of the prior at
+## zero for larger k (validation/01_prior_and_posterior.R).
 
-flat_r_stan_code <- "
-  // P(b) = P(total) x P(this combination | total) x unit conversion
-  real flat_r_lpdf(vector b, real sigma, matrix predictor_covariance) {
-    int k = rows(b);
+flat_r_stan_file <- file.path("R", "flat_r.stan")
+compiled_flat_r_models <- new.env()   # compile once per session
 
-    // The total: length of b in noise units (Cohen's f)
-    real f_squared = quad_form(predictor_covariance, b) / square(sigma);
-    real f = sqrt(f_squared);
+compile_flat_r_model <- function(backend) {
+  if (is.null(compiled_flat_r_models[[backend]]))
+    compiled_flat_r_models[[backend]] <- if (backend == "cmdstanr")
+      cmdstanr::cmdstan_model(flat_r_stan_file) else
+      rstan::stan_model(flat_r_stan_file)
+  compiled_flat_r_models[[backend]]
+}
 
-    // 1. P(total): flat on R, per unit of f
-    real log_p_total = -1.5 * log1p(f_squared);
-
-    // 2. P(this combination | total): 1 / size of all combinations with this total
-    //    = 1 / surface of a sphere with radius f in k dimensions
-    real log_size_of_all_combinations = log(2) + 0.5 * k * log(pi()) - lgamma(0.5 * k)
-                                        + (k - 1) * log(f);
-    real log_p_combination_given_total = -log_size_of_all_combinations;
-
-    // 3. Unit conversion: from noise units to the units of b
-    real log_conversion = 0.5 * log_determinant(predictor_covariance) - k * log(sigma);
-
-    // log of (1 x 2 x 3)
-    return log_p_total + log_p_combination_given_total + log_conversion;
-  }
-"
-
-## Builds the brms prior for a formula: each model uses its own predictors'
-## covariance, so the prior adapts to correlated predictors automatically.
-build_flat_r_prior <- function(formula, data) {
-  predictors <- model.matrix(formula, data)[, -1, drop = FALSE]
-  neutral_priors <- brms::set_prior("", class = "Intercept") +   # flat intercept
-                    brms::set_prior("", class = "sigma")         # Jeffreys term added below
+## Fit a linear regression with the flat-R prior. Returns a "flat_r_fit":
+## print() gives estimates and diagnostics, loo() and pp_check() work as
+## usual, fit$draws holds all posterior draws (posterior::draws_df).
+fit_flat_r_model <- function(formula, data, chains = 4, iter_warmup = 1000,
+                             iter_sampling = 1000, adapt_delta = 0.95, seed = NULL,
+                             backend = if (requireNamespace("cmdstanr", quietly = TRUE))
+                                         "cmdstanr" else "rstan") {
+  model_frame <- model.frame(formula, data)
+  design      <- model.matrix(formula, model_frame)
+  if (!"(Intercept)" %in% colnames(design))
+    stop("fit_flat_r_model() needs a model with an intercept.")
+  predictors <- design[, colnames(design) != "(Intercept)", drop = FALSE]
   if (ncol(predictors) == 0)
-    return(list(prior = neutral_priors + brms::set_prior("target += -log(sigma);", check = FALSE),
-                stanvars = NULL))
-  centered_predictors  <- scale(predictors, scale = FALSE)
-  predictor_covariance <- crossprod(centered_predictors) / nrow(centered_predictors)
-  list(
-    prior = neutral_priors + brms::set_prior(
-      "target += flat_r_lpdf(b | sigma, predictor_covariance) - log(sigma);",
-      check = FALSE),
-    stanvars = brms::stanvar(scode = flat_r_stan_code, block = "functions") +
-               brms::stanvar(predictor_covariance, name = "predictor_covariance"))
+    stop("fit_flat_r_model() needs at least one predictor.")
+  outcome <- as.numeric(model.response(model_frame))
+  if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1)
+
+  stan_data <- list(N = nrow(predictors), K = ncol(predictors), X = predictors, y = outcome,
+                    prior_only = 0L, proper_stand_ins = 0L)
+  model <- compile_flat_r_model(backend)
+  if (backend == "cmdstanr") {
+    fit <- model$sample(data = stan_data, chains = chains, parallel_chains = chains,
+                        iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                        adapt_delta = adapt_delta, seed = seed, refresh = 0,
+                        show_messages = FALSE)
+    all_draws <- posterior::as_draws_df(fit$draws())
+    divergent <- sum(fit$diagnostic_summary(quiet = TRUE)$num_divergent)
+  } else {
+    fit <- rstan::sampling(model, data = stan_data, chains = chains, cores = chains,
+                           iter = iter_warmup + iter_sampling, warmup = iter_warmup,
+                           control = list(adapt_delta = adapt_delta), seed = seed, refresh = 0)
+    all_draws <- posterior::as_draws_df(as.array(fit))
+    divergent <- rstan::get_num_divergent(fit)
+  }
+  if (divergent > 0) warning(divergent, " divergent transitions; check the fit.")
+
+  ## Coefficients under their own names; the intercept back on the data's scale
+  ## (the model's alpha is the mean of y, at the predictors' means)
+  coefficients <- unclass(posterior::as_draws_matrix(posterior::subset_draws(all_draws, variable = "b")))
+  colnames(coefficients) <- colnames(predictors)
+  intercept <- all_draws$alpha - drop(coefficients %*% colMeans(predictors))
+  draws <- posterior::as_draws_df(cbind(
+    data.frame(Intercept = intercept, check.names = FALSE),
+    as.data.frame(coefficients, check.names = FALSE),
+    data.frame(sigma = all_draws$sigma, R_squared = all_draws$R_squared)))
+
+  structure(list(draws        = draws,
+                 log_lik      = unclass(posterior::as_draws_matrix(posterior::subset_draws(all_draws, variable = "log_lik"))),
+                 y_rep        = unclass(posterior::as_draws_matrix(posterior::subset_draws(all_draws, variable = "y_rep"))),
+                 chain_ids    = all_draws$.chain,
+                 outcome      = outcome,
+                 predictors   = predictors,
+                 formula      = formula,
+                 divergent    = divergent),
+            class = "flat_r_fit")
 }
 
-## Fit exactly like brm(): summary(), plot(), pp_check(), bayes_R2(),
-## loo() all work as usual. Extra arguments go to brm(). The family may
-## be given, but only gaussian with the identity link is supported.
-fit_flat_r_model <- function(formula, data, family = gaussian(), ...) {
-  if (any(grepl("|", deparse(formula), fixed = TRUE)))
-    stop("fit_flat_r_model() supports fixed effects only (no group-level terms like (1 | g)).")
-  if (is.character(family)) family <- get(family, mode = "function")
-  if (is.function(family))  family <- family()
-  if (!identical(family$family, "gaussian") || !identical(family$link, "identity"))
-    stop("fit_flat_r_model() supports the gaussian family with the identity link only.")
-  prior_parts <- build_flat_r_prior(formula, data)
-  brms::brm(formula, data = data, family = gaussian(),
-            prior = prior_parts$prior, stanvars = prior_parts$stanvars,
-            backend = getOption("brms.backend", "cmdstanr"), ...)
+print.flat_r_fit <- function(x, digits = 3, ...) {
+  cat("Linear regression with the flat-R prior\n")
+  cat("Formula:", deparse(x$formula), "\n")
+  cat("Observations:", length(x$outcome), "  Predictors:", ncol(x$predictors),
+      "  Divergent transitions:", x$divergent, "\n\n")
+  estimates <- posterior::summarise_draws(
+    x$draws, mean, sd,
+    ~ quantile(.x, probs = c(0.025, 0.975)),
+    rhat = posterior::rhat, ess_bulk = posterior::ess_bulk)
+  print(as.data.frame(estimates), digits = digits, row.names = FALSE)
+  cat("\nR_squared is the population explained share; its prior is Beta(1/2, 1).\n")
+  invisible(x)
 }
+
+## loo() and pp_check() as for any Stan model
+loo.flat_r_fit <- function(x, ...) {
+  relative_efficiency <- loo::relative_eff(exp(x$log_lik), chain_id = x$chain_ids)
+  loo::loo(x$log_lik, r_eff = relative_efficiency, ...)
+}
+pp_check.flat_r_fit <- function(object, ndraws = 50, ...) {
+  shown <- sample(nrow(object$y_rep), ndraws)
+  bayesplot::ppc_dens_overlay(object$outcome, object$y_rep[shown, , drop = FALSE], ...)
+}
+loo     <- function(x, ...) UseMethod("loo")
+pp_check <- function(object, ...) UseMethod("pp_check")
+loo.default      <- function(x, ...) loo::loo(x, ...)
+pp_check.default <- function(object, ...) bayesplot::pp_check(object, ...)
 
 
 ## =====================================================================
@@ -114,7 +128,7 @@ fit_flat_r_model <- function(formula, data, family = gaussian(), ...) {
 ## =====================================================================
 ## In one sentence: the Bayes factor with k predictors is the one-predictor
 ## Bayes factor, averaged over every direction the effect could take
-## (docs/2_how_it_calculates.md, section 6).
+## (docs/2_how_it_calculates.md, section 7).
 ## Every model gets an exact Bayes factor against the intercept-only
 ## model; any two models then compare by dividing. Works for nested and
 ## non-nested models, as long as both use the same outcome and rows.
@@ -186,12 +200,11 @@ log_bayes_factor_flat_r_vs_intercept_only <- function(explained_share, sample_si
               log_sum_exp_per_row(log_fit_matrix)) + log(log_g_step)
 }
 
-## Pull predictors and outcome out of a brms or lm fit
+## Pull predictors and outcome out of a flat_r_fit or lm fit
 extract_predictors_and_outcome <- function(model) {
-  if (inherits(model, "brmsfit")) {
-    stan_data  <- brms::standata(model)
-    predictors <- stan_data$X[, colnames(stan_data$X) != "Intercept", drop = FALSE]
-    outcome    <- as.numeric(stan_data$Y)
+  if (inherits(model, "flat_r_fit")) {
+    predictors <- model$predictors
+    outcome    <- model$outcome
   } else {
     predictors <- model.matrix(model)[, -1, drop = FALSE]
     outcome    <- as.numeric(model.response(model.frame(model)))
@@ -230,57 +243,11 @@ bayes_factor_flat_r_per_term <- function(formula, data) {
 
 
 ## =====================================================================
-##  PART 3. REPORTING
-## =====================================================================
-## For one coefficient: how much better each possible partial correlation
-## explains the data than zero does. Report next to any Bayes factor that
-## favours "no effect": it shows which effect sizes were ruled out and
-## which weren't. The peak of the curve is the most any Bayes factor could
-## be; the Bayes factor is this curve averaged over everything possible.
-## Treats the noise level and predictor spread as known, so boundaries are
-## approximate (about +/- 0.01-0.02 at n = 60).
-##
-## column_name is a column of the design matrix, not a term: for a factor
-## that is one dummy column such as "groupb" (see colnames(model.matrix(lm_fit))).
-support_per_partial_correlation <- function(lm_fit, column_name,
-                                            partial_correlations = seq(-0.9, 0.9, by = 0.01)) {
-  design_matrix <- model.matrix(lm_fit)
-  if (!column_name %in% colnames(design_matrix))
-    stop(sprintf("'%s' is not a design-matrix column. Available: %s", column_name,
-                 paste(colnames(design_matrix)[-1], collapse = ", ")))
-  coefficient_row <- summary(lm_fit)$coefficients[column_name, ]
-  other_columns   <- design_matrix[, colnames(design_matrix) != column_name, drop = FALSE]
-  spread_left_after_others <- sd(qr.resid(qr(other_columns), design_matrix[, column_name]))
-  conversion_to_slope <- spread_left_after_others / summary(lm_fit)$sigma
-  slopes <- partial_correlations / (conversion_to_slope * sqrt(1 - partial_correlations^2))
-  data.frame(partial_correlation = partial_correlations,
-             support_vs_zero = dt((coefficient_row[1] - slopes) / coefficient_row[2],
-                                  lm_fit$df.residual) /
-                               dt(coefficient_row[1] / coefficient_row[2], lm_fit$df.residual))
-}
-
-## Split the effect-size axis into regions: better than zero, worse than
-## zero, or can't be told apart (within a factor `band`). Read left to right.
-support_regions <- function(support_table, band = 3) {
-  verdict <- ifelse(support_table$support_vs_zero > band,
-                    "explains the data better than zero",
-             ifelse(support_table$support_vs_zero < 1 / band,
-                    "explains the data worse than zero",
-                    "can't be told apart from zero"))
-  region_number <- cumsum(c(TRUE, verdict[-1] != verdict[-length(verdict)]))
-  do.call(rbind, lapply(split(seq_along(verdict), region_number), function(rows)
-    data.frame(verdict = verdict[rows[1]],
-               from    = min(support_table$partial_correlation[rows]),
-               to      = max(support_table$partial_correlation[rows]))))
-}
-
-
-## =====================================================================
-##  PART 4. PRIOR DRAWS
+##  PART 3. PRIOR DRAWS
 ## =====================================================================
 ## The prior as a recipe, the same sentence read forwards. Used by
-## docs/1_from_behaviour.md (to show what the prior implies) and by
-## validation/01_prior_in_brms.R (to compare with what brms samples).
+## docs/figures/make_figures.R (to show what the prior implies) and by
+## validation/ (to simulate from the prior and as the reference to check against).
 
 ## One coefficient set per row, in units of the noise (sigma = 1):
 ##   1. P(total):  draw the overall correlation R, flat; Cohen's f^2 = R^2 / (1 - R^2)

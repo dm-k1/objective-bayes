@@ -9,8 +9,7 @@
 ##   - flat partial correlation, one coefficient at a time
 ##   - R2-D2 with the same R-squared prior, Dirichlet split
 ##
-##  Uses the closed-form Bayes factor: brms per dataset would take days. That
-##  the closed form matches brms is checked in validation/02_bayes_factor.R (A3).
+##  Uses the closed-form Bayes factor (checked in validation/02_bayes_factor.R).
 ##
 ##  Run from the project folder. The simulation runs in parallel and is
 ##  cached: it only reruns when its settings change (or rerun_simulation = TRUE).

@@ -25,8 +25,9 @@ It does carry expectations, stated rather than hidden: flat on $R$ means
 $E[R^2] = \tfrac13$, and the per-predictor shrinkage follows from the shared
 budget ([`docs/1_from_behaviour.md`](docs/1_from_behaviour.md), last section).
 
-**What you get:** estimation through **brms** (all the usual brms output), and
-Bayes factors between any two linear models, nested or not, from an exact
+**What you get:** estimation with Stan, sampled in the prior's own coordinates
+($R$ and a direction), with the usual tools (`loo()`, `pp_check()`, bayesplot);
+and Bayes factors between any two linear models, nested or not, from an exact
 closed form that needs only $R^2$, $n$ and $k$.
 
 ## Quick start
@@ -34,33 +35,35 @@ closed form that needs only $R^2$, $n$ and $k$.
 Set the working directory to the project folder, then:
 
 ```r
-source("R/flat_r.R")   # light: brms is only loaded when you fit
-library(brms)          # for summary(), plot(), ... on fitted models
+source("R/flat_r.R")
 
-fit <- fit_flat_r_model(y ~ x1 + x2 + x3, my_data)                  # estimation (brms)
-summary(fit)
+fit <- fit_flat_r_model(y ~ x1 + x2 + x3, my_data)   # estimation (Stan)
+fit                                                  # estimates and diagnostics
+loo(fit); pp_check(fit)
 
 bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)              # BF per term
-bayes_factor_flat_r(fit, fit_flat_r_model(y ~ x2 + x3, my_data))     # any two models
+bayes_factor_flat_r(fit, lm(y ~ x2 + x3, my_data))                   # any two models
 bayes_factor_flat_r(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))   # no Stan needed
 ```
 
-Requirements: R ≥ 4.3, brms with the cmdstanr backend (CmdStan installed),
-MASS. Optional: BayesFactor (JZS comparison), ggplot2, dplyr, purrr, tidyr
-(vignette, figures and validation).
+Requirements: R ≥ 4.3 and MASS. For estimation: cmdstanr with CmdStan (or
+rstan), posterior, loo, bayesplot. Optional: BayesFactor (JZS comparison),
+ggplot2, dplyr, purrr, tidyr (vignette, figures and validation).
 
 ## What's where
 
 | Path | What it is |
 |---|---|
-| `R/flat_r.R` | The method: `fit_flat_r_model()` (estimation), `bayes_factor_flat_r()` and `bayes_factor_flat_r_per_term()` (Bayes factors), `support_per_partial_correlation()` and `support_regions()` (reporting), `draw_coefficients_from_flat_r_prior()` (the prior as a recipe) |
+| `R/flat_r.R` | The method: `fit_flat_r_model()` (estimation), `bayes_factor_flat_r()` and `bayes_factor_flat_r_per_term()` (Bayes factors), `draw_coefficients_from_flat_r_prior()` (the prior as a recipe) |
+| `R/flat_r.stan` | The Stan model: samples $R$ and a direction, computes the coefficients |
+| `R/support_curve.R` | Optional reporting next to a null Bayes factor: which effect sizes the data can't tell apart from zero |
 | `vignette.R` | Use it on a dataset, start to finish |
 | `docs/1_from_behaviour.md` | Where the prior comes from: from what effects can do to the one sentence, with simulated figures |
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
-| `validation/` | Does brms carry the prior, is the Bayes factor right, how does it behave; see `validation/README.md` |
-| `archive/` | Superseded code (by-hand tutorials, brute-force Bayes factor, earlier approaches), kept for history |
+| `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; see `validation/README.md` |
+| `archive/` | Superseded code (by-hand tutorials, the brms version of the prior, earlier approaches), kept for history |
 
 ## Scope
 
@@ -77,15 +80,13 @@ Points of attention:
 
 - With several predictors at small $n$ the prior pulls estimates toward zero;
   the vignette prints the size of the pull next to the ordinary estimates.
-- For $k \ge 2$ the density has a sharp (integrable) peak at all-zero
-  coefficients. With many predictors brms under-samples that peak **without
-  warnings**, so null effects get less shrinkage than the prior implies
-  (`validation/README.md`, open problem). The Bayes factors are not affected.
+- Why not brms: brms samples the coefficients directly, and for $k \ge 2$ the
+  prior has a sharp peak at all-zero coefficients that such a sampler misses,
+  without warnings. The Stan model here samples $R$ and a direction instead
+  (`docs/2_how_it_calculates.md`, section 6).
 - `bayes_factor_flat_r_per_term()` removes one term at a time; testing a main
   effect while its interaction stays in the model follows the usual
   marginality caveats.
-- Don't use `brms::hypothesis()` for Bayes factors with this prior (Savage–Dickey
-  needs prior samples brms can't make for a custom prior); use `bayes_factor_flat_r()`.
 
 ## History
 
@@ -94,7 +95,7 @@ Points of attention:
   scale shared by all predictors so that together they explain at most the
   outcome's variance (scale ≈ 1/√k).
 - **v2 (October 2026, this project)**: the exact version, with a closed-form
-  Bayes factor and brms estimation.
+  Bayes factor and Stan estimation in the prior's own coordinates.
 
 ## Author
 

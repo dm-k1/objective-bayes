@@ -1,12 +1,11 @@
 ## =====================================================================
 ##  Vignette: the flat-R prior on one dataset, start to finish
-##  Estimation with brms, then Bayes factors for any model comparison.
+##  Estimation (Stan), then Bayes factors for any model comparison.
 ##  Run with the project folder as working directory.
 ## =====================================================================
 source("R/flat_r.R")
-library(brms)      # summary(), bayes_R2(), pp_check(), plot() on the fitted models
+source("R/support_curve.R")   # section 5
 library(ggplot2)
-options(mc.cores = max(1, parallel::detectCores() - 1))   # chains in parallel, one core left free
 
 ## ---- 1. Data ---------------------------------------------------------
 ## Three correlated predictors (x1 and x2 matter, x3 doesn't) and one
@@ -21,20 +20,17 @@ my_data <- data.frame(x1 = predictor_values[, 1],
 my_data$y  <- 0.3 * my_data$x1 + 0.2 * my_data$x2 + rnorm(sample_size)
 my_data$x4 <- rnorm(sample_size)
 
-## ---- 2. Estimation: fit like any brms model -------------------------
-sampler_settings <- list(chains = 4, iter = 2000, warmup = 1000, seed = 1, refresh = 0)
-fit_with <- function(formula)
-  do.call(fit_flat_r_model, c(list(formula = formula, data = my_data), sampler_settings))
-
-full_model <- fit_with(y ~ x1 + x2 + x3)
-summary(full_model)              # estimates, intervals, Rhat, ESS
-bayes_R2(full_model)             # explained share
+## ---- 2. Estimation ---------------------------------------------------
+full_model <- fit_flat_r_model(y ~ x1 + x2 + x3, data = my_data, chains = 4,
+                               iter_warmup = 1000, iter_sampling = 1000, seed = 1)
+full_model                       # estimates, intervals, Rhat, ESS, divergences
+loo(full_model)                  # leave-one-out cross-validation
 pp_check(full_model)             # posterior predictive check
-plot(full_model)                 # trace plots and posteriors
+bayesplot::mcmc_trace(full_model$draws)   # trace plots (any bayesplot plot works on $draws)
 
 ## Next to the ordinary estimates: at n = 60 with three predictors the prior
 ## pulls the estimates toward zero (docs/1_from_behaviour.md, step 4)
-cbind(flat_r   = fixef(full_model)[c("x1", "x2", "x3"), "Estimate"],
+cbind(flat_r   = colMeans(as.data.frame(full_model$draws)[, c("x1", "x2", "x3")]),
       ordinary = coef(lm(y ~ x1 + x2 + x3, data = my_data))[c("x1", "x2", "x3")])
 
 ## ---- 3. Bayes factor per predictor ----------------------------------
@@ -42,13 +38,9 @@ cbind(flat_r   = fixef(full_model)[c("x1", "x2", "x3"), "Estimate"],
 bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)
 
 ## ---- 4. Comparing any two models ------------------------------------
-without_x1 <- fit_with(y ~ x2 + x3)
-other_set  <- fit_with(y ~ x4)
-
-bayes_factor_flat_r(full_model, without_x1)   # nested: evidence for x1
-bayes_factor_flat_r(full_model, other_set)    # non-nested comparison
-
-## Works on plain lm() fits too:
+## Takes fit_flat_r_model() fits or plain lm() fits: only R-squared, n and k matter
+bayes_factor_flat_r(full_model, lm(y ~ x2 + x3, data = my_data))   # nested: evidence for x1
+bayes_factor_flat_r(full_model, lm(y ~ x4, data = my_data))        # non-nested comparison
 bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, data = my_data), lm(y ~ 1, data = my_data))
 
 ## ---- 5. What a null Bayes factor rests on ---------------------------

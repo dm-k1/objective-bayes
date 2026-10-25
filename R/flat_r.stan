@@ -48,3 +48,14 @@ model {
   if (!prior_only)
     y ~ normal(alpha + Xc * b, sigma);
 }
+generated quantities {
+  // per observation: log-likelihood (for loo) and a predicted value (for pp_check)
+  vector[N] log_lik;
+  array[N] real y_rep;
+  real R_squared = square(R);               // population explained share
+  {
+    vector[N] mu = alpha + Xc * b;
+    for (n in 1:N) log_lik[n] = normal_lpdf(y[n] | mu[n], sigma);
+    y_rep = normal_rng(mu, sigma);
+  }
+}

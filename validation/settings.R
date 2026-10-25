@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  Shared settings for the validation scripts
 ##   - parallel: use all cores but one (leaves one free for the computer)
-##   - caching:  simulation results and brms fits are saved in
+##   - caching:  simulation results are saved in
 ##               validation/results/ and reused when nothing changed
 ##   - figures:  saved to validation/results/figures/
 ##   - checks:   record_check() and report_checks() for pass/fail summaries
@@ -11,7 +11,7 @@
 ## Forking (mclapply) is not available on Windows, so it runs serially there.
 number_of_cores <- if (.Platform$OS.type == "windows") 1 else
   max(1, parallel::detectCores() - 1)
-options(mc.cores = number_of_cores)   # brms also uses this: chains run in parallel
+options(mc.cores = number_of_cores)
 
 ## ---- Cache folders -------------------------------------------------------------
 results_folder <- file.path("validation", "results")

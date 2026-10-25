@@ -29,3 +29,7 @@ Rplots.pdf
 
 # Figures written by the validation scripts
 validation/results/figures/
+
+# Compiled Stan models (rstan auto_write, cmdstanr executables)
+R/*.rds
+R/flat_r

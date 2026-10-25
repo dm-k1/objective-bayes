@@ -1,16 +1,19 @@
 ## =====================================================================
-##  Validation 04: sampling in the prior's own coordinates
+##  Validation 01: does the Stan model get the prior and the posterior right?
 ##
-##  Check 01 found that sampling the coefficients directly (what brms does)
-##  under-samples the peak at zero for larger k. R/flat_r_direction.stan
-##  samples R (flat) and a direction (uniform) instead, and computes the
-##  coefficients from them. This script checks that it gets the prior and
-##  the posterior right, with the coefficient-coordinates model as contrast.
+##  R/flat_r.stan (used by fit_flat_r_model()) samples R (flat) and a
+##  direction (uniform), and computes the coefficients from them. This script
+##  checks that it gets the prior and the posterior right.
 ##
-##    D1. prior: implied correlation flat (k = 1); R-squared ~ Beta(1/2, 1)
+##  Contrast (reported, not a check): the same prior written as a density on
+##  the coefficients and sampled directly, as a custom brms prior would do.
+##  For larger k that sampler misses the peak of the prior at zero, without
+##  divergent transitions (with brms at k = 8: KS distance 0.074).
+##
+##    P1-P4. prior: implied correlation flat (k = 1); R-squared ~ Beta(1/2, 1)
 ##        (k = 3 correlated, k = 8); per-predictor shares match the recipe (k = 3)
 ##        Criterion: KS distance < 0.03
-##    D2. posterior: simulation-based calibration, k = 8, n = 60. Draw the
+##    S. posterior: simulation-based calibration, k = 8, n = 60. Draw the
 ##        parameters from the prior, simulate data, fit, and record where the
 ##        true value falls among the posterior draws (its rank). If the
 ##        sampler is right, every rank is equally likely.
@@ -20,7 +23,7 @@
 ##  sample a prior or simulate from it); R, f and the direction don't depend
 ##  on them.
 ##
-##  Run from the project folder: Rscript validation/04_direction_model.R
+##  Run from the project folder: Rscript validation/01_prior_and_posterior.R
 ##  About 5 minutes on 4 cores.
 ## =====================================================================
 source("R/flat_r.R")
@@ -49,11 +52,25 @@ sample_stan <- function(model, stan_data, chains, iter_warmup, iter_sampling, th
 coefficients_of <- function(draws) draws[, grep("^b\\[", colnames(draws)), drop = FALSE]
 
 ## ---- The two models ------------------------------------------------------
-## direction:    R/flat_r_direction.stan (R and a direction as parameters)
-## coefficients: the same prior as a density on b, as brms samples it
-direction_model <- compile_stan(paste(readLines("R/flat_r_direction.stan"), collapse = "\n"))
+## direction:    R/flat_r.stan (R and a direction as parameters)
+## coefficients: the same prior as a density on b (docs/2_how_it_calculates.md,
+##               section 5), sampled directly
+direction_model <- compile_stan(paste(readLines("R/flat_r.stan"), collapse = "\n"))
+flat_r_density_code <- "
+  // P(b) = P(total) x P(this combination | total) x unit conversion
+  real flat_r_lpdf(vector b, real sigma, matrix predictor_covariance) {
+    int k = rows(b);
+    real f_squared = quad_form(predictor_covariance, b) / square(sigma);
+    real f = sqrt(f_squared);
+    real log_p_total = -1.5 * log1p(f_squared);
+    real log_p_combination_given_total = -(log(2) + 0.5 * k * log(pi()) - lgamma(0.5 * k)
+                                           + (k - 1) * log(f));
+    real log_conversion = 0.5 * log_determinant(predictor_covariance) - k * log(sigma);
+    return log_p_total + log_p_combination_given_total + log_conversion;
+  }
+"
 coefficients_model <- compile_stan(paste0("
-functions {", flat_r_stan_code, "}
+functions {", flat_r_density_code, "}
 data {
   int<lower=1> N; int<lower=1> K; matrix[N, K] X; vector[N] y;
   int<lower=0, upper=1> prior_only; int<lower=0, upper=1> proper_stand_ins;
@@ -87,7 +104,7 @@ ks_distance <- function(draws, reference) suppressWarnings(unname(ks.test(draws,
 
 
 ## =====================================================================
-## D1. The prior
+## P1-P4. The prior
 ## =====================================================================
 set.seed(42)
 one_predictor    <- matrix(rnorm(sample_size), sample_size)
@@ -105,20 +122,20 @@ draws_one <- sample_prior(one_predictor)
 signed_f  <- coefficients_of(draws_one)[, 1] * sqrt(covariance_of(one_predictor)[1, 1]) /
              draws_one[, "sigma"]
 distance  <- ks_distance(signed_f / sqrt(1 + signed_f^2), function(r) punif(r, min = -1, max = 1))
-record_check("D1a. k = 1: correlation flat from -1 to 1", distance < 0.03,
+record_check("P1. k = 1: correlation flat from -1 to 1", distance < 0.03,
              sprintf("KS distance %.3f", distance))
 
 draws_three <- sample_prior(three_correlated)
 distance <- ks_distance(implied_r_squared(draws_three, covariance_of(three_correlated)),
                         function(r2) pbeta(r2, shape1 = 0.5, shape2 = 1))
-record_check("D1b. k = 3 correlated: R-squared ~ Beta(1/2, 1)", distance < 0.03,
+record_check("P2. k = 3 correlated: R-squared ~ Beta(1/2, 1)", distance < 0.03,
              sprintf("KS distance %.3f", distance))
 
 draws_eight <- sample_prior(eight_predictors)
 distance <- ks_distance(implied_r_squared(draws_eight, covariance_of(eight_predictors)),
                         function(r2) pbeta(r2, shape1 = 0.5, shape2 = 1))
-record_check("D1c. k = 8: R-squared ~ Beta(1/2, 1)", distance < 0.03,
-             sprintf("KS distance %.3f (coefficient coordinates in brms: 0.074)", distance))
+record_check("P3. k = 8: R-squared ~ Beta(1/2, 1)", distance < 0.03,
+             sprintf("KS distance %.3f", distance))
 
 covariance_three <- covariance_of(three_correlated)
 spread_left_after_others <- sqrt(1 / diag(solve(covariance_three)))
@@ -130,12 +147,12 @@ stan_partials   <- partial_correlations(coefficients_of(draws_three) / draws_thr
 set.seed(7)
 recipe_partials <- partial_correlations(draw_coefficients_from_flat_r_prior(100000, covariance_three))
 distances <- sapply(1:3, function(j) ks_distance(stan_partials[, j], recipe_partials[, j]))
-record_check("D1d. k = 3: per-predictor shares match the recipe", all(distances < 0.03),
+record_check("P4. k = 3: per-predictor shares match the recipe", all(distances < 0.03),
              sprintf("KS distances %s", paste(sprintf("%.3f", distances), collapse = " ")))
 
 
 ## =====================================================================
-## D2. The posterior: simulation-based calibration, k = 8
+## S. The posterior: simulation-based calibration, k = 8
 ## =====================================================================
 number_of_predictors <- 8
 replications <- 400
@@ -170,7 +187,7 @@ for (model_name in c("direction", "coefficients")) for (quantity in c("r_squared
   quantity_ranks <- sapply(ranks, function(r) r[quantity, model_name])
   bin_counts <- table(cut(quantity_ranks, breaks = seq(0, 100, by = 10), include.lowest = TRUE))
   p_value <- chisq.test(bin_counts)$p.value
-  label <- sprintf("D2. %s coordinates, %s", model_name, quantity)
+  label <- sprintf("S. %s coordinates, %s", model_name, quantity)
   details <- sprintf("p = %.3f; bins %s", p_value, paste(bin_counts, collapse = " "))
   if (model_name == "direction") {
     record_check(label, p_value > 0.01, details)

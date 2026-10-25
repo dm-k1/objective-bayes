@@ -1,6 +1,5 @@
-## ARCHIVED: direct cmdstanr version of the flat-R model, using a
-## unit-vector parameterization (explained share + direction). Superseded
-## by fit_flat_r_model() in R/flat_r.R. Kept as a fallback: if brms
+## ARCHIVED: first version of the unit-vector parameterization (explained
+## share + direction), with whitening. Grown into R/flat_r.stan. Original note: if brms
 ## shows persistent divergent transitions (the prior has a sharp peak at
 ## all-zero coefficients), this parameterization avoids that peak.
 

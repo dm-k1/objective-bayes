@@ -7,8 +7,8 @@
 ##    A1. the grid computes the formula: against adaptive integration
 ##        (integrate()) over a sweep of R-squared, n and k, extremes included
 ##    A2. invariance: rescaling or recoding predictors leaves the BF unchanged
-##    A3. the formula is the right one: closed form vs brms bridge sampling
-##        with the Stan prior (continuous predictor; factor tested as a block)
+##    A3. the formula is the right one: closed form vs brute force (draw
+##        coefficients from the prior, average how well they predict; no formula)
 ##
 ##  PART B. Properties of a good default (Bayarri et al., 2012)
 ##    B1. predictive matching (n = k + 1 gives BF = 1)
@@ -16,17 +16,10 @@
 ##    B3. consistency under the null (log BF01 grows like 1/2 log n), simulated
 ##
 ##  Run from the project folder: Rscript validation/02_bayes_factor.R
-##  A few minutes; the brms fits (A3) are cached after the first run.
+##  About a minute. No Stan needed.
 ## =====================================================================
 source("R/flat_r.R")
 source("validation/settings.R")             # parallel cores, cache folders, record_check()
-
-run_bridge_sampling_check <- TRUE    # set FALSE to skip A3 (needs CmdStan)
-
-## brms fits from A3 are cached in validation/results/fits/ and reused on the
-## next run. They are refitted automatically when the model code, the prior or
-## the data change (file_refit = "on_change"). Delete the files to force a refit.
-cache_folder <- fits_folder
 
 
 ## =====================================================================
@@ -172,46 +165,74 @@ record_check("A2c. recoding predictors (same model, other columns)",
 
 
 ## =====================================================================
-## A3. Closed form vs brms bridge sampling
+## A3. Closed form vs brute force
 ## =====================================================================
-## The brms prior (a Stan density on the coefficients) and the closed form
-## must describe the same prior. This is the check of the formula itself
-## (A1 only checks that the grid computes the formula accurately). Bridge sampling is noisy: criterion is
-## agreement within 10% (0.1 on the log scale).
-## Case A: a continuous predictor (x1). Case B: a 3-level factor tested
-## as a block, so dummy-coded columns are covered too.
+## A1 checks that the grid computes the formula. This checks the formula
+## itself, without using it: draw coefficient sets from the prior (the recipe
+## of docs/2 section 5), see how well each predicts the outcome (the noise
+## level averaged on a grid), and average. Monte Carlo, so noisy: with
+## 400,000 draws its SD is about 0.02 on the log scale (k = 5).
+## Criterion: agreement within 0.05 on the log scale.
 
-if (run_bridge_sampling_check) {
-  library(brms)   # save_pars(), bayes_factor()
-  set.seed(5)
-  example_data$group   <- factor(sample(c("a", "b", "c"), sample_size, replace = TRUE))
-  example_data$y_group <- example_data$y + c(a = 0, b = 0.5, c = -0.3)[as.character(example_data$group)]
+## The same log Bayes factor as log_bayes_factor_flat_r_vs_intercept_only(),
+## without the formula: draw coefficient sets from the prior, see how well
+## each predicts the outcome (the noise level averaged on a grid), and
+## average. Slow and noisy (Monte Carlo); agrees to about 0.05 on the log scale.
+log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
+                                                        number_of_draws = 40000,
+                                                        draws_per_batch = 2000) {
+  sample_size            <- length(outcome)
+  centered_predictors    <- scale(predictors, scale = FALSE)
+  centered_outcome       <- outcome - mean(outcome)
+  outcome_sum_of_squares <- sum(centered_outcome^2)
+  predictor_covariance   <- crossprod(centered_predictors) / sample_size
 
-  bridge_cases <- list(
-    list(label = "A3a. bridge sampling, continuous x1", cache_name = "checkA3a",
-         full = y ~ x1 + x2 + x3, reduced = y ~ x2 + x3),
-    list(label = "A3b. bridge sampling, factor as a block", cache_name = "checkA3b",
-         full = y_group ~ x1 + group, reduced = y_group ~ x1))
+  ## the noise level is unknown: average over it on a grid (written as
+  ## 1 / noise, which makes the arithmetic simpler)
+  inverse_noise_values <- seq(1e-4, 6 * sqrt(sample_size / outcome_sum_of_squares), length.out = 800)
+  inverse_noise_step   <- inverse_noise_values[2] - inverse_noise_values[1]
+  log_inverse_noise    <- log(inverse_noise_values)
 
-  ## same sampler settings for every fit; cached per case and model
-  fit_for_bridge_sampling <- function(formula, cache_file)
-    fit_flat_r_model(formula, example_data, iter = 10000, seed = 2, refresh = 0,
-                             save_pars = save_pars(all = TRUE),
-                             control = list(adapt_delta = 0.99),
-                             file = file.path(cache_folder, cache_file), file_refit = "on_change")
+  ## how well "no effect" predicts the data
+  log_evidence_null <- log_sum_exp((sample_size - 2) * log_inverse_noise -
+                                   inverse_noise_values^2 * outcome_sum_of_squares / 2) +
+                       log(inverse_noise_step)
 
-  for (case in bridge_cases) {
-    full_fit    <- fit_for_bridge_sampling(case$full,    paste0(case$cache_name, "_full"))
-    reduced_fit <- fit_for_bridge_sampling(case$reduced, paste0(case$cache_name, "_reduced"))
-    bridge <- bayes_factor(full_fit, reduced_fit, silent = TRUE)$bf
-    closed <- bayes_factor_flat_r(lm(case$full, example_data), lm(case$reduced, example_data))
-    record_check(case$label, abs(log(bridge) - log(closed)) < 0.1,
-                 sprintf("bridge %.3f, closed %.3f", bridge, closed))
+  ## how well each drawn coefficient set predicts the data
+  log_evidence_per_draw <- numeric(0)
+  for (batch in seq_len(number_of_draws / draws_per_batch)) {
+    coefficients     <- draw_coefficients_from_flat_r_prior(draws_per_batch, predictor_covariance)
+    predicted_values <- centered_predictors %*% t(coefficients)
+    overlap_with_outcome     <- drop(crossprod(centered_outcome, predicted_values))
+    predicted_sum_of_squares <- colSums(predicted_values^2)
+    log_integrand <- (sample_size - 2) *
+        matrix(log_inverse_noise, draws_per_batch, length(inverse_noise_values), byrow = TRUE) -
+      (outer(rep(outcome_sum_of_squares, draws_per_batch), inverse_noise_values^2) -
+       2 * outer(overlap_with_outcome, inverse_noise_values) + predicted_sum_of_squares) / 2
+    log_evidence_per_draw <- c(log_evidence_per_draw,
+                               log_sum_exp_per_row(log_integrand) + log(inverse_noise_step))
   }
+  log_sum_exp(log_evidence_per_draw) - log(number_of_draws) - log_evidence_null
 }
 
+brute_force_cases <- list(
+  list(label = "k = 3, correlated (vignette data)", predictors = predictors, outcome = outcome),
+  local({ set.seed(11); x <- matrix(rnorm(80), 80, 1)
+          list(label = "k = 1, n = 80", predictors = x, outcome = drop(0.3 * x) + rnorm(80)) }),
+  local({ set.seed(12); x <- matrix(rnorm(100 * 5), 100) %*% chol(0.3 + 0.7 * diag(5))
+          list(label = "k = 5, n = 100, correlated", predictors = x,
+               outcome = drop(x %*% c(0.2, 0, 0.1, 0, 0)) + rnorm(100)) }))
 
-
+set.seed(1)
+for (case in brute_force_cases) {
+  closed_form <- log_bayes_factor_flat_r_vs_intercept_only(
+    sample_r_squared(case$predictors, case$outcome), length(case$outcome), ncol(case$predictors))
+  brute_force <- log_bayes_factor_flat_r_by_sampling(case$predictors, case$outcome,
+                                                      number_of_draws = 400000)
+  record_check(paste("A3. brute force,", case$label),
+               abs(closed_form - brute_force) < 0.05,
+               sprintf("closed %.3f, brute force %.3f", closed_form, brute_force))
+}
 
 
 ## #####################################################################
