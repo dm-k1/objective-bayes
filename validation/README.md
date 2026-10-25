@@ -7,6 +7,7 @@ computer (brms with CmdStan needed for 01 and for 02's check A3):
 Rscript validation/01_prior_in_brms.R
 Rscript validation/02_bayes_factor.R
 Rscript validation/03_simulations.R
+Rscript validation/04_direction_model.R
 ```
 
 | Script | Question | How | Run time |
@@ -14,6 +15,7 @@ Rscript validation/03_simulations.R
 | `01_prior_in_brms.R` | Does the brms model carry the prior the docs describe? | brms samples the Stan prior with no data; the draws must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe | a few minutes |
 | `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: closed form against brms bridge sampling with the Stan prior. B1–B3: predictive matching, information and null consistency | a few minutes |
 | `03_simulations.R` | How does it behave across many datasets, compared with JZS, per-coefficient flat partial correlation and R2-D2? | 4 correlated predictors, 200 replications per cell, closed-form Bayes factors | long |
+| `04_direction_model.R` | Does sampling in the prior's own coordinates (R and a direction, `R/flat_r_direction.stan`) fix the problem below? | the prior checks of 01 for k = 1, 3, 8, and simulation-based calibration of the posterior (k = 8, n = 60, 400 datasets), with the coefficient-coordinates model as contrast | about 5 minutes |
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
@@ -29,6 +31,8 @@ anything failed. Results, brms fits and figures are cached in
 | 01 P2 | k = 3 correlated | pass, narrowly (0.025) |
 | 01 P3 | k = 8 | **FAIL (0.074)**: see below |
 | 01 P4 | per-predictor shares, k = 3 | pass (0.013–0.017) |
+| 04 D1 | prior in direction coordinates, KS < 0.03 | pass: k = 1 0.007, k = 3 0.008, k = 8 0.005, shares 0.008 |
+| 04 D2 | calibration, rank bins χ² p > 0.01 | pass: R² p = 0.29, b1 0.43, σ 0.91 (contrast, coefficient coordinates: R² p = 0.03, lowest bin 61 of 400 where 40 is expected) |
 | 02 A1 | log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 4.1e-05 |
 | 02 A2 | identical up to 1e-8 | pass |
 | 02 A3 | bridge sampling within 10% | pass in the previous version (18.76 vs 18.70; 2.833 vs 2.821); rerun |
@@ -56,9 +60,11 @@ What it means: estimates for null predictors in models with many predictors
 can be shrunk less than the prior implies. The Bayes factor is unaffected (it
 is a closed form, not sampled).
 
-Possible fix: estimate in coordinates without the peak, the explained share
-and a direction (`archive/stan_unit_vector_model.R`), instead of the
-coefficients directly. That needs Stan code outside brms' standard `b` vector.
+**Fix, tested:** `R/flat_r_direction.stan` samples R (flat) and a direction
+(uniform on the sphere) and computes the coefficients from them, so there is
+no peak to miss. It gets the prior right for k = 1, 3 and 8, and passes
+simulation-based calibration of the posterior at k = 8 (check 04). It is not
+yet wired into `fit_flat_r_model()`, which still uses brms.
 
 ## Not yet done
 
