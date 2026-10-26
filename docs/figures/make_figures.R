@@ -160,3 +160,45 @@ save_doc_figure(
          title = "The formula and the recipe describe the same prior",
          subtitle = "k = 2, correlated predictors with unequal spreads; 20 points, 4 million draws"),
   "5_formula_vs_draws", width = 6, height = 5)
+
+
+## ---- 6. Flat-R among the mixtures of g-priors ---------------------------
+## Under a g-prior, f^2 = (g / n) * chi2_k. The flat-R prior is the mixture with
+## g / n = B * W, B ~ Beta(1/2, (k - 1)/2), W ~ Inverse-Gamma(1, 1/2).
+## Implied median R-squared before any data, as k grows (n = 100).
+n_for_g <- 100
+g_draws <- 400000
+g_over_n_draws <- list(
+  `Zellner-Siow (scale 1)` = function(k) 1 / rgamma(g_draws, shape = 0.5, rate = 0.5),
+  `hyper-g/n (a = 3)`      = function(k) { s <- rbeta(g_draws, 1, 0.5); s / (1 - s) },
+  `robust (Bayarri et al.)` = function(k) {
+    lower <- (1 + n_for_g) / (k + 1)
+    (lower / runif(g_draws)^2 - 1) / n_for_g },
+  `intrinsic`              = function(k) (1 / (k + 1)) / rbeta(g_draws, 0.5, 0.5),
+  `flat-R`                 = function(k)
+    (if (k == 1) rep(1, g_draws) else rbeta(g_draws, 0.5, (k - 1) / 2)) / (2 * rexp(g_draws)))
+g_family_r_squared <- do.call(rbind, lapply(names(g_over_n_draws), function(prior)
+  do.call(rbind, lapply(c(1, 2, 3, 5, 10, 20, 30), function(k) {
+    f_squared <- g_over_n_draws[[prior]](k) * rchisq(g_draws, df = k)
+    data.frame(prior = prior, number_of_predictors = k,
+               median_r_squared = median(f_squared / (1 + f_squared)),
+               ks_to_beta_half_one = suppressWarnings(unname(
+                 ks.test(f_squared / (1 + f_squared), "pbeta", 0.5, 1)$statistic)))
+  }))))
+print(g_family_r_squared)
+
+save_doc_figure(
+  ggplot(g_family_r_squared, aes(number_of_predictors, median_r_squared, colour = prior)) +
+    geom_line(linewidth = 1) + geom_point(size = 2) +
+    scale_x_continuous(breaks = c(1, 2, 3, 5, 10, 20, 30)) +
+    scale_y_continuous(limits = c(0, 1)) +
+    scale_colour_manual(values = c(`Zellner-Siow (scale 1)` = "#d95f02",
+                                   `hyper-g/n (a = 3)` = "#e7298a",
+                                   `robust (Bayarri et al.)` = "#7570b3",
+                                   `intrinsic` = "#1b9e77", `flat-R` = "black")) +
+    labs(x = "number of predictors (k)", y = "median implied R-squared, before any data",
+         colour = NULL,
+         title = "Mixtures of g-priors: only flat-R keeps the same claim for every k",
+         subtitle = "n = 100; robust and intrinsic scale g with k, but still drift") +
+    theme(legend.position = "bottom"),
+  "6_g_prior_family")

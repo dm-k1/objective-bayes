@@ -9,6 +9,8 @@
 ##    A2. invariance: rescaling or recoding predictors leaves the BF unchanged
 ##    A3. the formula is the right one: closed form vs brute force (draw
 ##        coefficients from the prior, average how well they predict; no formula)
+##    A4. a second derivation: the prior as a mixture of g-priors, whose Bayes
+##        factor is the standard g-prior one averaged over the hyperprior
 ##
 ##  PART B. Properties of a good default (Bayarri et al., 2012)
 ##    B1. predictive matching (n = k + 1 gives BF = 1)
@@ -233,6 +235,41 @@ for (case in brute_force_cases) {
                abs(closed_form - brute_force) < 0.05,
                sprintf("closed %.3f, brute force %.3f", closed_form, brute_force))
 }
+
+
+## =====================================================================
+## A4. The same prior as a mixture of g-priors
+## =====================================================================
+## The flat-R prior is a mixture of Zellner g-priors with
+## g / n = B * W, B ~ Beta(1/2, (k-1)/2), W ~ Inverse-Gamma(1, 1/2)
+## (docs/2_how_it_calculates.md, section 8). Its Bayes factor is then the
+## standard g-prior Bayes factor (Liang et al., 2008) averaged over that
+## hyperprior: a different route to the same number.
+## Criterion: within 0.002 on the log scale (nested numerical integration).
+
+## Density of t = g / n: p(t) = E[B exp(-B / (2t))] / (2 t^2)
+hyperprior_density_g_over_n <- function(t, k) {
+  if (k == 1) return(exp(-1 / (2 * t)) / (2 * t^2))
+  weighted_beta <- function(b) b * dbeta(b, 0.5, (k - 1) / 2) * exp(-b / (2 * t))
+  split <- min(1, 60 * t)   # the integrand sits near b = 0 when t is small
+  pieces <- integrate(weighted_beta, 0, split, rel.tol = 1e-10)$value +
+    (if (split < 1) integrate(weighted_beta, split, 1, rel.tol = 1e-10)$value else 0)
+  pieces / (2 * t^2)
+}
+log_bayes_factor_by_g_mixture <- function(r_squared, sample_size, k) {
+  integrand <- function(log_t) sapply(log_t, function(lt) {
+    t <- exp(lt); g <- sample_size * t
+    exp((sample_size - 1 - k) / 2 * log1p(g) - (sample_size - 1) / 2 * log1p(g * (1 - r_squared))) *
+      hyperprior_density_g_over_n(t, k) * t          # times t: the step is in log t
+  })
+  log(integrate(integrand, -20, 25, rel.tol = 1e-8, subdivisions = 2000)$value)
+}
+g_mixture_cases <- list(c(0.19, 60, 3), c(0.05, 100, 5), c(0.30, 200, 10), c(0.10, 30, 2), c(0.40, 50, 1))
+g_mixture_errors <- sapply(g_mixture_cases, function(case)
+  abs(log_bayes_factor_by_g_mixture(case[1], case[2], case[3]) -
+      log_bayes_factor_flat_r_vs_intercept_only(case[1], case[2], case[3])))
+record_check("A4. closed form vs mixture of g-priors (5 settings)", max(g_mixture_errors) < 0.002,
+             sprintf("largest difference %.1e", max(g_mixture_errors)))
 
 
 ## #####################################################################

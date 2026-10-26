@@ -11,7 +11,7 @@ Rscript validation/03_simulations.R           # long
 | Script | Question | How | Run time |
 |---|---|---|---|
 | `01_prior_and_posterior.R` | Does the Stan model (`R/flat_r.stan`) get the prior and the posterior right? | P1–P4: sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets. Contrast: the same prior sampled in coefficient coordinates | about 5 minutes |
-| `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. B1–B3: predictive matching, information and null consistency | about a minute |
+| `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. A4: against the same prior written as a mixture of g-priors. B1–B3: predictive matching, information and null consistency | about a minute |
 | `03_simulations.R` | How does it behave across many datasets, compared with JZS, per-coefficient flat partial correlation and R2-D2? | 4 correlated predictors, 200 replications per cell, closed-form Bayes factors | long |
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
@@ -29,11 +29,12 @@ so the counts per bin should be flat.
 
 | Check | Criterion | Last result |
 |---|---|---|
-| 01 P1–P4 | KS distance < 0.03 | pass: k = 1 0.006, k = 3 0.006, k = 8 0.007, shares 0.006–0.012 |
-| 01 S | rank bins, χ² p > 0.01 | pass: R² p = 0.29, β₁ 0.50, σ 0.24. Contrast, coefficient coordinates: R² p = 0.03, lowest bin 61 where 40 is expected |
+| 01 P1–P4 | KS distance < 0.03 | pass (cmdstanr): k = 1 0.005, k = 3 0.007, k = 8 0.007, shares 0.005–0.007 |
+| 01 S | rank bins, χ² p > 0.01 | pass (cmdstanr): R² p = 0.19, β₁ 0.45, σ 0.76. Contrast, coefficient coordinates: all p < 0.001; R² bins 38 15 24 23 23 18 24 19 26 **190**, σ bins **191** 15 17 … (40 expected per bin) |
 | 02 A1 | log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 4.1e-05 |
 | 02 A2 | identical up to 1e-8 | pass |
 | 02 A3 | within 0.05 of brute force (400,000 draws) | pass: 1.644 vs 1.638 (k = 3), −0.692 vs −0.691 (k = 1), 2.507 vs 2.518 (k = 5) |
+| 02 A4 | within 0.002 of the Bayes factor computed as a mixture of g-priors | pass, largest difference 3.5e-04 |
 | 02 B1 | BF within 0.001 of 1, k = 1–6 | pass |
 | 02 B2 | increasing; log BF > 50 at R² = 0.9999 | pass (12.6, 28.6, 44.7, 60.9) |
 | 02 B3 | median log BF₀₁ increasing, slope vs log n in 0.35–0.65 | pass (slope 0.53) |
