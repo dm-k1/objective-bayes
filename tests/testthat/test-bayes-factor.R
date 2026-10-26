@@ -9,9 +9,37 @@ example_data <- local({
   data
 })
 
-test_that("the vignette's Bayes factors are unchanged", {
-  per_term <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)
-  expect_equal(per_term$BF10, c(18.696, 0.3827, 1.5872), tolerance = 1e-3)
+test_that("the vignette's Bayes factors are unchanged (joint and conditional)", {
+  joint <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data, test = "joint")
+  expect_equal(joint$BF10, c(18.696, 0.3827, 1.5872), tolerance = 1e-3)
+  conditional <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)
+  expect_equal(conditional$BF10, c(17.489, 0.3911, 1.1833), tolerance = 1e-3)
+  expect_equal(unique(conditional$test), "conditional")
+})
+
+test_that("conditional test: one predictor equals the joint test", {
+  for (case in list(c(0.3, 30), c(0.1, 100), c(0.5, 50)))
+    expect_equal(log_bayes_factor_flat_r_conditional(case[1], case[2], 1, points_R = 4000),
+                 log_bayes_factor_flat_r_vs_intercept_only(case[1]^2, case[2], 1), tolerance = 1e-3)
+})
+
+test_that("the joint test depends on what the others explain; the conditional test does not", {
+  ## same evidence about x1 (partial correlation 0.2, n = 100, k = 3); the
+  ## other predictors explain 5% or 60% (docs/2_how_it_calculates.md, section 9)
+  joint_bf <- function(r2_without) {
+    r2_with <- 1 - (1 - r2_without) * (1 - 0.2^2)
+    exp(log_bayes_factor_flat_r_vs_intercept_only(r2_with, 100, 3) -
+        log_bayes_factor_flat_r_vs_intercept_only(r2_without, 100, 2))
+  }
+  expect_gt(joint_bf(0.05), 2)     # leans toward an effect
+  expect_lt(joint_bf(0.60), 1)     # leans toward no effect, with the same x1 evidence
+  expect_equal(exp(log_bayes_factor_flat_r_conditional(0.2, 100, 3)), 1.37, tolerance = 0.01)
+})
+
+test_that("multi-column terms fall back to the joint test", {
+  data <- transform(example_data, group = factor(rep(c("a", "b", "c"), 20)))
+  result <- bayes_factor_flat_r_per_term(y ~ x1 + group, data)
+  expect_equal(result$test, c("conditional", "joint"))
 })
 
 test_that("rescaling or recoding predictors leaves the Bayes factor unchanged", {

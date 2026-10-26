@@ -386,7 +386,58 @@ Everything except $g$ and $c$ integrates out exactly, so the Bayes factor needs
 no MCMC. It agrees with a brute-force Bayes factor that draws from the prior and
 uses no formula (`validation/02_bayes_factor.R`, check A3).
 
-**In the code:** `bayes_factor_flat_r()` and `bayes_factor_flat_r_per_term()`.
+**In the code:** `bayes_factor_flat_r()`.
+
+### Testing one coefficient: the conditional test
+
+**In one sentence:** to test one coefficient, look only at its own contribution
+(its partial correlation), with the prior that the joint flat-R prior implies
+for one coefficient.
+
+Comparing the models with and without x1 (the *joint* test) judges x1 by how it
+moves the total, so it depends on how much the other predictors explain.
+Example: x1 has partial correlation 0.2 ($n = 100$, $k = 3$) in two datasets.
+When the others explain 5%, the joint Bayes factor for x1 is 2.25; when they
+explain 60%, it is 0.70, with the same evidence about x1. This is the
+**conditional Lindley paradox** of Som, Hans and MacEachern (2016): every prior
+with one scale shared by all coefficients has it, including the JZS default
+(weaker; `validation/README.md`, study 04). Its cause is the shared scale.
+
+The conditional test gives the tested coefficient its own scale: its share of
+the flat total. With $f$ its effect in noise units,
+
+$$
+f^2 = \text{share}\cdot\frac{R^2}{1-R^2}, \qquad R \sim U(0,1), \qquad
+\text{share} \sim \mathrm{Beta}\!\left(\tfrac12, \tfrac{k-1}{2}\right),
+$$
+
+with a random sign. This is exactly what the joint prior implies for one
+coefficient, whatever the correlations between predictors (the alignment of a
+uniform direction with one axis has this Beta distribution). The other
+coefficients and the intercept get flat priors and the noise $1/\sigma$, the
+same under both hypotheses. Integrating them out:
+
+$$
+\frac{p(y \mid f)}{p(y \mid 0)} = e^{-nf^2/2}\,\frac{I(\sqrt n\, r f)}{I(0)},
+\qquad I(b) = \int_0^\infty v^{m} e^{-v^2/2 + bv}\,dv, \qquad m = n - k - 1,
+$$
+
+with $r$ the sample partial correlation. The Bayes factor averages this over the
+prior for $f$, and depends only on $r$, $n$ and $k$. With one predictor it equals
+the joint test.
+
+What it does (`validation/05`, `06`): it separates nulls from small effects at
+least as well as JZS in every design tried, and better with correlated
+predictors (AUC +0.03 to +0.045 at correlation 0.7); the joint test does worse
+than JZS. With many predictors it is cautious: it rarely calls a small effect
+null, but also rarely confirms a null, because the prior expects each
+coefficient to be small (on average $1/(3k)$ of the variance), so "no effect"
+and "a tiny effect" predict nearly the same data.
+
+**In the code:** `log_bayes_factor_flat_r_conditional()`, used by
+`bayes_factor_flat_r_per_term()` for every one-column term. Terms with several
+columns (factors with more than two levels) still use the joint test; a block
+version, with share ~ Beta($q/2$, $(k-q)/2$) for $q$ columns, is not built yet.
 
 ---
 

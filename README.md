@@ -50,7 +50,7 @@ fit <- fit_flat_r_model(y ~ x1 + x2 + x3, my_data)   # estimation (Stan)
 fit                                                  # estimates and diagnostics
 loo(fit); pp_check(fit)
 
-bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)              # BF per term
+bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)              # BF per term (conditional test)
 bayes_factor_flat_r(fit, lm(y ~ x2 + x3, my_data))                   # any two models
 bayes_factor_flat_r(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))   # no Stan needed
 ```
@@ -66,6 +66,7 @@ and validation). Run the tests with `devtools::test()`.
 |---|---|
 | `R/fit.R` | `fit_flat_r_model()`, with `print()`, `loo()` and `pp_check()` |
 | `R/bayes_factor.R` | `bayes_factor_flat_r()`, `bayes_factor_flat_r_per_term()` and the closed form behind them |
+| `R/conditional.R` | `log_bayes_factor_flat_r_conditional()`: the test for one coefficient |
 | `R/prior_draws.R` | `draw_coefficients_from_flat_r_prior()`: the prior as a recipe |
 | `R/support_curve.R` | Optional reporting next to a null Bayes factor: which effect sizes the data can't tell apart from zero |
 | `inst/stan/flat_r.stan` | The Stan model: samples $R$ and a direction, computes the coefficients |
@@ -102,12 +103,14 @@ Points of attention:
   prior has a sharp peak at all-zero coefficients that such a sampler misses,
   without warnings. The Stan model here samples $R$ and a direction instead
   (`docs/2_how_it_calculates.md`, section 6).
-- **Testing one coefficient with correlated predictors:** the evidence for a
-  coefficient depends on how much the other predictors explain (the shared
-  budget). With correlated predictors this makes the test separate nulls from
-  small effects slightly worse than the JZS default (AUC 0.03 lower; with
-  uncorrelated predictors they are equal). Comparing whole models is not
-  affected (`validation/README.md`, study 04).
+- **Testing one coefficient:** `bayes_factor_flat_r_per_term()` uses the
+  conditional test: the coefficient's own partial correlation, with the prior
+  the joint prior implies for one coefficient. Comparing the models with and
+  without it instead (`test = "joint"`) makes the evidence depend on how much
+  the other predictors explain, the conditional Lindley paradox that also
+  affects the JZS default (`docs/2_how_it_calculates.md`, section 9). With many
+  predictors the conditional test is cautious: it rarely confirms a null.
+  Factors with more than two levels still use the joint test.
 - **Information consistency needs $n \ge k + 3$**: with fewer observations the
   evidence for a perfect fit stays bounded (`docs/2_how_it_calculates.md`,
   section 10).

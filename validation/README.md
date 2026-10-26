@@ -175,7 +175,7 @@ null side.
 
 ## Not yet done
 
-- Whether the conditional test (05) should replace the joint one in `bayes_factor_flat_r_per_term()`: depends on study 06. A block version for factors.
+- A block version of the conditional test for multi-column terms (factors), with share ~ Beta(q/2, (k − q)/2). The conditional test is now the default in `bayes_factor_flat_r_per_term()` for one-column terms.
 - An estimation simulation (coverage, bias, RMSE with `fit_flat_r_model()`),
   and a mean-squared-error comparison to test whether the shrinkage pays off.
 - Consistency when the number of predictors grows with n.

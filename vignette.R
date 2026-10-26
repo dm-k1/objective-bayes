@@ -32,8 +32,10 @@ cbind(flat_r   = colMeans(as.data.frame(full_model$draws)[, c("x1", "x2", "x3")]
       ordinary = coef(lm(y ~ x1 + x2 + x3, data = my_data))[c("x1", "x2", "x3")])
 
 ## ---- 3. Bayes factor per predictor ----------------------------------
-## Closed form: no Stan needed, the data enter only through R-squared, n and k
+## No Stan needed. Each predictor is tested on its own partial correlation
+## (the conditional test); test = "joint" compares the models with and without it
 bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)
+bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, test = "joint")
 
 ## ---- 4. Comparing any two models ------------------------------------
 ## Takes fit_flat_r_model() fits or plain lm() fits: only R-squared, n and k matter

@@ -46,6 +46,15 @@ predictors are added ([`1_from_behaviour.md`](1_from_behaviour.md), step 2).
 | R2-D2 (Zhang et al., 2022), R2D2M2 (Aguilar & Bürkner, 2023) | no | fixed prior on $R^2$, Dirichlet split |
 | **flat-R** | no | flat on $R$ for every $k$, even split |
 
+## The conditional Lindley paradox
+
+Priors with one scale shared by all coefficients (Zellner–Siow, hyper-g, and the
+joint flat-R prior) let large coefficients drive the test of a small one toward
+"no effect" (Som, Hans & MacEachern, 2016). Their remedy, block hyper-g priors,
+gives groups of coefficients their own scale. The conditional flat-R test does
+the same for one coefficient: its own share of the flat total
+([`2_how_it_calculates.md`](2_how_it_calculates.md), section 9).
+
 ## Is this just R2-D2?
 
 No. Both can start from Beta(½, 1) on $R^2$, but they turn it into
@@ -120,6 +129,8 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
 
 - Li, Y., & Clyde, M. A. (2018). Mixtures of g-priors in generalized linear
   models. *JASA*.
+- Som, A., Hans, C. M., & MacEachern, S. N. (2016). A conditional Lindley paradox
+  in Bayesian linear models. *Biometrika*.
 - Wetzels, R., & Wagenmakers, E.-J. (2012). A default Bayesian hypothesis test
   for correlations and partial correlations. *Psychonomic Bulletin & Review*.
 - Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
