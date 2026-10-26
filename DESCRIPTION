@@ -1,0 +1,39 @@
+Package: flatr
+Title: Objective Bayes for Linear Regression with the Flat-R Prior
+Version: 0.1.0
+Authors@R:
+    person("Diemithry M.", "Kloppenburg", email = "diemithrykloppenburg@hotmail.com",
+           role = c("aut", "cre"))
+Description: Bayes factors and estimation for linear regression with a prior
+    that is flat on the multiple correlation R for any number of predictors,
+    with every way of dividing the explained variance over the predictors
+    equally plausible. It is a mixture of Zellner g-priors whose implied prior
+    on R-squared, Beta(1/2, 1), does not change with the number of predictors;
+    with one predictor it is Jeffreys' flat prior on the correlation. Bayes
+    factors between any two linear models come from a closed form that needs
+    only R-squared, n and k. Estimation samples the prior in its own
+    coordinates (R and a direction) with Stan.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Depends: R (>= 4.3)
+Imports:
+    MASS,
+    stats,
+    tools,
+    posterior,
+    loo,
+    bayesplot
+Suggests:
+    cmdstanr,
+    rstan,
+    BayesFactor,
+    ggplot2,
+    dplyr,
+    purrr,
+    tidyr,
+    pkgload,
+    testthat (>= 3.0.0)
+Additional_repositories: https://stan-dev.r-universe.dev
+Config/testthat/edition: 3

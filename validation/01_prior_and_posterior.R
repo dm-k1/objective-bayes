@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  Validation 01: does the Stan model get the prior and the posterior right?
 ##
-##  R/flat_r.stan (used by fit_flat_r_model()) samples R (flat) and a
+##  inst/stan/flat_r.stan (used by fit_flat_r_model()) samples R (flat) and a
 ##  direction (uniform), and computes the coefficients from them. This script
 ##  checks that it gets the prior and the posterior right.
 ##
@@ -26,7 +26,7 @@
 ##  Run from the project folder: Rscript validation/01_prior_and_posterior.R
 ##  About 5 minutes on 4 cores.
 ## =====================================================================
-source("R/flat_r.R")
+pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
 source("validation/settings.R")   # parallel cores, record_check()
 
 ## ---- Sampling helper: cmdstanr if installed, otherwise rstan ------------
@@ -52,10 +52,10 @@ sample_stan <- function(model, stan_data, chains, iter_warmup, iter_sampling, th
 coefficients_of <- function(draws) draws[, grep("^b\\[", colnames(draws)), drop = FALSE]
 
 ## ---- The two models ------------------------------------------------------
-## direction:    R/flat_r.stan (R and a direction as parameters)
+## direction:    inst/stan/flat_r.stan (R and a direction as parameters)
 ## coefficients: the same prior as a density on b (docs/2_how_it_calculates.md,
 ##               section 5), sampled directly
-direction_model <- compile_stan(paste(readLines("R/flat_r.stan"), collapse = "\n"))
+direction_model <- compile_stan(paste(readLines("inst/stan/flat_r.stan"), collapse = "\n"))
 flat_r_density_code <- "
   // P(b) = P(total) x P(this combination | total) x unit conversion
   real flat_r_lpdf(vector b, real sigma, matrix predictor_covariance) {

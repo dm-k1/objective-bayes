@@ -1,0 +1,9 @@
+^archive$
+^docs$
+^validation$
+^vignette\.R$
+^_backup_original_files_.*$
+^LICENSE\.md$
+^\.git$
+^.*\.Rproj$
+^\.Rproj\.user$

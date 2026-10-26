@@ -5,7 +5,7 @@
 ##  Run from the project folder: Rscript docs/figures/make_figures.R
 ## =====================================================================
 library(ggplot2)
-source("R/flat_r.R")
+pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
 
 figure_folder <- file.path("docs", "figures")
 save_doc_figure <- function(figure, name, width = 8, height = 4.5) {

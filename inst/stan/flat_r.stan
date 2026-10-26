@@ -19,24 +19,28 @@ transformed data {
   // Any square root of the predictor covariance works; Cholesky is the cheapest.
   // It turns a direction in "explained variance" units into predictor units.
   matrix[K, K] root = cholesky_decompose(crossprod(Xc) / N);
-  int K_sphere = K > 1 ? K : 2;   // a unit vector needs at least 2 dimensions
 }
 parameters {
   real alpha;
   real<lower=0> sigma;
   // with one predictor the sign lives in R; with more, in the direction
   real<lower=(K == 1 ? -1 : 0), upper=1> R;
-  unit_vector[K_sphere] direction_raw;
+  // the direction is z / |z|. Any density for z that depends only on its length
+  // makes the direction uniform; this one keeps |z| near 1, away from 0, where
+  // the direction would be undefined (Stan's unit_vector lets |z| reach 0,
+  // which gives divergent transitions)
+  vector[K > 1 ? K : 0] z;
 }
 transformed parameters {
   real f = R / sqrt(1 - square(R));          // Cohen's f (signed when K = 1)
   vector[K] direction;
   if (K == 1) direction = rep_vector(1, 1);
-  else        direction = direction_raw;
+  else        direction = z / norm2(z);
   vector[K] b = sigma * f * mdivide_right_tri_low(direction', root)';   // b' Sigma b = sigma^2 f^2
 }
 model {
-  // factor 1: R flat (the declared bounds); factor 2: direction uniform (unit_vector)
+  // factor 1: R flat (the declared bounds); factor 2: direction uniform
+  if (K > 1) target += -0.5 * square((norm2(z) - 1) / 0.1);
   if (proper_stand_ins) {
     // Checks that sample the prior, or simulate data from it, need proper priors
     // on alpha and sigma. R, f and the direction don't depend on these.

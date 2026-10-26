@@ -108,6 +108,10 @@ left for a reader to find:
 
 - flat on $R$ means $E[R^2] = \tfrac13$ and median $R^2 = 0.25$;
 - the per-predictor expectation of step 4 follows from the budget.
+- the evidence for one predictor depends on how much the others explain, for
+  the same reason. With correlated predictors that costs a little: a single
+  coefficient's test separates nulls from small effects slightly worse than the
+  JZS default (`validation/README.md`, study 04).
 
 Other rulers make other trade-offs. Flat on $R^2$ (Beta(1, 1)) shrinks less
 but favours the null more for small effects; the Beta(½, b) family on $R^2$

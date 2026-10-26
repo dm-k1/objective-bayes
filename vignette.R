@@ -1,10 +1,8 @@
 ## =====================================================================
 ##  Vignette: the flat-R prior on one dataset, start to finish
 ##  Estimation (Stan), then Bayes factors for any model comparison.
-##  Run with the project folder as working directory.
 ## =====================================================================
-source("R/flat_r.R")
-source("R/support_curve.R")   # section 5
+library(flatr)   # install once, from the project folder: devtools::install()
 library(ggplot2)
 
 ## ---- 1. Data ---------------------------------------------------------

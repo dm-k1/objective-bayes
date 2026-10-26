@@ -163,12 +163,12 @@ The density above is what the prior *says*; it is not how estimation should
 sampler that moves through $\beta$ steps over it without warning (with 8
 predictors it draws far too few small effects).
 
-So `R/flat_r.stan` samples the parameters the prior is built from:
+So `inst/stan/flat_r.stan` samples the parameters the prior is built from:
 
 | Parameter | Prior | Factor |
 |---|---|---|
 | `R` | flat on (0, 1) (on (−1, 1) when $k = 1$: the sign) | 1 |
-| `direction` | uniform on the sphere (Stan's `unit_vector`) | 2 |
+| `direction` $= z/\lVert z\rVert$ | uniform on the sphere | 2 |
 | `sigma`, `alpha` | $1/\sigma$, flat | |
 
 and computes $\beta = \sigma f\, L^{-\top} d$, with $f = R/\sqrt{1-R^2}$, $d$
@@ -176,6 +176,13 @@ the direction and $L$ a square root of $\Sigma$ (Cholesky). Then
 $\beta^\top \Sigma \beta = \sigma^2 f^2$, so the length is right (factor 3).
 Here a matrix root *is* needed: it turns a uniform direction in explained
 variance into predictor units. Which root does not matter.
+
+The direction is $z/\lVert z\rVert$ for a free vector $z$. Any density for $z$
+that depends only on its length makes the direction uniform; the model uses one
+that keeps $\lVert z\rVert$ near 1. Stan's built-in `unit_vector` does the same
+with a standard normal $z$, which lets $\lVert z\rVert$ come near 0, where the
+direction is undefined; with 2 predictors that gave 1–3 divergent transitions
+per 4,000 draws, and none with the length kept near 1.
 
 In these coordinates there is no peak. `validation/01_prior_and_posterior.R`
 checks that the prior comes out right for $k$ = 1, 3 and 8, and that the
@@ -383,19 +390,35 @@ uses no formula (`validation/02_bayes_factor.R`, check A3).
 
 ---
 
-## 10. Properties
+## 10. The criteria for a default prior (Bayarri et al., 2012)
 
-Checked numerically in `validation/02_bayes_factor.R`, not proved:
+Bayarri, Berger, Forte and García-Donato (2012) list seven criteria a default
+prior for model choice should meet. Status for the flat-R prior; "argued"
+means a short argument below, "checked" means a numerical check in
+`validation/02_bayes_factor.R`, and nothing here is a formal proof yet.
 
-| Property | Meaning | Check |
-|---|---|---|
-| Invariance | BF depends only on $R^2$, $n$, $k$: unaffected by units or linear recoding of predictors | by construction (§7); A2 |
-| Predictive matching | with $n = k + 1$ observations the data can't separate the models: BF = 1 | B1 |
-| Information consistency | BF → ∞ as $R^2 \to 1$ | B2 |
-| Model-selection consistency | under the null, $\log \mathrm{BF}_{01}$ grows like $\tfrac12 \log n$ | B3 |
-| Correct reduction | $k = 1$ is the flat-correlation prior | §3 |
+| # | Criterion | Meaning | Status |
+|---|---|---|---|
+| 1 | Basic | the prior on the tested coefficients is proper, and not arbitrarily vague | **met**, by construction: $p(\beta \mid \sigma)$ integrates to 1 and has no free scale |
+| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **checked**: under the null (B3, $\log\mathrm{BF}_{01}$ grows like $\tfrac12\log n$) and under an effect (B4, $\log\mathrm{BF}_{10}$ grows linearly); argued: like Zellner–Siow, a fixed proper prior on $g/n$ |
+| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**, argued and checked (B2, B2b); not at $n = k + 2$ |
+| 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **argued**: the prior on $g/n$ does not involve $n$, and $\Sigma = X_c^\top X_c/n$ converges |
+| 5 | Predictive matching | on minimal samples ($n = k + 1$) the data cannot separate models: BF = 1 with the null (null matching) and between models of equal size (dimensional matching) | **met**: checked (B1); dimensional matching follows because BF depends only on $R^2$, $n$, $k$, and $R^2 = 1$ for every model at $n = k + 1$ |
+| 6 | Measurement invariance | units of the data do not change the answer | **met**, by construction (§7) and checked (A2) |
+| 7 | Group invariance | the common parameters get the right-Haar prior, and the prior respects the invariance | **met**: $p(\alpha, \sigma) \propto 1/\sigma$, and $\beta$ is scaled by $\sigma$ |
 
-Proofs (for example along the lines of Bayarri et al., 2012) are still open.
+**Information consistency, the argument.** As $R^2 \to 1$ the g-prior
+Bayes factor of section 8 tends to $\int (1+g)^{(n-1-k)/2}\,p(g)\,dg$, so the
+Bayes factor grows without limit exactly when that integral diverges (Liang et
+al., 2008). For large $g$ the flat-R hyperprior has $p(g/n = t) \approx 1/(2k\,t^2)$
+(the confluent hypergeometric factor tends to 1), so the integrand behaves like
+$g^{(n-1-k)/2 - 2}$, which diverges if and only if $(n-1-k)/2 - 2 \ge -1$, that
+is $n \ge k + 3$. Check B2b confirms the boundary: at $n = k + 2$ the evidence
+levels off (e.g. $\log\mathrm{BF} \to 0.91$ for $k = 1$), at $n = k + 3$ it keeps
+growing. For comparison, the robust prior of Bayarri et al. needs $n \ge k + 2$.
+
+**Still open:** formal proofs of criteria 2 and 4, and consistency when the
+number of predictors grows with $n$.
 
 ---
 

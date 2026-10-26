@@ -15,12 +15,14 @@
 ##  PART B. Properties of a good default (Bayarri et al., 2012)
 ##    B1. predictive matching (n = k + 1 gives BF = 1)
 ##    B2. information consistency (BF grows without limit as R2 -> 1)
+##    B2b. ... exactly from n = k + 3 on (the analytic boundary)
 ##    B3. consistency under the null (log BF01 grows like 1/2 log n), simulated
+##    B4. consistency under the alternative (log BF10 grows with n), simulated
 ##
 ##  Run from the project folder: Rscript validation/02_bayes_factor.R
 ##  About a minute. No Stan needed.
 ## =====================================================================
-source("R/flat_r.R")
+pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
 source("validation/settings.R")             # parallel cores, cache folders, record_check()
 
 
@@ -295,6 +297,17 @@ information <- sapply(c(0.9, 0.99, 0.999, 0.9999), function(r2)
 record_check("B2. information consistency", all(diff(information) > 0) && information[4] > 50,
              paste(sprintf("%.1f", information), collapse = " "))
 
+##    The exact boundary (docs/2_how_it_calculates.md, section 10): information
+##    consistent if and only if n >= k + 3. At n = k + 2 the evidence stays
+##    bounded as R2 -> 1; at n = k + 3 it keeps growing.
+boundary <- sapply(1:3, function(k) {
+  at <- function(n) sapply(c(1 - 1e-6, 1 - 1e-8), log_bayes_factor_flat_r_vs_intercept_only,
+                           sample_size = n, number_of_predictors = k)
+  c(bounded_at_k_plus_2 = diff(at(k + 2)) < 0.01, growing_at_k_plus_3 = diff(at(k + 3)) > 0.2)
+})
+record_check("B2b. information consistency starts exactly at n = k + 3 (k = 1-3)", all(boundary),
+             "bounded at n = k + 2, growing at n = k + 3")
+
 ## B3. Consistency under the null, by simulation: x3 truly does nothing.
 ##    The median log BF01 for x3 should grow with n at a rate of about
 ##    1/2 log n. Criterion: increasing in n, and slope against log n
@@ -314,6 +327,24 @@ record_check("B3. consistency under the null (simulated)",
              all(diff(median_log_bf01) > 0) && slope_against_log_n > 0.35 && slope_against_log_n < 0.65,
              sprintf("median log BF01 %s; slope %.2f",
                      paste(sprintf("%.2f", median_log_bf01), collapse = " "), slope_against_log_n))
+
+
+## B4. Model selection consistency when there IS an effect: x1 = 0.15 is real,
+##     so the median log BF10 for x1 should grow without limit with n.
+##     Criterion: increasing in n, and above 20 at n = 5000.
+set.seed(5)
+median_log_bf10 <- sapply(c(200, 1000, 5000), function(n) {
+  median(replicate(100, {
+    x <- matrix(rnorm(n * 3), n)
+    y <- drop(x %*% c(0.15, 0.2, 0)) + rnorm(n)
+    log_bayes_factor_flat_r_vs_intercept_only(sample_r_squared(x, y), n, 3) -
+      log_bayes_factor_flat_r_vs_intercept_only(sample_r_squared(x[, 2:3], y), n, 2)
+  }))
+})
+record_check("B4. consistency under the alternative (simulated)",
+             all(diff(median_log_bf10) > 0) && median_log_bf10[3] > 20,
+             sprintf("median log BF10 at n = 200, 1000, 5000: %s",
+                     paste(sprintf("%.1f", median_log_bf10), collapse = " ")))
 
 
 ## =====================================================================

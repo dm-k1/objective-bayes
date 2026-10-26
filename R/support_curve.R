@@ -13,6 +13,16 @@
 ##
 ## column_name is a column of the design matrix, not a term: for a factor
 ## that is one dummy column such as "groupb" (see colnames(model.matrix(lm_fit))).
+#' Support for each possible partial correlation, compared with zero
+#'
+#' Reporting next to a Bayes factor that favours "no effect": which effect
+#' sizes the data can and cannot tell apart from zero. Treats the noise level
+#' and predictor spread as known, so boundaries are approximate.
+#' @param lm_fit A fitted \code{lm()}.
+#' @param column_name A design-matrix column (for a factor, one dummy column).
+#' @param partial_correlations The partial correlations to evaluate.
+#' @return A data frame with \code{partial_correlation} and \code{support_vs_zero}.
+#' @export
 support_per_partial_correlation <- function(lm_fit, column_name,
                                             partial_correlations = seq(-0.9, 0.9, by = 0.01)) {
   design_matrix <- model.matrix(lm_fit)
@@ -32,6 +42,11 @@ support_per_partial_correlation <- function(lm_fit, column_name,
 
 ## Split the effect-size axis into regions: better than zero, worse than
 ## zero, or can't be told apart (within a factor `band`). Read left to right.
+#' Split the effect-size axis into regions of support
+#' @param support_table Output of \code{support_per_partial_correlation()}.
+#' @param band Within this factor of zero counts as "can't be told apart".
+#' @return A data frame of regions, read from left to right.
+#' @export
 support_regions <- function(support_table, band = 3) {
   verdict <- ifelse(support_table$support_vs_zero > band,
                     "explains the data better than zero",
