@@ -109,9 +109,11 @@ print.flat_r_fit <- function(x, digits = 3, ...) {
 }
 
 ## loo() and pp_check() as for any Stan model
-loo.flat_r_fit <- function(x, ...) {
-  relative_efficiency <- loo::relative_eff(exp(x$log_lik), chain_id = x$chain_ids)
-  loo::loo(x$log_lik, r_eff = relative_efficiency, ...)
+## (cores = 1: loo is fast here, and forking the R session is not allowed in
+## Positron or RStudio)
+loo.flat_r_fit <- function(x, cores = 1, ...) {
+  relative_efficiency <- loo::relative_eff(exp(x$log_lik), chain_id = x$chain_ids, cores = cores)
+  loo::loo(x$log_lik, r_eff = relative_efficiency, cores = cores, ...)
 }
 pp_check.flat_r_fit <- function(object, ndraws = 50, ...) {
   shown <- sample(nrow(object$y_rep), ndraws)

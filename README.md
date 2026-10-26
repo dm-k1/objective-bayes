@@ -83,6 +83,9 @@ Points of attention:
 
 - With several predictors at small $n$ the prior pulls estimates toward zero;
   the vignette prints the size of the pull next to the ordinary estimates.
+- At the start of warmup Stan may print a few "Informational Message ... proposal
+  is about to be rejected" lines (the sampler tried R at its boundary). A few are
+  harmless; `fit` reports divergent transitions, which is what to check.
 - Why not brms: brms samples the coefficients directly, and for $k \ge 2$ the
   prior has a sharp peak at all-zero coefficients that such a sampler misses,
   without warnings. The Stan model here samples $R$ and a direction instead
