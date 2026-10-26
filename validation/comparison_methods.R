@@ -14,13 +14,15 @@
 bayes_factor_jzs_one_coefficient <- function(explained_share_full, explained_share_without,
                                              sample_size, number_of_predictors,
                                              rscale = sqrt(2) / 4) {
-  with_coefficient <- BayesFactor::linearReg.R2stat(
+  ## on the log scale (simple = FALSE returns the log Bayes factor; simple = TRUE
+  ## overflows to Inf for very strong evidence)
+  log_with <- BayesFactor::linearReg.R2stat(
     sample_size, number_of_predictors, explained_share_full,
-    rscale = rscale, simple = TRUE)
-  without_coefficient <- if (number_of_predictors == 1) 1 else
+    rscale = rscale, simple = FALSE)$bf
+  log_without <- if (number_of_predictors == 1) 0 else
     BayesFactor::linearReg.R2stat(sample_size, number_of_predictors - 1,
-                                  explained_share_without, rscale = rscale, simple = TRUE)
-  with_coefficient / without_coefficient
+                                  explained_share_without, rscale = rscale, simple = FALSE)$bf
+  exp(log_with - log_without)
 }
 
 ## ---- Per-coefficient flat prior on the partial correlation -----------

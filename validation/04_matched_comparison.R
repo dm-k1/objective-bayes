@@ -105,9 +105,9 @@ one_dataset <- function() {
     r_squared_reduced = r_squared_reduced,
     log_bf_flat_r = log_bayes_factor_flat_r_vs_intercept_only(r_squared_full, sample_size, 4) -
                     log_bayes_factor_flat_r_vs_intercept_only(r_squared_reduced, sample_size, 3),
-    log_bf_jzs = unname(log(
-      BayesFactor::linearReg.R2stat(sample_size, 4, r_squared_full, rscale = sqrt(2) / 4, simple = TRUE) /
-      BayesFactor::linearReg.R2stat(sample_size, 3, r_squared_reduced, rscale = sqrt(2) / 4, simple = TRUE))))
+    log_bf_jzs =
+      BayesFactor::linearReg.R2stat(sample_size, 4, r_squared_full, rscale = sqrt(2) / 4, simple = FALSE)$bf -
+      BayesFactor::linearReg.R2stat(sample_size, 3, r_squared_reduced, rscale = sqrt(2) / 4, simple = FALSE)$bf)
 }
 datasets <- as.data.frame(t(replicate(1500, one_dataset())))
 dependence <- rbind(

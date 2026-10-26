@@ -21,6 +21,7 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 | `06_broad_simulation.R` | Does the picture hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; JZS, joint, conditional, flat partial r | about 15 minutes |
 | `07_estimation.R` | How good are the estimates? | bias, error relative to ordinary regression, coverage of 95% intervals; flat-R vs JZS vs `lm()`; 2,400 Stan fits, resumes if interrupted | 1.5–3 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; flat-R vs Zellner–Siow vs JZS | 10–20 minutes |
+| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real): does the prior's claim about model size matter? | flat-R, JZS, Zellner–Siow, BIC; uniform and beta-binomial model priors; true model found, false inclusions, missed | about 10 minutes |
 | `conditional_flat_r.R` | helper: the per-coefficient test, used by 06 | – | – |
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
@@ -144,6 +145,33 @@ So in this design the conditional test separates nulls from small effects
 keeping the flat-R expectation per coefficient. Study 06 checks whether this
 holds across designs. Not yet covered: factors and other multi-column terms
 (the block version would use a share ~ Beta(q/2, (k−q)/2) for q columns).
+
+## 06: across designs (k = 2–20, n = 50–1000, correlation 0–0.7, 72 designs)
+
+**Discrimination** (AUC null vs 0.1, minus JZS, mean over n and pattern of the
+other coefficients):
+
+| k | correlation 0 | 0.3 | 0.7 |
+|---|---|---|---|
+| conditional flat-R: 2 / 5 / 10 / 20 | +0.001 / +0.004 / +0.002 / +0.007 | +0.009 / +0.011 / +0.013 / +0.012 | **+0.035 / +0.045 / +0.041 / +0.031** |
+| joint flat-R: 2 / 5 / 10 / 20 | −0.015 / −0.011 / −0.007 / −0.005 | −0.022 / −0.020 / −0.009 / −0.008 | −0.064 / −0.035 / −0.022 / −0.013 |
+
+- The conditional test is at least as good as JZS in every group (worst single
+  cell −0.013, noise level), and better with correlated predictors.
+- The conditional test and the per-coefficient flat partial r have **identical**
+  AUCs: both depend only on the coefficient's partial correlation, so they rank
+  datasets the same way. That is the best ranking any prior can give; the prior
+  only changes calibration.
+- The joint test ranks worse than JZS everywhere.
+
+**Calibration at 3** (figure `06_calibration.png`): with many predictors the
+conditional test almost never calls a small real effect null (k = 10–20: 0–7%,
+JZS 11–16%, flat partial r about 70%), but it also rarely confirms a true null
+(k = 20, n = 1000: 18%, JZS 65%). With k predictors the prior expects each
+coefficient to be small (on average 1/(3k) of the variance), so "no effect" and
+"a tiny effect" predict nearly the same data: the Bayes factor stays near 1,
+undecided rather than wrong. That is the multiplicity correction, seen from the
+null side.
 
 ## Not yet done
 

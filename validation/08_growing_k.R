@@ -31,9 +31,10 @@ replications <- 200
 
 log_bf_vs_null <- function(method, r_squared, n, k) switch(method,
   `flat-R`               = log_bayes_factor_flat_r_vs_intercept_only(r_squared, n, k),
-  `Zellner-Siow (1)`     = log(BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = TRUE)),
-  `JZS default (0.354)`  = log(BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4,
-                                                             simple = TRUE)))
+  ## simple = FALSE returns the log Bayes factor (simple = TRUE can overflow to Inf)
+  `Zellner-Siow (1)`     = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = FALSE)$bf,
+  `JZS default (0.354)`  = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4,
+                                                         simple = FALSE)$bf)
 methods <- c("flat-R", "Zellner-Siow (1)", "JZS default (0.354)")
 
 
