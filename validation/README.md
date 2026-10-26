@@ -21,7 +21,7 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 | `06_broad_simulation.R` | Does the picture hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; JZS, joint, conditional, flat partial r | about 15 minutes |
 | `07_estimation.R` | How good are the estimates? | bias, error relative to ordinary regression, coverage of 95% intervals; flat-R vs JZS vs `lm()`; 2,400 Stan fits, resumes if interrupted | 1.5–3 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; flat-R vs Zellner–Siow vs JZS | 10–20 minutes |
-| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real): does the prior's claim about model size matter? | flat-R, JZS, Zellner–Siow, BIC; uniform and beta-binomial model priors; true model found, false inclusions, missed | about 10 minutes |
+| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real): does the prior's claim about model size matter? | flat-R, JZS, Zellner–Siow, BIC, and the experiment flat-R → flat-R²; uniform and beta-binomial model priors; true model found, false inclusions, missed; checks V1–V3 | about 2–10 minutes |
 | `conditional_flat_r.R` | helper: the per-coefficient test, used by 06 | – | – |
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
@@ -196,6 +196,46 @@ model prior). The methods differ in where they sit on a trade-off
   over how many predictors enter then has to come from the prior over models.
 - With correlated predictors, flat-R and JZS are nearly identical.
 - No method dominates; flat-R sits at the sensitive end, BIC at the strict end.
+
+### Experiment: growing from flat-R toward flat-R² (negative result)
+
+Idea: let the prior on R² open up with model size, R² ~ Beta(a, 1) with
+a = k / (k + 1): flat on R for one predictor (a = ½), flat on R² as k grows
+(a → 1). Same uniform direction; as a g-mixture, g/n = B·W with
+B ~ Beta(a, k/2 − a), W ~ Inverse-Gamma(1, ½). Checks: V2 (a = ½ reproduces
+flat-R, largest difference 7e-5) and V3 (implied R² is Beta(k/(k+1), 1), KS ≤ 0.004) pass.
+
+Result: it barely differs from flat-R. Only with uncorrelated predictors and
+the beta-binomial model prior does it move, about a quarter of the way toward
+JZS, and it pays with more missed predictors:
+
+| n | false inclusions: flat-R / growing / JZS | missed: flat-R / growing / JZS |
+|---|---|---|
+| 50 | 2.33 / 1.81 / 1.00 | 1.98 / 2.22 / 2.80 |
+| 100 | 2.38 / 1.78 / 0.83 | 1.45 / 1.69 / 2.22 |
+| 200 | 2.02 / 1.79 / 0.79 | 0.98 / 1.11 / 1.58 |
+| 500 | 0.91 / 0.89 / 0.42 | 0.45 / 0.49 / 0.58 |
+
+With correlation 0.5 or a uniform model prior the two are indistinguishable;
+finding the true model is identical (0.31 vs 0.31, n = 500). It slides along
+the same trade-off rather than improving it.
+
+Why: the prior median R² each prior claims as the model grows
+
+| k | flat-R | growing | JZS |
+|---|---|---|---|
+| 1 | 0.25 | 0.25 | 0.11 |
+| 4 | 0.25 | 0.42 | 0.48 |
+| 12 | 0.25 | 0.47 | 0.76 |
+
+JZS puts its scale on each coefficient, so every added predictor adds claimed
+variance; a 12-predictor model promises R² ≈ 0.76 and is punished when the data
+don't show it. Even flat on R² tops out at a median of 0.5, too close to flat-R
+to matter. The gap to JZS is a difference in stance (the total explained
+variance is unknown, whatever the size, versus each predictor brings its own
+effect), not something a better a(k) schedule closes. Conclusion: keep flat-R
+as is; put any wanted strictness in the prior over models, where it is visible
+and adjustable. The method stays in 09 as a documented experiment.
 
 ## Not yet done
 
