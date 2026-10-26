@@ -297,7 +297,7 @@ Against adaptive integration (`integrate()`), the largest error over 162
 settings ($R^2$ 0.01–0.99, $n$ 10–10,000, $k$ 1–30) is $4 \times 10^{-5}$ on
 the log scale (`validation/02_bayes_factor.R`, check A1).
 
-**In the code:** `log_bayes_factor_flat_r_vs_intercept_only()` in `R/flat_r.R`:
+**In the code:** `log_bayes_factor_flat_r_vs_intercept_only()` in `R/bayes_factor.R`:
 
 | Code | Formula |
 |---|---|
@@ -360,9 +360,20 @@ which agrees with section 7 to $3.5\times10^{-4}$ on the log scale
 | robust (Bayarri et al., 2012) | 0.52 | 0.72 | 0.77 | 0.78 |
 | intrinsic | 0.39 | 0.59 | 0.65 | 0.66 |
 | **flat-R** | 0.25 | 0.25 | 0.25 | 0.25 |
+| uniform correlations ($a = k/2$, below) | 0.25 | 0.63 | 0.87 | 0.95 |
 
 The robust and intrinsic priors also scale $g$ with $k$, and drift less, but
 still drift.
+
+**The family around it.** The same construction with $R^2 \sim$ Beta($a$, 1)
+and a uniform direction is the g-mixture with $B \sim$ Beta($a$, $k/2 - a$) and
+the same $W$, for $a \le k/2$ (checked in `validation/09`, V2 and V3).
+$a = \tfrac12$ is flat-R. At $a = k/2$, $B \equiv 1$ and $g/n \sim$
+Inverse-Gamma(1, ½) for every $k$: the prior you get when every correlation
+matrix of $(y, x_1 \ldots x_k)$ is equally likely, and rstanarm `stan_lm`'s
+$R^2$ prior with η = 1. Zellner–Siow (scale 1) is $R^2 \sim$ Beta($k/2$, ½)
+exactly (its row in the table). How the two ends compare:
+[`relation_to_others.md`](relation_to_others.md) and `validation/README.md`, 09.
 
 ![](figures/6_g_prior_family.png)
 
@@ -446,7 +457,8 @@ version, with share ~ Beta($q/2$, $(k-q)/2$) for $q$ columns, is not built yet.
 Bayarri, Berger, Forte and García-Donato (2012) list seven criteria a default
 prior for model choice should meet. Status for the flat-R prior; "argued"
 means a short argument below, "checked" means a numerical check in
-`validation/02_bayes_factor.R`, and nothing here is a formal proof yet.
+`validation/02_bayes_factor.R`; "proof" and "sketch" refer to
+[`3_consistency.md`](3_consistency.md).
 
 | # | Criterion | Meaning | Status |
 |---|---|---|---|

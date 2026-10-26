@@ -1,12 +1,12 @@
 ## =====================================================================
 ##  Comparison methods used in the validation simulations
-##  (the flat-R method itself lives in R/flat_r.R)
+##  (the flat-R method itself lives in R/bayes_factor.R and R/conditional.R)
 ##
 ##   - JZS default (BayesFactor / JASP)
 ##   - per-coefficient flat prior on one partial correlation
 ##   - R2-D2 with the same R-squared prior, Dirichlet split
 ##
-##  Names follow R/flat_r.R: bayes_factor_<method>[_<scope>].
+##  Names follow the package (R/bayes_factor.R): bayes_factor_<method>[_<scope>].
 ## =====================================================================
 
 ## ---- JZS default: one coefficient, model with vs without it ----------

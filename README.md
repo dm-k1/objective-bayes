@@ -23,6 +23,12 @@ P(beta) = P(total) x P(this combination | total) x unit conversion
 - It is a mixture of Zellner g-priors, the family of the JZS default: the member
   whose implied $R^2$ stays the same for every number of predictors
   ([`docs/2_how_it_calculates.md`](docs/2_how_it_calculates.md), section 8).
+- The other natural extension of the flat correlation, flat over all
+  correlation matrices (rstanarm `stan_lm`'s $R^2$ prior with η = 1), lets the
+  claimed $R^2$ grow as Beta($k/2$, 1). In variable selection neither dominates;
+  the two are compared in
+  [`docs/relation_to_others.md`](docs/relation_to_others.md) and
+  `validation/README.md` (study 09).
 
 It does carry expectations, stated rather than hidden: flat on $R$ means
 $E[R^2] = \tfrac13$, and the per-predictor shrinkage follows from the shared
@@ -76,7 +82,7 @@ and validation). Run the tests with `devtools::test()`.
 | `docs/1_from_behaviour.md` | Where the prior comes from: from what effects can do to the one sentence, with simulated figures |
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
 | `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
-| `docs/relation_to_others.md` | Which priors drift with the number of predictors; why this is not R2-D2 |
+| `docs/relation_to_others.md` | Which priors drift with the number of predictors; the other extension (flat over correlation matrices, `stan_lm`); why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
 | `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; see `validation/README.md` |
 | `archive/` | Superseded code (by-hand tutorials, the brms version of the prior, earlier approaches), kept for history |
@@ -114,6 +120,10 @@ Points of attention:
 - **Information consistency needs $n \ge k + 3$**: with fewer observations the
   evidence for a perfect fit stays bounded (`docs/2_how_it_calculates.md`,
   section 10).
+- **Variable selection:** flat-R has no hidden penalty for model size, so it
+  is the most inclusive of the priors compared; how strict a selection is
+  depends on the prior over models, so choose it deliberately
+  (`validation/README.md`, study 09).
 - `bayes_factor_flat_r_per_term()` removes one term at a time; testing a main
   effect while its interaction stays in the model follows the usual
   marginality caveats.

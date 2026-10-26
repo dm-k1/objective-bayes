@@ -1,12 +1,17 @@
 # Validation
 
-Three questions, one script each. Run from the project folder:
+One script per question. Run from the project folder:
 
 ```bash
 Rscript validation/01_prior_and_posterior.R   # needs cmdstanr (or rstan)
 Rscript validation/02_bayes_factor.R          # no Stan needed
 Rscript validation/03_simulations.R           # a few minutes
 Rscript validation/04_matched_comparison.R    # needs the results of 03
+Rscript validation/05_conditional_test.R
+Rscript validation/06_broad_simulation.R
+Rscript validation/07_estimation.R            # hours; resumes if interrupted
+Rscript validation/08_growing_k.R
+Rscript validation/09_variable_selection.R
 ```
 
 The scripts load the package from this folder with `pkgload::load_all()`.
@@ -21,12 +26,12 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 | `06_broad_simulation.R` | Does the picture hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; JZS, joint, conditional, flat partial r | about 15 minutes |
 | `07_estimation.R` | How good are the estimates? | bias, error relative to ordinary regression, coverage of 95% intervals; flat-R vs JZS vs `lm()`; 2,400 Stan fits, resumes if interrupted | 1.5–3 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; flat-R vs Zellner–Siow vs JZS | 10–20 minutes |
-| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real): does the prior's claim about model size matter? | flat-R, JZS, Zellner–Siow, BIC, and the experiment flat-R → flat-R²; uniform and beta-binomial model priors; true model found, false inclusions, missed; checks V1–V3 | about 2–10 minutes |
+| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real): does the prior's claim about model size matter? | flat-R, JZS, Zellner–Siow, BIC, and two experiments: flat-R → flat-R² and uniform correlations (`stan_lm`'s R² prior with η = 1); uniform and beta-binomial model priors; true model found, false inclusions, missed; whole trade-off curves and AUC; checks V1–V4 | about 2–3 minutes |
 | `conditional_flat_r.R` | helper: the per-coefficient test, used by 06 | – | – |
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
-Package tests (`devtools::test()`): 22 pass on cmdstanr.
+Package tests (`devtools::test()`): 31 pass on cmdstanr.
 
 Each check prints PASS/FAIL with its criterion; 01 and 02 stop with an error if
 anything failed. Simulation results and figures are cached in
@@ -237,14 +242,18 @@ effect), not something a better a(k) schedule closes. Conclusion: keep flat-R
 as is; put any wanted strictness in the prior over models, where it is visible
 and adjustable. The method stays in 09 as a documented experiment.
 
-### Experiment: uniform correlations (R² ~ Beta(k/2, 1))
+### Experiment: uniform correlations (R² ~ Beta(k/2, 1), `stan_lm` with η = 1)
 
 If every valid correlation matrix of (y, x₁ … x_k) is equally likely (LKJ,
 η = 1), the population R² is exactly Beta(k/2, η): flat-R at k = 1, flat R² at
 k = 2, then growing (1 − R² is a product of independent partial-correlation
-terms that telescopes; check V4, KS ≤ 0.013). The same growth law a = k/2 is
-forced by requiring models of different sizes to agree (a fixed g-mixture,
-B ≡ 1). Given R² the direction is uniform, so it is a member of the same family.
+terms that telescopes; check V4, KS ≤ 0.013). This is a known result, and the
+construction is rstanarm `stan_lm`'s prior (R² ~ Beta(k/2, η) with a uniform
+direction), where η is chosen by the user and η = 1 is not singled out. The
+same growth law a = k/2 is forced by requiring models of different sizes to
+agree (a fixed g-mixture, B ≡ 1), and keeping every single correlation flat
+(Barnard et al.'s marginally uniform prior) implies it too
+(`docs/relation_to_others.md`).
 
 Result: it lands on Zellner–Siow, the strict end, marginally ahead of it
 (slightly fewer misses at the same false inclusions):
@@ -256,16 +265,60 @@ Result: it lands on Zellner–Siow, the strict end, marginally ahead of it
 | uniform correlations | 0.13 / 0.20 | 0.84 / 0.64 | 0.36 |
 | Zellner–Siow (1) | 0.12 / 0.17 | 0.89 / 0.67 | 0.33 |
 
-So each principled stance has its own place on the same trade-off: one claim
+At the 0.5 cutoff each principled stance sits at its own place: one claim
 about the total (flat-R, sensitive), every correlation structure equally likely
 (a = k/2, strict), and JZS in between (its median prior R² is close to LKJ with
-η ≈ 2: 0.11 vs 0.12 at k = 1, 0.67 vs 0.69 at k = 8). None dominates; the choice
-of stance, not a better growth law, decides where a method sits.
+η ≈ 2: 0.11 vs 0.12 at k = 1, 0.67 vs 0.69 at k = 8; medians only). Zellner–Siow
+(scale 1) is exactly R² ~ Beta(k/2, ½), the LKJ η = ½ member, which is why it
+lands next to uniform correlations.
+
+### Equal or worse: whole trade-off curves
+
+The 0.5 cutoff gives each method one point. Sliding the cutoff on the inclusion
+probabilities traces a curve of missed against false inclusions per method
+(figure `09_trade_off_curves.png`); the AUC for "real vs null predictor"
+summarises it. Difference from flat-R, beta-binomial model prior, 95% bootstrap
+over datasets (* = interval excludes 0):
+
+| | n | JZS | uniform correlations | Zellner–Siow | BIC |
+|---|---|---|---|---|---|
+| uncorrelated | 50 | −0.025* | −0.019* | −0.021* | +0.005 |
+| | 100 | −0.029* | −0.021* | −0.030* | +0.012 |
+| | 200 | −0.006 | +0.006 | +0.001 | +0.028* |
+| | 500 | +0.002 | +0.003 | +0.002 | +0.009* |
+| correlation 0.5 | 50 | +0.001 | +0.011 | +0.011 | +0.030* |
+| | 100 | +0.006 | +0.020* | +0.022* | +0.039* |
+| | 200 | +0.007* | +0.022* | +0.023* | +0.035* |
+| | 500 | +0.003* | +0.011* | +0.011* | +0.019* |
+
+With the uniform model prior every difference is within ±0.01.
+
+- The curves nearly coincide; the priors mainly choose where on the curve the
+  0.5 cutoff lands.
+- Flat-R ranks predictors best in small samples with uncorrelated predictors;
+  with correlated predictors it is 0.01–0.02 behind uniform correlations and
+  Zellner–Siow (a null predictor that correlates with a real one can ride along
+  when there is no size penalty; cf. study 06).
+- Uniform correlations is at least as good as JZS in every cell (by AUC,
+  without a bootstrap for that pair).
+- BIC ranks best or equal-best almost everywhere, while missing the most at its
+  0.5 cutoff: ranking and calibration are separate properties.
+- One design (12 candidates, 4 real, 100 datasets per cell): indicative.
+
+## 07 and 08
+
+Written, not yet run in full on the reference machine. The growing-k table in
+`docs/3_consistency.md` comes from a development run of 08; rerun to confirm.
 
 ## Not yet done
 
-- A block version of the conditional test for multi-column terms (factors), with share ~ Beta(q/2, (k − q)/2). The conditional test is now the default in `bayes_factor_flat_r_per_term()` for one-column terms.
-- An estimation simulation (coverage, bias, RMSE with `fit_flat_r_model()`),
-  and a mean-squared-error comparison to test whether the shrinkage pays off.
-- Consistency when the number of predictors grows with n.
-- Formal proofs of B1–B3; these are numerical checks.
+- Run 07 (estimation: bias, error relative to `lm()`, coverage) and 08 (k
+  growing with n) and record the results here.
+- A block version of the conditional test for multi-column terms (factors),
+  with share ~ Beta(q/2, (k − q)/2). The conditional test is the default in
+  `bayes_factor_flat_r_per_term()` for one-column terms.
+- The empirical question that decides between flat-R and uniform correlations:
+  how explained variance grows with the number of predictors in published
+  regressions.
+- A full proof of model-selection consistency (criterion 2; a sketch is in
+  `docs/3_consistency.md`); information and intrinsic consistency are proven.

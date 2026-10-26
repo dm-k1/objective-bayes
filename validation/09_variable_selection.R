@@ -22,7 +22,8 @@
 ##    (E[R2] = k / (2k + 1): 1/3, 2/5, 3/7, ... -> 1/2). Same uniform direction.
 ##    Experiment: "uniform correlations", R-squared ~ Beta(k/2, 1): what you get when
 ##    every valid correlation matrix of (y, x1 ... xk) is equally likely (LKJ, eta = 1);
-##    flat-R at k = 1, flat R-squared at k = 2, then growing (check V4).
+##    flat-R at k = 1, flat R-squared at k = 2, then growing (check V4). This is
+##    rstanarm stan_lm's R-squared prior (Beta(k/2, eta), uniform direction) with eta = 1.
 ##  Priors over models:
 ##    uniform      every subset equally likely (favours models with ~6 predictors)
 ##    beta-binomial every model SIZE equally likely (Scott & Berger, 2010)
@@ -36,7 +37,7 @@
 ##  reported against direct computation).
 ##
 ##  Run from the project folder: Rscript validation/09_variable_selection.R
-##  About 10 minutes; cached.
+##  About 2-3 minutes; cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)

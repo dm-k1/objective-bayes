@@ -64,6 +64,17 @@ any number of predictors.** With one predictor $R = |r|$, so this is exactly
 step 1. On the $R^2$ scale it is $\mathrm{Beta}(\tfrac12, 1)$: the same
 statement on another ruler.
 
+**The judgement here** is that the total gets the flat prior. The other natural
+choice is to make the *correlations* flat: every correlation matrix of
+$(y, x_1 \ldots x_k)$ equally likely, or every single correlation flat. Both
+agree with step 1 at $k = 1$, and both imply $R^2 \sim \mathrm{Beta}(k/2, 1)$,
+so the claimed explained variance grows with $k$ (median 0.63 at $k = 3$, 0.87
+at $k = 10$). That is rstanarm `stan_lm`'s $R^2$ prior with η = 1. Flat-R
+instead says the total is unknown whatever the number of predictors. Which
+describes real studies better is an empirical question: how explained variance
+grows with the number of predictors in practice
+([`relation_to_others.md`](relation_to_others.md)).
+
 ---
 
 ## Step 3. Dividing the total: every split equally plausible
@@ -108,10 +119,14 @@ left for a reader to find:
 
 - flat on $R$ means $E[R^2] = \tfrac13$ and median $R^2 = 0.25$;
 - the per-predictor expectation of step 4 follows from the budget.
-- the evidence for one predictor depends on how much the others explain, for
-  the same reason. With correlated predictors that costs a little: a single
-  coefficient's test separates nulls from small effects slightly worse than the
-  JZS default (`validation/README.md`, study 04).
+- comparing the models with and without one predictor (the joint test) makes
+  its evidence depend on how much the others explain, for the same reason; with
+  correlated predictors that test separates nulls from small effects slightly
+  worse than the JZS default (`validation/README.md`, study 04). The
+  per-coefficient (conditional) test, the default, avoids this (study 05, 06).
+- in variable selection there is no hidden penalty for model size: flat-R is
+  the most inclusive of the priors compared, and how many predictors enter is
+  left to the prior over models (`validation/README.md`, study 09).
 
 Other rulers make other trade-offs. Flat on $R^2$ (Beta(1, 1)) shrinks less
 but favours the null more for small effects; the Beta(½, b) family on $R^2$

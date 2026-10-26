@@ -29,7 +29,7 @@ source("validation/settings.R")             # parallel cores, cache folders, rec
 ## =====================================================================
 ## Ground truth: the same Bayes factor by adaptive integration
 ## =====================================================================
-## R/flat_r.R averages over the scale g and over directions with
+## R/bayes_factor.R averages over the scale g and over directions with
 ## fixed grids (fast). Here both averages are computed with integrate():
 ## adaptive quadrature that adds points where the curve changes quickly and
 ## reports its own error estimate. Slow, but accurate, so it serves as the
