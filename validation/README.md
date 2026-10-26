@@ -20,6 +20,8 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
+Package tests (`devtools::test()`): 22 pass on cmdstanr.
+
 Each check prints PASS/FAIL with its criterion; 01 and 02 stop with an error if
 anything failed. Simulation results and figures are cached in
 `validation/results/` (not tracked by git).
@@ -33,8 +35,8 @@ so the counts per bin should be flat.
 
 | Check | Criterion | Last result |
 |---|---|---|
-| 01 P1–P4 | KS distance < 0.03 | pass: k = 1 0.010, k = 3 0.004, k = 8 0.005, shares 0.004–0.009 |
-| 01 S | rank bins, χ² p > 0.01 | pass: R² p = 0.18, β₁ 0.36, σ 0.69. Contrast, coefficient coordinates (earlier cmdstanr run): all p < 0.001; R² bins 38 15 24 23 23 18 24 19 26 **190**, σ bins **191** 15 17 … (40 expected per bin) |
+| 01 P1–P4 | KS distance < 0.03 | pass (cmdstanr, current model): k = 1 0.006, k = 3 0.006, k = 8 0.008, shares 0.004–0.009 |
+| 01 S | rank bins, χ² p > 0.01 | pass (cmdstanr, current model): R² p = 0.65, β₁ 0.73, σ 0.52. Contrast, coefficient coordinates: all p < 0.001; R² bins 38 15 24 23 23 18 24 19 26 **190**, σ bins **191** 15 17 … (40 expected per bin) |
 | 02 A1 | log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 4.1e-05 |
 | 02 A2 | identical up to 1e-8 | pass |
 | 02 A3 | within 0.05 of brute force (400,000 draws) | pass: 1.644 vs 1.638 (k = 3), −0.692 vs −0.691 (k = 1), 2.507 vs 2.518 (k = 5) |
