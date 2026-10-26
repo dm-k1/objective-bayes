@@ -18,6 +18,8 @@
 ##        that plugs in the estimated noise (close, not equal).
 ##    C4. under uniform correlations the implied prior for one coefficient's
 ##        partial correlation is flat, for any k and correlated predictors.
+##    C5. the conditional flat-R grid against stats::integrate() over
+##        n = 50 to 1e6, k = 1 to 30 and t-values 0 to 6.
 ##
 ##  Run from the project folder: Rscript validation/05_conditional_test.R
 ##  Under a minute.
@@ -29,7 +31,7 @@ source("validation/comparison_methods.R")
 
 ## C1. With one predictor the test is the joint flat-R test (both are flat on r).
 c1_differences <- sapply(list(c(0.3, 30), c(0.1, 100), c(0.5, 50), c(0.05, 500)), function(s)
-  abs(log_bayes_factor_flat_r_conditional(s[1], s[2], 1, points_R = 4000) -
+  abs(log_bayes_factor_flat_r_conditional(s[1], s[2], 1) -
       log_bayes_factor_flat_r_vs_intercept_only(s[1]^2, s[2], 1)))
 record_check("C1. k = 1: equals the joint flat-R Bayes factor", max(c1_differences) < 1e-3,
              sprintf("largest difference %.1e", max(c1_differences)))
@@ -77,5 +79,55 @@ c4_distances <- sapply(c(2, 5, 12), function(k) {
 record_check("C4. uniform correlations: one partial correlation is flat (k = 2, 5, 12)",
              max(c4_distances) < 0.01,
              sprintf("KS distances %s", paste(sprintf("%.4f", c4_distances), collapse = " ")))
+
+## C5. The conditional flat-R test against adaptive integration (stats::integrate),
+##     which shares no code with the package: BF = integral of L(f) p(f) df, with
+##       L(f) = exp(-n f^2/2) (I(b) + I(-b)) / (2 I(0)),  b = sqrt(n) r f,
+##       p(f) = integral over the share s ~ Beta(1/2, (k-1)/2) of s (s + f^2)^(-3/2)
+##     (the density of |f| = sqrt(s) R / sqrt(1 - R^2) given s, R flat).
+##     The likelihood ratio peaks with width about 1/sqrt(n), so large n tests
+##     whether the grid follows the peak. Criterion: within 2e-4 on the log scale.
+log_I_by_integration <- function(b, m) {        # log of integral v^m exp(-v^2/2 + b v)
+  peak     <- (b + sqrt(b^2 + 4 * m)) / 2
+  log_peak <- m * log(peak) - peak^2 / 2 + b * peak
+  log_peak + log(integrate(function(v) exp(m * log(v) - v^2 / 2 + b * v - log_peak),
+                           max(0, peak - 40), peak + 40, rel.tol = 1e-10)$value)
+}
+log_bayes_factor_conditional_by_integration <- function(partial_r, n, k) {
+  m <- n - k - 1
+  likelihood_ratio <- function(f) {
+    b <- sqrt(n) * partial_r * f
+    log_ratio_by_sign <- -n * f^2 / 2 - log_I_by_integration(0, m) +
+      c(log_I_by_integration(b, m), log_I_by_integration(-b, m))
+    mean(exp(log_ratio_by_sign))
+  }
+  prior_density <- function(f) {
+    if (k == 1) return((1 + f^2)^(-3 / 2))
+    given_share <- function(s) stats::dbeta(s, 0.5, (k - 1) / 2) * s * (s + f^2)^(-3 / 2)
+    ## shares below 1/2 on the log scale (the density changes near s = f^2),
+    ## above 1/2 as they are (the Beta density is infinite at 1 when k = 2)
+    integrate(function(u) given_share(exp(u)) * exp(u), log(f^2) - 50, log(0.5),
+              rel.tol = 1e-10)$value + integrate(given_share, 0.5, 1, rel.tol = 1e-10)$value
+  }
+  integrand <- Vectorize(function(f) likelihood_ratio(f) * prior_density(f))
+  peak  <- sqrt(m / n) * abs(partial_r) / sqrt(1 - partial_r^2)
+  width <- 1 / sqrt(n * (1 - partial_r^2))
+  breaks <- unique(pmax(0, peak + c(-15, -5, -2, 0, 2, 5, 15) * width))
+  log(sum(sapply(seq_len(length(breaks) - 1), function(i)
+    integrate(integrand, breaks[i], breaks[i + 1], rel.tol = 1e-8)$value)))
+}
+c5_cases <- expand.grid(t_value = c(0, 1, 2, 4, 6), k = c(1, 2, 3, 5, 10, 30),
+                        n = c(50, 200, 1e4, 1e6))
+c5_differences <- unlist(parallel_map(seq_len(nrow(c5_cases)), function(row) {
+  n <- c5_cases$n[row]; k <- c5_cases$k[row]; t_value <- c5_cases$t_value[row]
+  partial_r <- t_value / sqrt(t_value^2 + n - k - 1)
+  abs(log_bayes_factor_flat_r_conditional(partial_r, n, k) -
+      log_bayes_factor_conditional_by_integration(partial_r, n, k))
+}))
+worst <- c5_cases[which.max(c5_differences), ]
+record_check("C5. conditional flat-R grid = stats::integrate (n 50 to 1e6, k 1 to 30, t 0 to 6)",
+             max(c5_differences) < 2e-4,
+             sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c5_differences),
+                     worst$n, worst$k, worst$t_value))
 
 report_checks()

@@ -48,7 +48,7 @@ replications_per_cell  <- 200
 u1_differences <- sapply(list(c(0.2, 60), c(0.05, 100), c(0.5, 30)), function(s) {
   values <- c(log_bayes_factor_model("flat-R", s[1], s[2], 1),
               log_bayes_factor_model("uniform correlations", s[1], s[2], 1),
-              log_bayes_factor_flat_r_conditional(sqrt(s[1]), s[2], 1, points_R = 4000),
+              log_bayes_factor_flat_r_conditional(sqrt(s[1]), s[2], 1),
               log_bayes_factor_uniform_correlations_conditional(sqrt(s[1]), s[2], 1, points_R = 4000))
   diff(range(values))
 })

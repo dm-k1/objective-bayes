@@ -17,9 +17,15 @@ log_sum_exp_per_row <- function(log_matrix) {
 }
 
 ## Sample R-squared (always with intercept). Pure arithmetic, no fitting.
+## A column that is a combination of the others (aliased) adds nothing to
+## R-squared but would still count in k, so it stops instead.
 sample_r_squared <- function(predictor_columns, outcome) {
   if (is.null(predictor_columns) || NCOL(predictor_columns) == 0) return(0)
-  residuals_left <- qr.resid(qr(cbind(1, predictor_columns)), outcome)
+  decomposition <- qr(cbind(1, predictor_columns))
+  if (decomposition$rank < ncol(decomposition$qr))
+    stop("The predictor columns are linearly dependent (one is a combination of ",
+         "the others, or constant). Remove the redundant columns.")
+  residuals_left <- qr.resid(decomposition, outcome)
   1 - sum(residuals_left^2) / sum((outcome - mean(outcome))^2)
 }
 
@@ -134,6 +140,16 @@ bayes_factor_flat_r <- function(model_a, model_b) {
 bayes_factor_flat_r_per_term <- function(formula, data, test = c("conditional", "joint")) {
   test <- match.arg(test)
   full_model  <- lm(formula, data)
+  ## an aliased column (e.g. x3 = x1 + x2) gets no coefficient and would still
+  ## count in k
+  aliased_columns <- names(which(is.na(coef(full_model))))
+  if (length(aliased_columns) > 0)
+    stop("These columns are linear combinations of the other columns (aliased): ",
+         paste(aliased_columns, collapse = ", "), ". Remove them from the formula.")
+  ## the reduced models use the full model's rows: lm() drops rows with a
+  ## missing value in any term, so without the full model's rows a term's
+  ## missing values would change the rows of the model without it
+  rows_of_full_model <- data[row.names(model.frame(full_model)), , drop = FALSE]
   term_labels <- attr(terms(formula), "term.labels")
   design      <- model.matrix(full_model)
   columns_of_term <- split(colnames(design)[-1], attr(design, "assign")[-1])
@@ -147,7 +163,7 @@ bayes_factor_flat_r_per_term <- function(formula, data, test = c("conditional", 
       list(bf = exp(log_bayes_factor_flat_r_conditional(partial_r, sample_size, number_of_predictors)),
            used = "conditional")
     } else {
-      reduced_model <- lm(update(formula, paste(". ~ . -", term_labels[index])), data)
+      reduced_model <- lm(update(formula, paste(". ~ . -", term_labels[index])), rows_of_full_model)
       list(bf = bayes_factor_flat_r(full_model, reduced_model), used = "joint")
     }
   })

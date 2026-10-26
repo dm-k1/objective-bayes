@@ -8,8 +8,8 @@ log_bayes_factor_flat_r_conditional(
   partial_r,
   sample_size,
   number_of_predictors,
-  points_R = 100,
-  points_share = 50
+  points_f = 600,
+  points_share = 500
 )
 }
 \arguments{
@@ -19,8 +19,10 @@ log_bayes_factor_flat_r_conditional(
 
 \item{number_of_predictors}{Number of predictor columns in the model, k.}
 
-\item{points_R, points_share}{Grid sizes of the prior (accuracy about 1e-4 on
-the log scale with the defaults).}
+\item{points_f, points_share}{Grid sizes: for f, around the peak of the
+likelihood, and for the share, inside the prior. With the defaults the
+error is below about 2e-4 on the log scale for n = 50 to 1e6, k = 1 to 30
+(against \code{stats::integrate()}, validation/05, check C5).}
 }
 \value{
 The log Bayes factor for an effect against no effect.

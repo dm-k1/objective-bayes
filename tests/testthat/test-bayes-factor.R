@@ -19,8 +19,38 @@ test_that("the vignette's Bayes factors are unchanged (joint and conditional)", 
 
 test_that("conditional test: one predictor equals the joint test", {
   for (case in list(c(0.3, 30), c(0.1, 100), c(0.5, 50)))
-    expect_equal(log_bayes_factor_flat_r_conditional(case[1], case[2], 1, points_R = 4000),
+    expect_equal(log_bayes_factor_flat_r_conditional(case[1], case[2], 1),
                  log_bayes_factor_flat_r_vs_intercept_only(case[1]^2, case[2], 1), tolerance = 1e-3)
+})
+
+test_that("conditional test: the grid agrees with adaptive integration, also for large n", {
+  ## k = 3: share ~ Beta(1/2, 1) gives the prior of |f| the density
+  ## asinh(1/f) - 1/sqrt(1 + f^2). The likelihood ratio by integrate() too:
+  ## exp(-n f^2/2) (I(b) + I(-b)) / (2 I(0)), each I(b) scaled by its peak.
+  log_I <- function(b, m) {
+    peak     <- (b + sqrt(b^2 + 4 * m)) / 2
+    log_peak <- m * log(peak) - peak^2 / 2 + b * peak
+    log_peak + log(integrate(function(v) exp(m * log(v) - v^2 / 2 + b * v - log_peak),
+                             max(0, peak - 40), peak + 40, rel.tol = 1e-10)$value)
+  }
+  by_integration <- function(partial_r, n) {
+    m <- n - 4
+    likelihood_ratio_times_prior <- Vectorize(function(f) {
+      b <- sqrt(n) * partial_r * f
+      mean(exp(-n * f^2 / 2 - log_I(0, m) + c(log_I(b, m), log_I(-b, m)))) *
+        (asinh(1 / f) - 1 / sqrt(1 + f^2))
+    })
+    peak  <- sqrt(m / n) * abs(partial_r) / sqrt(1 - partial_r^2)
+    width <- 1 / sqrt(n * (1 - partial_r^2))
+    breaks <- unique(pmax(0, peak + c(-15, -5, -2, 0, 2, 5, 15) * width))
+    log(sum(sapply(seq_len(length(breaks) - 1), function(i)
+      integrate(likelihood_ratio_times_prior, breaks[i], breaks[i + 1], rel.tol = 1e-8)$value)))
+  }
+  for (case in list(c(3, 200), c(0, 1e4), c(2, 1e6))) {     # t-value, n
+    partial_r <- case[1] / sqrt(case[1]^2 + case[2] - 4)
+    expect_lt(abs(log_bayes_factor_flat_r_conditional(partial_r, case[2], 3) -
+                  by_integration(partial_r, case[2])), 2e-4)
+  }
 })
 
 test_that("the joint test depends on what the others explain; the conditional test does not", {
@@ -40,6 +70,20 @@ test_that("multi-column terms fall back to the joint test", {
   data <- transform(example_data, group = factor(rep(c("a", "b", "c"), 20)))
   result <- bayes_factor_flat_r_per_term(y ~ x1 + group, data)
   expect_equal(result$test, c("conditional", "joint"))
+})
+
+test_that("an aliased column stops with a clear message", {
+  aliased <- transform(example_data, x4 = x1 + x2)
+  expect_error(bayes_factor_flat_r_per_term(y ~ x1 + x2 + x4, aliased), "aliased): x4")
+  expect_error(bayes_factor_flat_r(lm(y ~ x1 + x2 + x4, aliased), lm(y ~ 1, aliased)),
+               "linearly dependent")
+})
+
+test_that("a term with missing values: the model without it uses the same rows", {
+  with_missing <- transform(example_data, x3 = replace(x3, c(3, 8), NA))
+  complete_rows <- with_missing[-c(3, 8), ]
+  expect_equal(bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, with_missing, test = "joint"),
+               bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, complete_rows, test = "joint"))
 })
 
 test_that("rescaling or recoding predictors leaves the Bayes factor unchanged", {

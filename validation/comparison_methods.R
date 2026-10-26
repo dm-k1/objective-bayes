@@ -104,9 +104,7 @@ log_bayes_factor_one_coefficient <- function(method, r_squared_full, r_squared_w
     `Zellner-Siow`               = joint("Zellner-Siow"),
     `flat-R joint`               = joint("flat-R"),
     `uniform correlations joint` = joint("uniform correlations"),
-    ## coarser grids than the package default: about 5e-4 on the log scale, 5x faster
-    `flat-R conditional` = log_bayes_factor_flat_r_conditional(partial_r, n, k,
-                                                               points_R = 50, points_share = 25),
+    `flat-R conditional` = log_bayes_factor_flat_r_conditional(partial_r, n, k),
     `uniform correlations conditional` = log_bayes_factor_uniform_correlations_conditional(partial_r, n, k),
     stop("Unknown method: ", method))
 }
