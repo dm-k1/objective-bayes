@@ -53,7 +53,7 @@ fit_prior_only <- function(formula, data) {
     model <- cmdstanr::cmdstan_model(cmdstanr::write_stan_file(stan_code))
     fit   <- model$sample(data = stan_data, chains = 4, iter_warmup = 5000,
                           iter_sampling = 5000, seed = 1, adapt_delta = 0.99, refresh = 0)
-    list(draws = posterior::as_draws_matrix(fit$draws(c("b", "sigma"))),
+    list(draws = unclass(posterior::as_draws_matrix(fit$draws(c("b", "sigma")))),
          divergent = sum(fit$diagnostic_summary()$num_divergent))
   } else {
     fit <- rstan::stan(model_code = stan_code, data = stan_data, chains = 4, iter = 10000,

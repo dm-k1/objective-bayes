@@ -41,7 +41,7 @@ sample_stan <- function(model, stan_data, chains, iter_warmup, iter_sampling, th
     fit <- model$sample(data = stan_data, chains = chains, iter_warmup = iter_warmup,
                         iter_sampling = iter_sampling, thin = thin, seed = seed,
                         refresh = 0, show_messages = FALSE)
-    posterior::as_draws_matrix(fit$draws(c("b", "sigma")))
+    unclass(posterior::as_draws_matrix(fit$draws(c("b", "sigma"))))   # plain matrix, as rstan gives
   } else {
     fit <- rstan::sampling(model, data = stan_data, chains = chains,
                            iter = iter_warmup + iter_sampling, warmup = iter_warmup,
