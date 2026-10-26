@@ -17,6 +17,11 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 | `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. A4: against the same prior written as a mixture of g-priors. B1–B3: predictive matching, information and null consistency | about a minute |
 | `03_simulations.R` | How does it behave across many datasets, compared with JZS, per-coefficient flat partial correlation and R2-D2? | 4 correlated predictors, 200 replications per cell, closed-form Bayes factors | long |
 | `04_matched_comparison.R` | Is the difference in 03 discrimination or calibration? | AUC (threshold-free) of BF01 for null vs small effect, paired bootstrap flat-R vs JZS, matched thresholds, and why: dependence of the evidence on what the other predictors explain | about 2 minutes |
+| `05_conditional_test.R` | Experiment: a per-coefficient test that uses only that coefficient's partial correlation, with the prior the joint flat-R prior implies for it | checks C1–C3, then AUC and calibration on the design of 03 | about 3 minutes |
+| `06_broad_simulation.R` | Does the picture hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; JZS, joint, conditional, flat partial r | about 15 minutes |
+| `07_estimation.R` | How good are the estimates? | bias, error relative to ordinary regression, coverage of 95% intervals; flat-R vs JZS vs `lm()`; 2,400 Stan fits, resumes if interrupted | 1.5–3 hours |
+| `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; flat-R vs Zellner–Siow vs JZS | 10–20 minutes |
+| `conditional_flat_r.R` | helper: the per-coefficient test, used by 06 | – | – |
 | `comparison_methods.R` | helper: the comparison methods | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
@@ -108,9 +113,41 @@ small effect of 0.1; threshold-free), flat-R minus JZS, paired bootstrap 95% CI:
 - This is the cost of the budget for testing **one coefficient** in a model with
   correlated predictors. It does not affect comparing whole models.
 
+## 05: a per-coefficient test (experiment)
+
+**In one sentence:** test one coefficient's partial correlation only, with the
+prior the joint flat-R prior implies for it, so the multiplicity correction
+stays but the evidence no longer depends on what the other predictors explain.
+
+The implied prior per coefficient: $f_j^2 = \text{share} \cdot R^2/(1-R^2)$,
+$R$ flat, share ~ Beta(½, (k−1)/2). It depends only on k, not on how the
+predictors correlate (C2, KS 0.002). The other coefficients get flat priors, as
+in Kucharský et al. (2026), so the Bayes factor depends only on the sample
+partial correlation, n and k.
+
+Checks: C1 equals the joint test for k = 1 (difference 3e-12); C2 as above;
+C3 with a flat prior it matches the approximate flat partial r (within 0.012).
+
+Discrimination (AUC, null vs 0.1), paired bootstrap 95% CI, design of 03:
+
+| | n = 100 | n = 200 | n = 500 |
+|---|---|---|---|
+| conditional − JZS, correlated (0.5) | **+0.052** [0.030, 0.074] | **+0.034** [0.022, 0.046] | **+0.025** [0.018, 0.034] |
+| conditional − joint, correlated (0.5) | **+0.113** [0.069, 0.150] | **+0.078** [0.054, 0.102] | **+0.053** [0.039, 0.068] |
+| conditional − JZS, uncorrelated | −0.004 [−0.022, 0.012] | +0.004 [−0.008, 0.016] | −0.002 [−0.007, 0.002] |
+
+Calibration at 3 (correlated, n = 200): nulls found 0.43 (JZS 0.55, joint 0.22);
+slope 0.1 called null 0.21 (JZS 0.27); slope 0.3 found 0.94 (JZS 0.94).
+
+So in this design the conditional test separates nulls from small effects
+**better than JZS** with correlated predictors and equally well without, while
+keeping the flat-R expectation per coefficient. Study 06 checks whether this
+holds across designs. Not yet covered: factors and other multi-column terms
+(the block version would use a share ~ Beta(q/2, (k−q)/2) for q columns).
+
 ## Not yet done
 
-- Whether a per-coefficient test should use the joint budget at all, or condition on what the other predictors explain (cf. Kucharský et al., 2026): the open design question raised by 04.
+- Whether the conditional test (05) should replace the joint one in `bayes_factor_flat_r_per_term()`: depends on study 06. A block version for factors.
 - An estimation simulation (coverage, bias, RMSE with `fit_flat_r_model()`),
   and a mean-squared-error comparison to test whether the shrinkage pays off.
 - Consistency when the number of predictors grows with n.

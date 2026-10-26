@@ -74,6 +74,7 @@ and validation). Run the tests with `devtools::test()`.
 | `vignette.R` | Use it on a dataset, start to finish |
 | `docs/1_from_behaviour.md` | Where the prior comes from: from what effects can do to the one sentence, with simulated figures |
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
+| `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
 | `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; see `validation/README.md` |

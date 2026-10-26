@@ -400,9 +400,9 @@ means a short argument below, "checked" means a numerical check in
 | # | Criterion | Meaning | Status |
 |---|---|---|---|
 | 1 | Basic | the prior on the tested coefficients is proper, and not arbitrarily vague | **met**, by construction: $p(\beta \mid \sigma)$ integrates to 1 and has no free scale |
-| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **checked**: under the null (B3, $\log\mathrm{BF}_{01}$ grows like $\tfrac12\log n$) and under an effect (B4, $\log\mathrm{BF}_{10}$ grows linearly); argued: like Zellner–Siow, a fixed proper prior on $g/n$ |
-| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**, argued and checked (B2, B2b); not at $n = k + 2$ |
-| 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **argued**: the prior on $g/n$ does not involve $n$, and $\Sigma = X_c^\top X_c/n$ converges |
+| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **sketch** of the proof for fixed $k$ ([`3_consistency.md`](3_consistency.md)) and checked: under the null (B3, $\log\mathrm{BF}_{01}$ grows like $\tfrac12\log n$, the rate the sketch gives) and under an effect (B4); with $k$ growing with $n$: checked numerically, slower but still growing (`validation/08`) |
+| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: proof in [`3_consistency.md`](3_consistency.md), checked (B2, B2b); not at $n = k + 2$ |
+| 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **met**: proof in [`3_consistency.md`](3_consistency.md) (the prior on $g/n$ does not involve $n$, and $\Sigma_n$ converges) |
 | 5 | Predictive matching | on minimal samples ($n = k + 1$) the data cannot separate models: BF = 1 with the null (null matching) and between models of equal size (dimensional matching) | **met**: checked (B1); dimensional matching follows because BF depends only on $R^2$, $n$, $k$, and $R^2 = 1$ for every model at $n = k + 1$ |
 | 6 | Measurement invariance | units of the data do not change the answer | **met**, by construction (§7) and checked (A2) |
 | 7 | Group invariance | the common parameters get the right-Haar prior, and the prior respects the invariance | **met**: $p(\alpha, \sigma) \propto 1/\sigma$, and $\beta$ is scaled by $\sigma$ |
@@ -417,8 +417,8 @@ is $n \ge k + 3$. Check B2b confirms the boundary: at $n = k + 2$ the evidence
 levels off (e.g. $\log\mathrm{BF} \to 0.91$ for $k = 1$), at $n = k + 3$ it keeps
 growing. For comparison, the robust prior of Bayarri et al. needs $n \ge k + 2$.
 
-**Still open:** formal proofs of criteria 2 and 4, and consistency when the
-number of predictors grows with $n$.
+**Still open:** a full proof of criterion 2 (the sketch's dominated-convergence
+steps, and non-nested models), and a proof for $k$ growing with $n$.
 
 ---
 
