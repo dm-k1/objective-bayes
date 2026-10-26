@@ -1,8 +1,11 @@
 # Relation to other priors
 
 **In one sentence:** the flat-R prior is a mixture of Zellner g-priors, the
-family of the JZS default, and the only member found whose implied $R^2$ stays
-the same for every number of predictors. Its closest neighbour is the other
+family of the JZS default, and the only member whose implied $R^2$ stays
+the same for every number of predictors *and* is Jeffreys' flat correlation for
+one predictor (constant in $k$ alone is not enough: $R^2 \sim$ Beta(½, $b$) for
+every $k$ is a g-mixture for every $b$, checked in `validation/09`, V5; see
+[`2_how_it_calculates.md`](2_how_it_calculates.md), section 8). Its closest neighbour is the other
 natural way to extend Jeffreys' flat correlation to several predictors: flat
 over all correlation matrices, which is rstanarm `stan_lm`'s $R^2$ prior with
 η = 1.

@@ -314,7 +314,8 @@ the log scale (`validation/02_bayes_factor.R`, check A1).
 ## 8. The same prior as a mixture of g-priors
 
 **In one sentence:** the flat-R prior is a mixture of Zellner g-priors, and the
-only one in that family whose implied $R^2$ is the same for every $k$.
+only one in that family whose implied $R^2$ is the same for every $k$ *and*
+equals Jeffreys' flat correlation at $k = 1$.
 
 Zellner's g-prior is $\beta \mid g, \sigma \sim N\bigl(0,\ g\,\sigma^2 (X_c^\top X_c)^{-1}\bigr)$:
 a uniform direction (in explained variance) with $f^2 = (g/n)\,\chi^2_k$. Putting a
@@ -334,6 +335,15 @@ $$
 - Why it works: $f^2 = B W \chi^2_k$, and $B\,\chi^2_k$ has the distribution of
   $\chi^2_1$ (a Beta(½, (k−1)/2) share of a $\chi^2_k$ is a $\chi^2_1$). So
   $f^2 = W\chi^2_1$ for every $k$: exactly the one-predictor prior on the total.
+- Constant in $k$ alone does not single it out. Any $W$ gives an implied $R^2$
+  that does not depend on $k$; with $W \sim$ Inverse-Gamma($b$, ½) it is
+  $R^2 \sim$ Beta(½, $b$) for every $k$ ($W\chi^2_1$ is then a ratio of a
+  Gamma(½) and a Gamma($b$) variable; checked in `validation/09`, V5). What fixes $b = 1$ is the second condition:
+  at $k = 1$ the prior must be flat on $r$, i.e. $r^2 \sim$ Beta(½, 1). More
+  generally, for a g-mixture $f^2 = (g/n)\,\chi^2_k$, so the distribution of
+  $f^2$ at each $k$ determines that of $g/n$ (Mellin transforms factor); fixing
+  the $k = 1$ distribution to Jeffreys' and asking it to stay the same for every
+  $k$ leaves exactly one hyperprior per $k$, this one.
 
 The hyperprior density is $p(g/n = t) = \dfrac{1}{2kt^2}\, {}_1F_1\!\left(\tfrac32;
 \tfrac k2 + 1; -\tfrac{1}{2t}\right)$ (Kummer's confluent hypergeometric
@@ -463,7 +473,7 @@ means a short argument below, "checked" means a numerical check in
 | # | Criterion | Meaning | Status |
 |---|---|---|---|
 | 1 | Basic | the prior on the tested coefficients is proper, and not arbitrarily vague | **met**, by construction: $p(\beta \mid \sigma)$ integrates to 1 and has no free scale |
-| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **sketch** of the proof for fixed $k$ ([`3_consistency.md`](3_consistency.md)) and checked: under the null (B3, $\log\mathrm{BF}_{01}$ grows like $\tfrac12\log n$, the rate the sketch gives) and under an effect (B4); with $k$ growing with $n$: checked numerically, slower but still growing (`validation/08`) |
+| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **sketch** of the proof for fixed $k$ ([`3_consistency.md`](3_consistency.md)) and checked. When the smaller model is true, $\log\mathrm{BF}_{01}$ grows like $\tfrac12\log n$ if it is the intercept-only model, for any number of extra predictors, and like $\tfrac q2\log n$ if it already contains an effect and the larger model adds $q$ null predictors (B3, B3b: slopes 0.51 for $q$ = 1, 3, 6 against 0.55, 1.59, 2.91); under an effect in the larger model it grows linearly (B4); with $k$ growing with $n$: checked numerically, slower but still growing (`validation/08`) |
 | 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: proof in [`3_consistency.md`](3_consistency.md), checked (B2, B2b); not at $n = k + 2$ |
 | 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **met**: proof in [`3_consistency.md`](3_consistency.md) (the prior on $g/n$ does not involve $n$, and $\Sigma_n$ converges) |
 | 5 | Predictive matching | on minimal samples ($n = k + 1$) the data cannot separate models: BF = 1 with the null (null matching) and between models of equal size (dimensional matching) | **met**: checked (B1); dimensional matching follows because BF depends only on $R^2$, $n$, $k$, and $R^2 = 1$ for every model at $n = k + 1$ |

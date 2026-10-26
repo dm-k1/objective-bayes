@@ -138,6 +138,21 @@ v4_distances <- sapply(c(1, 2, 5), function(k) {
 record_check("V4. uniform correlation matrices imply R-squared ~ Beta(k/2, 1) (k = 1, 2, 5)", max(v4_distances) < 0.03,
              sprintf("KS distances %s", paste(sprintf("%.4f", v4_distances), collapse = " ")))
 
+## V5. constant in k does not single out flat-R: with the same B but
+##     W ~ Inverse-Gamma(b, 1/2), the mixture implies R-squared ~ Beta(1/2, b) for
+##     every k (docs/2_how_it_calculates.md, section 8). b = 1 is flat-R; only
+##     b = 1 is Jeffreys' flat correlation at k = 1.
+set.seed(4)
+v5_settings <- expand.grid(k = c(1, 5, 20), b = c(0.5, 2))
+v5_distances <- mapply(function(k, b) {
+  share <- if (k == 1) 1 else rbeta(2e5, 0.5, (k - 1) / 2)
+  f_squared <- share * (0.5 / rgamma(2e5, b)) * rchisq(2e5, k)
+  suppressWarnings(unname(ks.test(f_squared / (1 + f_squared), "pbeta", 0.5, b)$statistic))
+}, v5_settings$k, v5_settings$b)
+record_check("V5. W ~ Inverse-Gamma(b, 1/2) implies R-squared ~ Beta(1/2, b) (b = 1/2, 2; k = 1, 5, 20)",
+             max(v5_distances) < 0.01,
+             sprintf("KS distances %s", paste(sprintf("%.4f", v5_distances), collapse = " ")))
+
 
 ## ---- One dataset ------------------------------------------------------------
 log_model_prior <- list(

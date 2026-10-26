@@ -19,14 +19,14 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 | Script | Question | How | Run time |
 |---|---|---|---|
 | `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flat_r.stan`) get the prior and the posterior right? | P1–P4: sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets. Contrast: the same prior sampled in coefficient coordinates | about 5 minutes |
-| `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. A4: against the same prior written as a mixture of g-priors. B1–B3: predictive matching, information and null consistency | about a minute |
+| `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. A4: against the same prior written as a mixture of g-priors. B1–B3b: predictive matching, information and null consistency (B3b: the rate with and without an effect in the smaller model) | about a minute |
 | `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); checks U1–U2 | 5–10 minutes |
 | `04_matched_comparison.R` | Is a difference in 03 discrimination or calibration? | AUC (threshold-free), each method minus JZS with a paired bootstrap, matched thresholds, and why: how much the evidence depends on what the other predictors explain | about 3 minutes |
 | `05_conditional_test.R` | Are the conditional tests right? | C1–C4: equals the joint test at k = 1; the implied priors for one coefficient (flat-R: depends only on k; uniform correlations: a flat partial correlation for any k) | under a minute |
 | `06_broad_simulation.R` | Does the picture of 03–04 hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; all one-coefficient methods | 20–30 minutes |
 | `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; flat-R, uniform correlations (`stan_lm`, η = 1), JZS, Zellner–Siow, `lm()`; needs rstanarm; resumes if interrupted | 2.5–4 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods | under a minute |
-| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real) | all whole-model methods and BIC; uniform and beta-binomial model priors; true model found, false inclusions, missed; whole trade-off curves and AUC; checks V1–V4 | 3–5 minutes |
+| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real) | all whole-model methods and BIC; uniform and beta-binomial model priors; true model found, false inclusions, missed; whole trade-off curves and AUC; checks V1–V5 | 3–5 minutes |
 | `comparison_methods.R` | helper: the common method set (names, colours, Bayes factors) | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
@@ -81,6 +81,7 @@ time. The checks of 01 and 02 are unaffected.
 | 02 B2 | increasing; log BF > 50 at R² = 0.9999 | pass (12.6, 28.6, 44.7, 60.9) |
 | 02 B2b | bounded at n = k + 2, growing at n = k + 3 (the analytic boundary) | pass |
 | 02 B3 | median log BF₀₁ increasing, slope vs log n in 0.35–0.65 | pass (slope 0.53) |
+| 02 B3b | q = 1, 3, 6 null predictors added: slope within 20% of q/2 when the smaller model is x1 (y = 0.5 x1 + e); in 0.35–0.65 for every q when it is the intercept-only model | pass (0.55, 1.59, 2.91; 0.51, 0.51, 0.51) |
 | 02 B4 | effect x1 = 0.15: median log BF₁₀ increasing, > 20 at n = 5000 | pass (0.9, 9.3, 54.1 at n = 200, 1000, 5000) |
 
 **Why the Stan model samples R and a direction.** The prior as a density on the
@@ -222,8 +223,12 @@ model prior). The methods differ in where they sit on a trade-off
   are near 0.5: close to undecided.
 - Why: the other priors claim more explained variance for bigger models, so
   bigger models that don't show it are penalised automatically. Flat-R claims
-  the same R² for every model size, so that hidden size penalty is gone; control
-  over how many predictors enter then has to come from the prior over models.
+  the same R² for every model size, so the extra penalty for leaving the null
+  model is gone: against the intercept-only model, evidence for the null grows
+  like ½ log n whatever the size of the alternative. Between models that both
+  contain an effect, the usual penalty of ½ log n per extra predictor remains
+  (`docs/3_consistency.md`; check 02 B3b). Control over how many predictors
+  enter then has to come from the prior over models.
 - With correlated predictors, flat-R and JZS are nearly identical.
 - No method dominates; flat-R sits at the sensitive end, BIC at the strict end.
 
@@ -323,7 +328,7 @@ With the uniform model prior every difference is within ±0.01.
 - Flat-R ranks predictors best in small samples with uncorrelated predictors;
   with correlated predictors it is 0.01–0.02 behind uniform correlations and
   Zellner–Siow (a null predictor that correlates with a real one can ride along
-  when there is no size penalty; cf. study 06).
+  when leaving the null model carries no extra penalty; cf. study 06).
 - Uniform correlations is at least as good as JZS in every cell (by AUC,
   without a bootstrap for that pair).
 - BIC ranks best or equal-best almost everywhere, while missing the most at its

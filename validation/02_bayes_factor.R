@@ -17,6 +17,8 @@
 ##    B2. information consistency (BF grows without limit as R2 -> 1)
 ##    B2b. ... exactly from n = k + 3 on (the analytic boundary)
 ##    B3. consistency under the null (log BF01 grows like 1/2 log n), simulated
+##    B3b. ... the 1/2 log n holds when the smaller model is the null model;
+##         with a real effect in the smaller model it is q/2 log n (q extra nulls)
 ##    B4. consistency under the alternative (log BF10 grows with n), simulated
 ##
 ##  Run from the project folder: Rscript validation/02_bayes_factor.R
@@ -310,7 +312,8 @@ record_check("B2b. information consistency starts exactly at n = k + 3 (k = 1-3)
 
 ## B3. Consistency under the null, by simulation: x3 truly does nothing.
 ##    The median log BF01 for x3 should grow with n at a rate of about
-##    1/2 log n. Criterion: increasing in n, and slope against log n
+##    1/2 log n (one extra null predictor, q = 1; B3b separates the cases
+##    where q matters). Criterion: increasing in n, and slope against log n
 ##    between 0.35 and 0.65.
 set.seed(4)
 sample_sizes <- c(50, 200, 1000, 5000)
@@ -327,6 +330,43 @@ record_check("B3. consistency under the null (simulated)",
              all(diff(median_log_bf01) > 0) && slope_against_log_n > 0.35 && slope_against_log_n < 0.65,
              sprintf("median log BF01 %s; slope %.2f",
                      paste(sprintf("%.2f", median_log_bf01), collapse = " "), slope_against_log_n))
+
+
+## B3b. The rate depends on which smaller model is true (docs/3_consistency.md).
+##     Against the intercept-only model the evidence for the null grows like
+##     1/2 log n whatever the number q of extra null predictors: flat on R puts
+##     prior mass of order n^(-1/2) near beta = 0, for every k. Between two
+##     non-null models (y = 0.5 x1 + e; x1 against x1 plus q nulls) it grows
+##     like q/2 log n, the usual penalty for q extra dimensions.
+##     Criterion: slope of the median log BF01 against log n within 20% of
+##     q/2 for every q (smaller model x1), and between 0.35 and 0.65 for every q
+##     (smaller model intercept only).
+set.seed(6)
+extra_null_predictors <- c(1, 3, 6)
+nested_design <- expand.grid(extra_nulls = extra_null_predictors,
+                             smaller_model = c("x1", "intercept only"),
+                             stringsAsFactors = FALSE)
+nested_medians <- parallel_map(seq_len(nrow(nested_design)), function(row) {
+  q <- nested_design$extra_nulls[row]
+  has_effect <- nested_design$smaller_model[row] == "x1"
+  k_small <- as.integer(has_effect)
+  sapply(sample_sizes, function(n) median(replicate(200, {
+    x <- matrix(rnorm(n * (k_small + q)), n)
+    y <- (if (has_effect) 0.5 * x[, 1] else 0) + rnorm(n)
+    log_bf_small <- if (has_effect)
+      log_bayes_factor_flat_r_vs_intercept_only(sample_r_squared(x[, 1, drop = FALSE], y), n, 1) else 0
+    log_bf_small - log_bayes_factor_flat_r_vs_intercept_only(sample_r_squared(x, y), n, k_small + q)
+  })))
+})
+nested_design$slope <- sapply(nested_medians, function(m) coef(lm(m ~ log(sample_sizes)))[[2]])
+from_x1   <- nested_design$smaller_model == "x1"
+from_null <- !from_x1
+record_check("B3b. nested, smaller model x1: slope q/2 (q = 1, 3, 6)",
+             all(abs(nested_design$slope[from_x1] / (nested_design$extra_nulls[from_x1] / 2) - 1) < 0.2),
+             sprintf("slopes %s", paste(sprintf("%.2f", nested_design$slope[from_x1]), collapse = " ")))
+record_check("B3b. nested, smaller model intercept only: slope 1/2 (q = 1, 3, 6)",
+             all(nested_design$slope[from_null] > 0.35 & nested_design$slope[from_null] < 0.65),
+             sprintf("slopes %s", paste(sprintf("%.2f", nested_design$slope[from_null]), collapse = " ")))
 
 
 ## B4. Model selection consistency when there IS an effect: x1 = 0.15 is real,

@@ -70,13 +70,38 @@ variation. ∎
 
 ## Model selection consistency, fixed k: sketch
 
-**Claim.** For nested models with a fixed number of predictors: if the smaller
-model is true, $\log \mathrm{BF}_{01}$ grows like $\tfrac12 \log n$; if the larger
-model is true, $\log \mathrm{BF}_{10}$ grows linearly in $n$.
+**Claim.** For nested models with a fixed number of predictors, the smaller
+model $M_0$ with $k_0$ predictors inside the larger $M_1$ with $k = k_0 + q$:
 
-*The smaller model is true* (take it to be the intercept-only model; the
-nested case reduces to it). Then $nR^2$ stays bounded in probability
-($\approx \chi^2_k$). Put $t = s/n$:
+- if $M_0$ is true and is the **intercept-only model** ($k_0 = 0$),
+  $\log \mathrm{BF}_{01}$ grows like $\tfrac12 \log n$, **the same rate for every $q$**;
+- if $M_0$ is true and **has a real effect** ($k_0 \ge 1$, $\rho_0^2 > 0$),
+  $\log \mathrm{BF}_{01}$ grows like $\tfrac q2 \log n$, the usual rate for $q$
+  extra parameters;
+- if $M_1$ is true, $\log \mathrm{BF}_{10}$ grows linearly in $n$.
+
+In both null cases the true model wins, so the prior is consistent; the two
+rates differ, and that difference is a property of flat-R worth knowing.
+
+**Why the rates differ, in one picture.** The evidence for a model is roughly
+its best fit times its *Occam factor*: the prior mass within the posterior's
+reach, a neighbourhood of size $n^{-1/2}$ around the estimate.
+
+- When the estimate is near $\beta = 0$ (the null is true), that neighbourhood
+  is a ball of radius $\propto n^{-1/2}$ around 0. Flat on $R$ gives it prior
+  mass $P(R \lesssim n^{-1/2}) \propto n^{-1/2}$, for every $k$: the prior density
+  of $\beta$ peaks at 0 (like $|\beta|^{-(k-1)}$), so leaving the null model
+  costs only $n^{-1/2}$.
+- When the estimate is away from 0 (some effect is real), the neighbourhood is a
+  box of volume $\propto n^{-k/2}$ where the prior density is finite and
+  positive (flat in $R$, uniform in direction). The Occam factor is
+  $n^{-k/2}$, and adding $q$ null predictors costs $n^{-q/2}$.
+
+So flat-R has no extra penalty for leaving the null model, but the ordinary
+penalty for each extra dimension once some effect is in the model.
+
+*The smaller model is the intercept-only model and is true.* Then $nR^2$
+stays bounded in probability ($\approx \chi^2_k$). Put $t = s/n$:
 
 $$
 \mathrm{BF}_k = \int_0^\infty (1+s)^{-k/2}
@@ -94,9 +119,51 @@ $$
 and the integral is finite and bounded in probability for $k \ge 2$
 (for $k = 1$ the same rate follows from $E[t^{-1/2}] < \infty$). So
 $\mathrm{BF}_{10} = O_p(n^{-1/2})$: the evidence for the true null grows like
-$\tfrac12 \log n$, **the same rate for every fixed k**. Checked numerically: the
-slope of the median $\log \mathrm{BF}_{01}$ against $\log n$ is 0.53
-(`validation/02`, B3).
+$\tfrac12 \log n$ for every fixed $k$. The integral concentrates at
+$t \approx 1/n$, where $p(t) \propto t^{-1/2}$: that is the $n^{-1/2}$ of the
+picture above.
+
+*The smaller model has a real effect and is true.* Now
+$R^2 \to \rho_0^2 > 0$ under both models, and the integrand of $\mathrm{BF}_k$
+sits at $t$ of order 1 instead of $1/n$ (a Laplace argument). For fixed $t > 0$,
+
+$$
+(1+nt)^{(n-1-k)/2}\bigl(1+nt(1-R^2)\bigr)^{-(n-1)/2}
+\approx (nt)^{-k/2}\,(1-R^2)^{-(n-1)/2}\,\exp\!\left(-\frac{R^2}{2(1-R^2)\,t}\right),
+$$
+
+so
+
+$$
+\log \mathrm{BF}_k = -\tfrac{n-1}{2}\log(1-R^2) - \tfrac k2 \log n
++ \log \int_0^\infty t^{-k/2} e^{-R^2/(2(1-R^2)t)}\, p(t)\, dt + o_p(1),
+$$
+
+and the last integral is a finite positive constant (the exponential removes
+small $t$, and $p(t) \propto t^{-2}$ for large $t$). Taking the difference between
+the two models,
+
+$$
+\log \mathrm{BF}_{01} = \tfrac q2 \log n - \tfrac{n-1}{2}\log\frac{1-R^2_0}{1-R^2_1} + O_p(1),
+$$
+
+and the middle term tends to $\tfrac12\chi^2_q$ (the likelihood-ratio statistic),
+so it is bounded in probability. The $(nt)^{-k/2}$ is the $n^{-k/2}$ box of the
+picture: it is the average over a uniform direction, which spreads the prior
+over all $k$ dimensions. Under the null this factor stays of order 1
+(because $s = nt$ stays of order 1), which is why the rate there does not depend
+on $k$.
+
+Checked numerically (`validation/02`, B3b; 200 datasets per $n$ at
+$n$ = 50, 200, 1000, 5000, slope of the median $\log \mathrm{BF}_{01}$ against
+$\log n$):
+
+| $q$ null predictors added to | $q = 1$ | $q = 3$ | $q = 6$ |
+|---|---|---|---|
+| intercept only (expected $\tfrac12$) | 0.51 | 0.51 | 0.51 |
+| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ (expected $\tfrac q2$) | 0.55 | 1.59 | 2.91 |
+
+Check B3 ($x_1, x_2$ real, $x_3$ null: $q = 1$) gives slope 0.53.
 
 *The larger model is true.* Then $R^2_{\text{large}} \to \rho_1^2 > \rho_0^2 \leftarrow R^2_{\text{small}}$,
 and for $t$ bounded away from 0 the ratio of the two integrands behaves like

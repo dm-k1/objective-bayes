@@ -37,7 +37,8 @@ weight on small effects (orange): that is its built-in expectation.
 are different priors. The correlation is chosen because it is the natural
 scale of an effect: bounded, signed, and comparable across studies. (In the
 stretched-beta family of Ly, Verhagen & Wagenmakers, flat on $r$ is shape
-$a = 1$; the JZS Cauchy corresponds to $a = \tfrac12$.)
+$a = 1$; a Cauchy on $f$ with scale 1 corresponds to $a = \tfrac12$. The JZS
+default's scale 0.354 is not a member of that family: it is narrower.)
 
 ---
 
@@ -124,8 +125,11 @@ left for a reader to find:
   correlated predictors that test separates nulls from small effects slightly
   worse than the JZS default (`validation/README.md`, study 04). The
   per-coefficient (conditional) test, the default, avoids this (study 05, 06).
-- in variable selection there is no hidden penalty for model size: flat-R is
-  the most inclusive of the priors compared, and how many predictors enter is
+- in variable selection there is no extra penalty for leaving the null model:
+  against the intercept-only model, evidence for the null grows like
+  $\tfrac12\log n$ for any number of predictors (between models that both
+  contain an effect, the usual $\tfrac12\log n$ per extra predictor remains;
+  [`3_consistency.md`](3_consistency.md)). Flat-R is the most inclusive of the priors compared, and how many predictors enter is
   left to the prior over models (`validation/README.md`, study 09).
 
 Other rulers make other trade-offs. Flat on $R^2$ (Beta(1, 1)) shrinks less

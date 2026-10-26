@@ -21,7 +21,8 @@ P(beta) = P(total) x P(this combination | total) x unit conversion
 - Intercept and noise get the usual neutral priors (flat, and $1/\sigma$), as in
   the JZS / JASP default.
 - It is a mixture of Zellner g-priors, the family of the JZS default: the member
-  whose implied $R^2$ stays the same for every number of predictors
+  whose implied $R^2$ stays the same for every number of predictors and is
+  Jeffreys' flat correlation for one predictor
   ([`docs/2_how_it_calculates.md`](docs/2_how_it_calculates.md), section 8).
 - The other natural extension of the flat correlation, flat over all
   correlation matrices (rstanarm `stan_lm`'s $R^2$ prior with η = 1), lets the
@@ -120,8 +121,11 @@ Points of attention:
 - **Information consistency needs $n \ge k + 3$**: with fewer observations the
   evidence for a perfect fit stays bounded (`docs/2_how_it_calculates.md`,
   section 10).
-- **Variable selection:** flat-R has no hidden penalty for model size, so it
-  is the most inclusive of the priors compared; how strict a selection is
+- **Variable selection:** flat-R has no extra penalty for leaving the null
+  model (evidence for the null against any fixed set of predictors grows like
+  ½ log n), so it is the most inclusive of the priors compared; between models
+  that both contain an effect the usual ½ log n per extra predictor remains
+  (`docs/3_consistency.md`); how strict a selection is
   depends on the prior over models, so choose it deliberately
   (`validation/README.md`, study 09).
 - `bayes_factor_flat_r_per_term()` removes one term at a time; testing a main
