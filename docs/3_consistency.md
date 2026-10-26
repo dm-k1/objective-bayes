@@ -196,4 +196,4 @@ Consistent, but with $k = n/4$ at about half the rate of fixed $k$. Zellner–Si
 accumulates evidence for the null much faster here, because its prior expects
 $R^2$ near 1 when $k$ is large, which the data easily rule out; flat-R's
 alternative stays at "$R$ flat", which is harder to tell apart from the null.
-That is the same budget property, seen from the null side.
+That is the same shared-total property, seen from the null side.

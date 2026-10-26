@@ -6,7 +6,7 @@
 ## depends only on that coefficient's own contribution (its sample partial
 ## correlation), n and k. This avoids the conditional Lindley paradox of priors
 ## with one shared scale (Som, Hans & MacEachern, 2016), which affects the
-## joint test as it does the JZS default. docs/2_how_it_calculates.md, section 9.
+## joint test as it does the JZS default. docs/2_how_it_calculates.md, section 10.
 ##
 ## Prior for one coefficient, in noise units f:
 ##   f^2 = share * R^2 / (1 - R^2),  R flat on (0, 1),  share ~ Beta(1/2, (k-1)/2),

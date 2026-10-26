@@ -55,7 +55,7 @@ test_that("conditional test: the grid agrees with adaptive integration, also for
 
 test_that("the joint test depends on what the others explain; the conditional test does not", {
   ## same evidence about x1 (partial correlation 0.2, n = 100, k = 3); the
-  ## other predictors explain 5% or 60% (docs/2_how_it_calculates.md, section 9)
+  ## other predictors explain 5% or 60% (docs/2_how_it_calculates.md, section 10)
   joint_bf <- function(r2_without) {
     r2_with <- 1 - (1 - r2_without) * (1 - 0.2^2)
     exp(log_bayes_factor_flat_r_vs_intercept_only(r2_with, 100, 3) -

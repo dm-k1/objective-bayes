@@ -65,7 +65,8 @@ so the counts per bin should be flat.
 
 ## Last results
 
-The sections for 03–06 and 09 below come from runs **before** the common method
+What each result means for the project's claims, with its status, is summarised
+in [`docs/0_overview.md`](../docs/0_overview.md). The sections for 03–06 and 09 below come from runs **before** the common method
 set; 03–06 and 09 have to be rerun with it, and 07 and 08 run for the first
 time. The checks of 01 and 02 are unaffected.
 
@@ -139,13 +140,13 @@ small effect of 0.1; threshold-free), flat-R minus JZS, paired bootstrap 95% CI:
 - **Why** (M4, correlated, n = 200): at a fixed t-statistic for x1, flat-R's log
   BF for x1 drops by 5.2 per unit of R² explained by the other predictors,
   against 1.9 for JZS. Its evidence for x1 depends 2.7 times as strongly on
-  what the rest of the model explains: the shared budget at work. With
+  what the rest of the model explains: the shared total at work. With
   correlated predictors, that R² partly contains x1's own effect, so the
   dependence adds noise (rank correlation of log BF with t²: 0.78 vs 0.93).
-- This is the cost of the budget for testing **one coefficient** in a model with
+- This is the cost of the shared total for testing **one coefficient** in a model with
   correlated predictors. It does not affect comparing whole models.
 
-## 05: a per-coefficient test (experiment)
+## 05: the conditional test (the default for one coefficient)
 
 **In one sentence:** test one coefficient's partial correlation only, with the
 prior the joint flat-R prior implies for it, so the multiplicity correction
@@ -342,13 +343,5 @@ Written, not yet run in full on the reference machine. The growing-k table in
 
 ## Not yet done
 
-- Rerun 03–06 and 09 with the common method set; run 07 (estimation) and 08
-  (k growing with n) for the first time; record the results here.
-- A block version of the conditional test for multi-column terms (factors),
-  with share ~ Beta(q/2, (k − q)/2). The conditional test is the default in
-  `bayes_factor_flat_r_per_term()` for one-column terms.
-- The empirical question that decides between flat-R and uniform correlations:
-  how explained variance grows with the number of predictors in published
-  regressions.
-- A full proof of model-selection consistency (criterion 2; a sketch is in
-  `docs/3_consistency.md`); information and intrinsic consistency are proven.
+The list of open work, for the whole project, is in
+[`docs/0_overview.md`](../docs/0_overview.md) ("Open").

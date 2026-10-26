@@ -16,15 +16,9 @@ Zellner–Siow (JZS, the BayesFactor/JASP default), hyper-g, hyper-g/n,
 beta-prime, robust and intrinsic priors all put a prior on Zellner's $g$. The
 flat-R prior does too, with $g/n = B \cdot W$, $B \sim$ Beta(½, (k−1)/2),
 $W \sim$ Inverse-Gamma(1, ½) ([`2_how_it_calculates.md`](2_how_it_calculates.md),
-section 8). Median implied $R^2$ before any data ($n = 100$):
-
-| Prior | $k = 1$ | $k = 3$ | $k = 10$ | $k = 30$ |
-|---|---|---|---|---|
-| Zellner–Siow (scale 1) | 0.50 | 0.84 | 0.95 | 0.98 |
-| hyper-g/n ($a = 3$) | 0.54 | 0.87 | 0.96 | 0.99 |
-| robust (Bayarri et al., 2012) | 0.52 | 0.72 | 0.77 | 0.78 |
-| intrinsic | 0.39 | 0.59 | 0.65 | 0.66 |
-| **flat-R** | 0.25 | 0.25 | 0.25 | 0.25 |
+section 8). How much $R^2$ each member claims before any data, as $k$ grows,
+is the table in that section: from 0.25 at every $k$ (flat-R) to 0.98 at
+$k = 30$ (Zellner–Siow).
 
 The flat-R hyperprior involves Kummer's confluent hypergeometric function, so
 it is not a special case of the tCCH family of Li & Clyde (2018), which unifies
@@ -161,7 +155,7 @@ joint flat-R prior) let large coefficients drive the test of a small one toward
 "no effect" (Som, Hans & MacEachern, 2016). Their remedy, block hyper-g priors,
 gives groups of coefficients their own scale. The conditional flat-R test does
 the same for one coefficient: its own share of the flat total
-([`2_how_it_calculates.md`](2_how_it_calculates.md), section 9).
+([`2_how_it_calculates.md`](2_how_it_calculates.md), section 10).
 
 ## Is this just R2-D2?
 

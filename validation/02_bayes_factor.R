@@ -299,7 +299,7 @@ information <- sapply(c(0.9, 0.99, 0.999, 0.9999), function(r2)
 record_check("B2. information consistency", all(diff(information) > 0) && information[4] > 50,
              paste(sprintf("%.1f", information), collapse = " "))
 
-##    The exact boundary (docs/2_how_it_calculates.md, section 10): information
+##    The exact boundary (docs/2_how_it_calculates.md, section 11): information
 ##    consistent if and only if n >= k + 3. At n = k + 2 the evidence stays
 ##    bounded as R2 -> 1; at n = k + 3 it keeps growing.
 boundary <- sapply(1:3, function(k) {

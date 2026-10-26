@@ -125,7 +125,7 @@ simulate, then derive, then check.**
 
 Predictor 1's own explained/unexplained variance (its Cohen's $f^2$) is then
 share × $R^2/(1-R^2)$ with $R$ flat: the prior of the conditional test
-([`2_how_it_calculates.md`](2_how_it_calculates.md), section 9).
+([`2_how_it_calculates.md`](2_how_it_calculates.md), section 10).
 
 - **Expected share per predictor:** $E[R^2]/k = \tfrac{1}{3k}$. Adding
   predictors does not add explained variance to the prior: a built-in
@@ -143,7 +143,7 @@ $R$ is flat. It does carry expectations, and they are stated here rather than
 left for a reader to find:
 
 - flat on $R$ means $E[R^2] = \tfrac13$ and median $R^2 = 0.25$;
-- the per-predictor expectation of step 4 follows from the budget.
+- the per-predictor expectation of step 4 follows from the shared total.
 - comparing the models with and without one predictor (the joint test) makes
   its evidence depend on how much the others explain, for the same reason; with
   correlated predictors that test separates nulls from small effects slightly

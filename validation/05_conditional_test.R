@@ -3,7 +3,7 @@
 ##
 ##  The conditional test looks only at one coefficient's sample partial
 ##  correlation, with the prior that the joint prior implies for one
-##  coefficient (R/conditional.R; docs/2_how_it_calculates.md, section 9):
+##  coefficient (R/conditional.R; docs/2_how_it_calculates.md, section 10):
 ##    flat-R                f_j^2 = share * R^2 / (1 - R^2), R flat,
 ##                          share ~ Beta(1/2, (k - 1)/2)
 ##    uniform correlations  f_j^2 = W chi^2_1, W ~ Inverse-Gamma(1, 1/2):

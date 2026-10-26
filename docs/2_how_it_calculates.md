@@ -22,9 +22,16 @@ And the Bayes factor in one sentence:
 > **The Bayes factor with $k$ predictors is the one-predictor Bayes factor,
 > averaged over every direction the effect could take.**
 
-Sections 1–5 build the density, section 6 shows how estimation samples it,
-sections 7 and 9 build the Bayes factor (used by `bayes_factor_flat_r()`), and
-section 8 places the prior in the known family of mixtures of g-priors.
+| Sections | What | Used by |
+|---|---|---|
+| 1–5 | the density, factor by factor | `draw_coefficients_from_flat_r_prior()` |
+| 6 | how estimation samples it | `fit_flat_r_model()` |
+| 7, 9 | the Bayes factor for whole models | `bayes_factor_flat_r()` |
+| 8 | the same prior as a mixture of g-priors | (theory, and check A4) |
+| 10 | the test for one coefficient (the conditional test) | `bayes_factor_flat_r_per_term()` |
+| 11–12 | the default-prior criteria; assumptions and limits | |
+
+Where this fits in the whole project: [`0_overview.md`](0_overview.md).
 
 ---
 
@@ -258,7 +265,8 @@ the correlation" and "Cauchy on the effect size".
 ### Step 3: average over g and over directions
 
 For a uniform direction in $k$ dimensions, the alignment $c$ with any fixed
-direction has density
+direction has density (its square $c^2$ is the **share** of
+[`1_from_behaviour.md`](1_from_behaviour.md), step 4: Beta(½, (k−1)/2))
 
 $$
 p_k(c) \propto (1 - c^2)^{(k-3)/2}, \qquad -1 < c < 1 .
@@ -330,8 +338,9 @@ $$
 
 - $W$ is the one-predictor part: for $k = 1$, $B = 1$ and this is the
   Inverse-Gamma(1, $n/2$) of section 7, step 2.
-- $B$ is the distribution of the squared alignment $c^2$ of section 7: averaging
-  over directions there is the same as averaging over $B$ here.
+- $B$ is the **share** again: the squared alignment $c^2$ of section 7 and the
+  share of [`1_from_behaviour.md`](1_from_behaviour.md), step 4. Averaging over
+  directions there is the same as averaging over $B$ here.
 - Why it works: $f^2 = B W \chi^2_k$, and $B\,\chi^2_k$ has the distribution of
   $\chi^2_1$ (a Beta(½, (k−1)/2) share of a $\chi^2_k$ is a $\chi^2_1$). So
   $f^2 = W\chi^2_1$ for every $k$: exactly the one-predictor prior on the total.
@@ -409,7 +418,9 @@ uses no formula (`validation/02_bayes_factor.R`, check A3).
 
 **In the code:** `bayes_factor_flat_r()`.
 
-### Testing one coefficient: the conditional test
+---
+
+## 10. Testing one coefficient: the conditional test
 
 **In one sentence:** to test one coefficient, look only at its own contribution
 (its partial correlation), with the prior that the joint flat-R prior implies
@@ -425,7 +436,7 @@ with one scale shared by all coefficients has it, including the JZS default
 (weaker; `validation/README.md`, study 04). Its cause is the shared scale.
 
 The conditional test gives the tested coefficient its own scale: its share of
-the flat total. With $f$ its effect in noise units,
+the flat total ([`1_from_behaviour.md`](1_from_behaviour.md), step 4). With $f$ its effect in noise units,
 
 $$
 f^2 = \text{share}\cdot\frac{R^2}{1-R^2}, \qquad R \sim U(0,1), \qquad
@@ -433,8 +444,7 @@ f^2 = \text{share}\cdot\frac{R^2}{1-R^2}, \qquad R \sim U(0,1), \qquad
 $$
 
 with a random sign. This is exactly what the joint prior implies for one
-coefficient, whatever the correlations between predictors (the alignment of a
-uniform direction with one axis has this Beta distribution). The other
+coefficient, whatever the correlations between predictors. The other
 coefficients and the intercept get flat priors and the noise $1/\sigma$, the
 same under both hypotheses. Integrating them out:
 
@@ -462,7 +472,16 @@ version, with share ~ Beta($q/2$, $(k-q)/2$) for $q$ columns, is not built yet.
 
 ---
 
-## 10. The criteria for a default prior (Bayarri et al., 2012)
+**Not one coherent model space.** The conditional test puts flat priors on the
+other coefficients, so it is not the ratio of two flat-R marginal likelihoods:
+a coefficient's conditional Bayes factor differs from
+`bayes_factor_flat_r(full, without it)` (the joint test). Use the conditional
+test to ask "is there evidence for this coefficient?", and the joint Bayes
+factors to compare or average over whole models.
+
+---
+
+## 11. The criteria for a default prior (Bayarri et al., 2012)
 
 Bayarri, Berger, Forte and García-Donato (2012) list seven criteria a default
 prior for model choice should meet. Status for the flat-R prior; "argued"
@@ -490,12 +509,11 @@ is $n \ge k + 3$. Check B2b confirms the boundary: at $n = k + 2$ the evidence
 levels off (e.g. $\log\mathrm{BF} \to 0.91$ for $k = 1$), at $n = k + 3$ it keeps
 growing. For comparison, the robust prior of Bayarri et al. needs $n \ge k + 2$.
 
-**Still open:** a full proof of criterion 2 (the sketch's dominated-convergence
-steps, and non-nested models), and a proof for $k$ growing with $n$.
+What is still open for criterion 2: [`0_overview.md`](0_overview.md), "Open".
 
 ---
 
-## 11. Assumptions and limits
+## 12. Assumptions and limits
 
 - Normal errors, fixed effects, an intercept.
 - The prior uses the **sample** covariance of the predictors (it conditions
