@@ -4,10 +4,16 @@
 ##  The prior shrinks estimates toward zero when several predictors share the
 ##  budget. Does that help or hurt? Fixed true coefficients, many datasets,
 ##  and for every coefficient: bias, error (RMSE), and whether the 95%
-##  interval covers the truth, for
-##    - flat-R        fit_flat_r_model(), posterior mean and 95% interval
-##    - JZS default   BayesFactor posterior (Cauchy, scale 0.354), same summaries
-##    - ordinary      lm(): estimate and 95% confidence interval
+##  interval covers the truth; per dataset: the excess prediction error for a
+##  new observation, (b_hat - b)' Sigma (b_hat - b). Methods (the estimation
+##  versions of the common set in validation/comparison_methods.R):
+##    - flat-R                fit_flat_r_model(), posterior mean and 95% interval
+##    - uniform correlations  rstanarm stan_lm() with R-squared ~ Beta(k/2, 1)
+##                            (R2(location = k/(k+2), what = "mean"), i.e. eta = 1)
+##    - JZS default           BayesFactor posterior (Cauchy, scale 0.354)
+##    - Zellner-Siow          BayesFactor posterior (Cauchy, scale 1)
+##    - ordinary              lm(): estimate and 95% confidence interval
+##  (The conditional tests have no estimation version: they are tests.)
 ##
 ##  Design (noise SD 1, effects in noise units):
 ##    k (predictors)    3, 8
@@ -15,13 +21,14 @@
 ##    correlation       0, 0.5 (all pairs equal)
 ##    true coefficients sparse: 0.4, 0.2, and the rest 0
 ##                      dense:  all 0.15
-##  100 datasets per cell: 2,400 Stan fits.
+##  100 datasets per cell: 2,400 flat-R fits and 2,400 stan_lm fits.
+##  Needs cmdstanr (or rstan), rstanarm and BayesFactor.
 ##
 ##  Run from the project folder, in a terminal, and leave it running:
 ##    Rscript validation/07_estimation.R
-##  Roughly 1.5-3 hours with cmdstanr. Each design cell is saved when it
-##  finishes (validation/results/estimation/), so an interrupted run resumes
-##  where it stopped.
+##  Roughly 2.5-4 hours. Each design cell is saved when it finishes
+##  (validation/results/estimation_v2/), so an interrupted run resumes where
+##  it stopped. (estimation/, from the version without stan_lm, is not used.)
 ## =====================================================================
 library(dplyr)
 library(tidyr)
@@ -29,7 +36,7 @@ library(ggplot2)
 source("validation/settings.R")   # results folder, save_figure()
 pkgload::load_all(".", quiet = TRUE)
 
-cell_folder <- file.path(results_folder, "estimation")
+cell_folder <- file.path(results_folder, "estimation_v2")
 dir.create(cell_folder, recursive = TRUE, showWarnings = FALSE)
 
 design <- expand_grid(number_of_predictors  = c(3, 8),
@@ -42,7 +49,7 @@ true_slopes_for <- function(k, pattern)
   if (pattern == "sparse") c(0.4, 0.2, rep(0, k - 2)) else rep(0.15, k)
 
 
-## ---- One dataset: estimates and intervals from the three methods ------------
+## ---- One dataset: estimates and intervals from every method -----------------
 estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
   set.seed(seed)
   covariance <- matrix(correlation, k, k); diag(covariance) <- 1
@@ -57,10 +64,21 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
                                                   iter_sampling = 1000, seed = seed))
   flat_r_draws <- as.data.frame(flat_r_fit$draws)[, colnames(predictors), drop = FALSE]
 
-  ## JZS default (posterior samples from BayesFactor)
-  jzs_draws <- as.data.frame(BayesFactor::lmBF(formula, data, posterior = TRUE,
-                                               iterations = 4000, progress = FALSE))
-  jzs_draws <- jzs_draws[, colnames(predictors), drop = FALSE]
+  ## uniform correlations: rstanarm stan_lm, R-squared ~ Beta(k/2, eta) with
+  ## mean (k/2) / (k/2 + eta); mean k / (k + 2) gives eta = 1
+  stan_lm_fit <- suppressWarnings(rstanarm::stan_lm(
+    formula, data = data, prior = rstanarm::R2(location = k / (k + 2), what = "mean"),
+    chains = 4, iter = 2000, seed = seed, refresh = 0))
+  stan_lm_draws <- as.data.frame(as.matrix(stan_lm_fit, pars = colnames(predictors)))
+  stan_lm_divergent <- sum(sapply(rstan::get_sampler_params(stan_lm_fit$stanfit, inc_warmup = FALSE),
+                                  function(chain) sum(chain[, "divergent__"])))
+
+  ## JZS default and Zellner-Siow (posterior samples from BayesFactor)
+  bayesfactor_draws <- function(scale)
+    as.data.frame(BayesFactor::lmBF(formula, data, rscaleCont = scale, posterior = TRUE,
+                                    iterations = 4000, progress = FALSE))[, colnames(predictors), drop = FALSE]
+  jzs_draws <- bayesfactor_draws(sqrt(2) / 4)
+  zs_draws  <- bayesfactor_draws(1)
 
   ## ordinary least squares
   ols_fit <- lm(formula, data)
@@ -72,11 +90,19 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
     lower = apply(draws, 2, quantile, probs = 0.025),
     upper = apply(draws, 2, quantile, probs = 0.975))
   rbind(summarise_draws(flat_r_draws, "flat-R"),
+        summarise_draws(stan_lm_draws, "uniform correlations"),
         summarise_draws(jzs_draws, "JZS default"),
+        summarise_draws(zs_draws, "Zellner-Siow"),
         data.frame(method = "ordinary (lm)", coefficient = colnames(predictors),
                    true_value = true_slopes, estimate = coef(ols_fit)[colnames(predictors)],
                    lower = ols_interval[, 1], upper = ols_interval[, 2])) |>
-    mutate(divergent_transitions = flat_r_fit$divergent)
+    group_by(method) |>
+    ## excess error predicting a new observation: (b_hat - b)' Sigma (b_hat - b)
+    mutate(excess_prediction_error = drop(t(estimate - true_value) %*% covariance %*%
+                                            (estimate - true_value))) |>
+    ungroup() |>
+    mutate(divergent_transitions = ifelse(method == "flat-R", flat_r_fit$divergent,
+                                          ifelse(method == "uniform correlations", stan_lm_divergent, NA)))
 }
 
 
@@ -109,13 +135,15 @@ results <- results |>
          interval_width = upper - lower,
          kind = ifelse(true_value == 0, "true zero", "true effect"))
 
-divergences_per_fit <- results |>
-  filter(method == "flat-R") |>
-  distinct(number_of_predictors, sample_size, predictor_correlation, true_coefficients,
-           replication, divergent_transitions)
-cat(sprintf("\nflat-R fits with divergent transitions: %d of %d (total %d transitions)\n",
-            sum(divergences_per_fit$divergent_transitions > 0), nrow(divergences_per_fit),
-            sum(divergences_per_fit$divergent_transitions)))
+for (stan_method in c("flat-R", "uniform correlations")) {
+  divergences_per_fit <- results |>
+    filter(method == stan_method) |>
+    distinct(number_of_predictors, sample_size, predictor_correlation, true_coefficients,
+             replication, divergent_transitions)
+  cat(sprintf("\n%s fits with divergent transitions: %d of %d (total %d transitions)\n", stan_method,
+              sum(divergences_per_fit$divergent_transitions > 0), nrow(divergences_per_fit),
+              sum(divergences_per_fit$divergent_transitions)))
+}
 
 per_cell <- results |>
   group_by(number_of_predictors, sample_size, predictor_correlation, true_coefficients,
@@ -144,6 +172,21 @@ print(as.data.frame(relative_error |>
   select(-mean_squared_error) |>
   pivot_wider(names_from = method, values_from = relative_to_ordinary)), digits = 3)
 
+## Excess prediction error for a new observation, relative to ordinary least squares
+relative_prediction_error <- results |>
+  distinct(number_of_predictors, sample_size, predictor_correlation, true_coefficients,
+           method, replication, excess_prediction_error) |>
+  group_by(number_of_predictors, sample_size, predictor_correlation, true_coefficients, method) |>
+  summarise(mean_excess = mean(excess_prediction_error), .groups = "drop") |>
+  group_by(number_of_predictors, sample_size, predictor_correlation, true_coefficients) |>
+  mutate(relative_to_ordinary = mean_excess / mean_excess[method == "ordinary (lm)"]) |>
+  ungroup()
+
+cat("\nExcess prediction error relative to ordinary least squares (below 1 = better):\n")
+print(as.data.frame(relative_prediction_error |>
+  select(-mean_excess) |>
+  pivot_wider(names_from = method, values_from = relative_to_ordinary)), digits = 3)
+
 cat("\nCoverage of the 95% intervals (should be about 0.95 for the ordinary interval):\n")
 print(as.data.frame(per_cell |>
   select(number_of_predictors, sample_size, predictor_correlation, true_coefficients,
@@ -152,7 +195,9 @@ print(as.data.frame(per_cell |>
 
 
 ## ---- Figures ---------------------------------------------------------------------
-method_colours <- c(`flat-R` = "#d95f02", `JZS default` = "grey40", `ordinary (lm)` = "#1b9e77")
+source("validation/comparison_methods.R")   # method_colours
+method_colours <- method_colours[c("flat-R", "uniform correlations", "JZS default", "Zellner-Siow",
+                                   "ordinary (lm)")]
 cells_facet <- facet_grid(
   number_of_predictors + predictor_correlation ~ true_coefficients,
   labeller = labeller(number_of_predictors  = function(v) paste("k =", v),
@@ -168,6 +213,17 @@ save_figure(
          colour = NULL, title = "Does the shrinkage pay off?",
          subtitle = "below 1: closer to the true coefficients than ordinary regression"),
   "07_relative_error", width = 9, height = 10)
+
+save_figure(
+  ggplot(relative_prediction_error, aes(sample_size, relative_to_ordinary, colour = method)) +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    geom_line(linewidth = 0.9) + geom_point() +
+    scale_x_log10(breaks = c(30, 60, 200)) + scale_colour_manual(values = method_colours) +
+    cells_facet + theme(legend.position = "bottom") +
+    labs(x = "sample size (log scale)", y = "excess prediction error / ordinary least squares",
+         colour = NULL, title = "Does the shrinkage pay off for prediction?",
+         subtitle = "below 1: predicts new observations better than ordinary regression"),
+  "07_prediction_error", width = 9, height = 10)
 
 save_figure(
   ggplot(per_cell, aes(sample_size, coverage, colour = method, linetype = kind)) +

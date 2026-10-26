@@ -10,24 +10,24 @@
 ##    tested coefficient x1   0 (null), 0.1, 0.2
 ##  200 datasets per cell, noise SD 1 (effects in noise units).
 ##
-##  Methods, all testing x1 (model with vs without it):
-##    JZS default, joint flat-R, conditional flat-R (validation/05), and the
-##    exact per-coefficient flat partial correlation.
-##  (R2-D2 is left out: its Monte Carlo Bayes factor is too slow for this grid.)
+##  Methods: the common set of validation/comparison_methods.R, all testing x1:
+##    JZS default, Zellner-Siow, flat-R joint, uniform correlations joint
+##    (model with vs without x1), flat-R conditional and uniform correlations
+##    conditional (x1's partial correlation only; the latter is a flat prior on
+##    the partial correlation).
 ##
 ##  Per cell: discrimination (AUC null vs 0.1 and vs 0.2, threshold-free) and
 ##  calibration at 3 (nulls found, false effects, 0.1 called null, 0.2 found).
 ##
 ##  Run from the project folder: Rscript validation/06_broad_simulation.R
-##  About 15 minutes on 7 cores; cached.
+##  About 20-30 minutes on 7 cores; cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 source("validation/settings.R")             # parallel_map(), caching, save_figure()
 pkgload::load_all(".", quiet = TRUE)
-source("validation/comparison_methods.R")   # JZS
-source("validation/conditional_flat_r.R")   # conditional flat-R, exact flat partial r
+source("validation/comparison_methods.R")   # the common method set
 
 ## ---- Design ----------------------------------------------------------------
 design <- expand_grid(
@@ -48,31 +48,22 @@ one_dataset <- function(k, n, correlation, pattern, slope_of_x1) {
   predictors <- matrix(rnorm(n * k), n) %*% chol(covariance)
   outcome    <- drop(predictors %*% slopes_for(k, slope_of_x1, pattern)) + rnorm(n)
   full_fit   <- lm(outcome ~ predictors)
-  r_squared_full    <- summary(full_fit)$r.squared
-  r_squared_reduced <- summary(lm(outcome ~ predictors[, -1]))$r.squared
-  partial_r <- partial_correlation_of(full_fit, 2)
-  data.frame(
-    method = c("JZS default", "joint flat-R", "conditional flat-R", "flat partial r (per coefficient)"),
-    log_BF10 = c(
-      log(bayes_factor_jzs_one_coefficient(r_squared_full, r_squared_reduced, n, k,
-                                           rscale = sqrt(2) / 4)),
-      log_bayes_factor_flat_r_vs_intercept_only(r_squared_full, n, k) -
-        log_bayes_factor_flat_r_vs_intercept_only(r_squared_reduced, n, k - 1),
-      ## coarser grids than the defaults: 5e-4 on the log scale, 5x faster
-      log_bayes_factor_flat_r_conditional(partial_r, n, k, points_R = 50, points_share = 25),
-      log_bayes_factor_flat_partial_exact(partial_r, n, k, points_R = 400)))
+  log_bayes_factors_one_coefficient(full_fit, 1, outcome, predictors)
 }
 
 runs <- run_simulation_grid(
   design,
   results_file = file.path(results_folder, "sim_broad.rds"),
-  settings = list(replications_per_cell = replications_per_cell, version = 1),
+  settings = list(replications_per_cell = replications_per_cell,
+                  methods = one_coefficient_methods, version = 2),
   simulate_cell = function(cell)
     do.call(rbind, lapply(seq_len(replications_per_cell), function(replication)
       cbind(as.data.frame(cell), replication = replication,
             one_dataset(cell$number_of_predictors, cell$sample_size, cell$predictor_correlation,
                         cell$other_coefficients, cell$slope_of_x1)))))
 
+
+runs <- mutate(runs, method = factor(method, levels = one_coefficient_methods))
 
 ## ---- Summaries ---------------------------------------------------------------
 area_under_curve <- function(higher, lower)
@@ -111,9 +102,7 @@ print(as.data.frame(cell_summaries |>
 
 
 ## ---- Figures -------------------------------------------------------------------
-method_colours <- c(`JZS default` = "grey40", `joint flat-R` = "#d95f02",
-                    `conditional flat-R` = "#e7298a",
-                    `flat partial r (per coefficient)` = "#1b9e77")
+method_colours <- method_colours[one_coefficient_methods]
 by_k_and_correlation <- facet_grid(
   predictor_correlation ~ number_of_predictors,
   labeller = labeller(number_of_predictors  = function(v) paste("k =", v),

@@ -20,16 +20,37 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 |---|---|---|---|
 | `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flat_r.stan`) get the prior and the posterior right? | P1–P4: sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets. Contrast: the same prior sampled in coefficient coordinates | about 5 minutes |
 | `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. A4: against the same prior written as a mixture of g-priors. B1–B3: predictive matching, information and null consistency | about a minute |
-| `03_simulations.R` | How does it behave across many datasets, compared with JZS, per-coefficient flat partial correlation and R2-D2? | 4 correlated predictors, 200 replications per cell, closed-form Bayes factors | long |
-| `04_matched_comparison.R` | Is the difference in 03 discrimination or calibration? | AUC (threshold-free) of BF01 for null vs small effect, paired bootstrap flat-R vs JZS, matched thresholds, and why: dependence of the evidence on what the other predictors explain | about 2 minutes |
-| `05_conditional_test.R` | Experiment: a per-coefficient test that uses only that coefficient's partial correlation, with the prior the joint flat-R prior implies for it | checks C1–C3, then AUC and calibration on the design of 03 | about 3 minutes |
-| `06_broad_simulation.R` | Does the picture hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; JZS, joint, conditional, flat partial r | about 15 minutes |
-| `07_estimation.R` | How good are the estimates? | bias, error relative to ordinary regression, coverage of 95% intervals; flat-R vs JZS vs `lm()`; 2,400 Stan fits, resumes if interrupted | 1.5–3 hours |
-| `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; flat-R vs Zellner–Siow vs JZS | 10–20 minutes |
-| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real): does the prior's claim about model size matter? | flat-R, JZS, Zellner–Siow, BIC, and two experiments: flat-R → flat-R² and uniform correlations (`stan_lm`'s R² prior with η = 1); uniform and beta-binomial model priors; true model found, false inclusions, missed; whole trade-off curves and AUC; checks V1–V4 | about 2–3 minutes |
-| `conditional_flat_r.R` | helper: the per-coefficient test, used by 06 | – | – |
-| `comparison_methods.R` | helper: the comparison methods | – | – |
+| `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); checks U1–U2 | 5–10 minutes |
+| `04_matched_comparison.R` | Is a difference in 03 discrimination or calibration? | AUC (threshold-free), each method minus JZS with a paired bootstrap, matched thresholds, and why: how much the evidence depends on what the other predictors explain | about 3 minutes |
+| `05_conditional_test.R` | Are the conditional tests right? | C1–C4: equals the joint test at k = 1; the implied priors for one coefficient (flat-R: depends only on k; uniform correlations: a flat partial correlation for any k) | under a minute |
+| `06_broad_simulation.R` | Does the picture of 03–04 hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; all one-coefficient methods | 20–30 minutes |
+| `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; flat-R, uniform correlations (`stan_lm`, η = 1), JZS, Zellner–Siow, `lm()`; needs rstanarm; resumes if interrupted | 2.5–4 hours |
+| `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods | under a minute |
+| `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real) | all whole-model methods and BIC; uniform and beta-binomial model priors; true model found, false inclusions, missed; whole trade-off curves and AUC; checks V1–V4 | 3–5 minutes |
+| `comparison_methods.R` | helper: the common method set (names, colours, Bayes factors) | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
+
+## The methods compared (03 on)
+
+One set, defined once in `comparison_methods.R` and used by every study.
+
+| Prior | What it says | Whole models | One coefficient |
+|---|---|---|---|
+| **flat-R** | R² ~ Beta(½, 1) for every k | ✓ | joint and conditional |
+| **uniform correlations** | R² ~ Beta(k/2, 1): every correlation matrix equally likely; `stan_lm`'s prior with η = 1 | ✓ | joint and conditional |
+| JZS default | Cauchy, scale 0.354 (BayesFactor, JASP) | ✓ | joint |
+| Zellner–Siow | Cauchy, scale 1; R² ~ Beta(k/2, ½) | ✓ | joint |
+
+- **Joint:** the model with against without the coefficient.
+- **Conditional:** only the coefficient's partial correlation, with the prior the
+  joint prior implies for one coefficient. For uniform correlations that is a
+  flat partial correlation whatever k is, so this is the "flat partial r per
+  coefficient" of earlier versions, now computed exactly.
+- Estimation (07): flat-R, uniform correlations (`stan_lm`), JZS, Zellner–Siow
+  and `lm()`; the conditional tests have no estimation version.
+- Dropped: R2-D2 and the approximate flat partial correlation from 03
+  (`archive/03_simulations_with_r2d2.R`), and the experiment R² ~ Beta(k/(k+1), 1)
+  from 09 (its result is kept below).
 
 Package tests (`devtools::test()`): 31 pass on cmdstanr.
 
@@ -43,6 +64,10 @@ the posterior draws. If the sampler is right, every position is equally likely,
 so the counts per bin should be flat.
 
 ## Last results
+
+The sections for 03–06 and 09 below come from runs **before** the common method
+set; 03–06 and 09 have to be rerun with it, and 07 and 08 run for the first
+time. The checks of 01 and 02 are unaffected.
 
 | Check | Criterion | Last result |
 |---|---|---|
@@ -312,8 +337,8 @@ Written, not yet run in full on the reference machine. The growing-k table in
 
 ## Not yet done
 
-- Run 07 (estimation: bias, error relative to `lm()`, coverage) and 08 (k
-  growing with n) and record the results here.
+- Rerun 03–06 and 09 with the common method set; run 07 (estimation) and 08
+  (k growing with n) for the first time; record the results here.
 - A block version of the conditional test for multi-column terms (factors),
   with share ~ Beta(q/2, (k − q)/2). The conditional test is the default in
   `bayes_factor_flat_r_per_term()` for one-column terms.

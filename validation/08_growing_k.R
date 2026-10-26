@@ -14,8 +14,9 @@
 ##    G2. A small model is true (3 predictors, 0.3 each, noise SD 1); the
 ##        other k - 3 predictors do nothing. Compare the true model with the
 ##        full k-predictor model: log BF(true vs full) should grow without limit.
-##  Methods: flat-R, Zellner-Siow with scale 1 (Liang et al.), JZS default
-##  (scale 0.354).
+##  Methods: the whole-model set of validation/comparison_methods.R: flat-R,
+##  uniform correlations (R-squared ~ Beta(k/2, 1)), Zellner-Siow (scale 1)
+##  and the JZS default (scale 0.354).
 ##
 ##  Run from the project folder: Rscript validation/08_growing_k.R
 ##  About 10-20 minutes (the n = 2000, k = 500 regressions in G2 dominate).
@@ -24,18 +25,14 @@ library(dplyr)
 library(ggplot2)
 source("validation/settings.R")   # parallel_map(), record_check(), save_figure()
 pkgload::load_all(".", quiet = TRUE)
+source("validation/comparison_methods.R")   # the common method set
 
 sample_sizes <- c(50, 100, 200, 500, 1000, 2000)
 growth_rates <- list(`k = n / 4` = function(n) floor(n / 4), `k = sqrt(n)` = function(n) floor(sqrt(n)))
 replications <- 200
 
-log_bf_vs_null <- function(method, r_squared, n, k) switch(method,
-  `flat-R`               = log_bayes_factor_flat_r_vs_intercept_only(r_squared, n, k),
-  ## simple = FALSE returns the log Bayes factor (simple = TRUE can overflow to Inf)
-  `Zellner-Siow (1)`     = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = FALSE)$bf,
-  `JZS default (0.354)`  = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4,
-                                                         simple = FALSE)$bf)
-methods <- c("flat-R", "Zellner-Siow (1)", "JZS default (0.354)")
+log_bf_vs_null <- log_bayes_factor_model
+methods <- model_methods
 
 
 ## ---- G1: the null is true ---------------------------------------------------
@@ -106,8 +103,7 @@ save_figure(
     geom_hline(yintercept = 0, linetype = "dotted") +
     geom_line(linewidth = 0.9) + geom_point() +
     scale_x_log10(breaks = sample_sizes) +
-    scale_colour_manual(values = c(`flat-R` = "#d95f02", `Zellner-Siow (1)` = "#7570b3",
-                                   `JZS default (0.354)` = "grey40")) +
+    scale_colour_manual(values = method_colours[model_methods]) +
     facet_grid(question ~ growth, scales = "free_y") + theme(legend.position = "bottom") +
     labs(x = "n (log scale)", y = "median log Bayes factor for the truth", colour = NULL,
          title = "Consistency when the number of predictors grows with n",

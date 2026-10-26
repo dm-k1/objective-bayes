@@ -28,6 +28,7 @@ Imports:
 Suggests:
     cmdstanr,
     rstan,
+    rstanarm,
     BayesFactor,
     ggplot2,
     dplyr,
