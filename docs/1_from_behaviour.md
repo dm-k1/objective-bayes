@@ -103,6 +103,30 @@ with others it gets a random slice, on average $1/k$ of the total.
 
 ![](figures/3_share_per_predictor.png)
 
+**How large is the slice? Beta(½, (k−1)/2), found the same way as above:
+simulate, then derive, then check.**
+
+1. **Simulate.** A direction with no preference is $k$ independent normal draws
+   $z_1 \ldots z_k$, divided by their length (in explained-variance units, so
+   correlated predictors are already accounted for). Predictor 1's share of the
+   total is $z_1^2 / (z_1^2 + \dots + z_k^2)$.
+2. **Derive.** The numerator is one squared normal ($\chi^2_1$) and the
+   remainder is $k - 1$ of them ($\chi^2_{k-1}$). A $\chi^2_a$ divided by itself
+   plus an independent $\chi^2_b$ is Beta($a/2$, $b/2$). So
+
+   $$
+   \text{share} \sim \mathrm{Beta}\!\left(\tfrac12, \tfrac{k-1}{2}\right),
+   \qquad E[\text{share}] = \frac{1/2}{1/2 + (k-1)/2} = \frac1k .
+   $$
+
+3. **Check.** 40,000 directions per $k$: KS distance to that Beta 0.003–0.006,
+   mean share 0.501, 0.333, 0.201, 0.100 for $k$ = 2, 3, 5, 10. For $k = 1$ the
+   share is 1: the predictor gets the whole total.
+
+Predictor 1's own explained/unexplained variance (its Cohen's $f^2$) is then
+share × $R^2/(1-R^2)$ with $R$ flat: the prior of the conditional test
+([`2_how_it_calculates.md`](2_how_it_calculates.md), section 9).
+
 - **Expected share per predictor:** $E[R^2]/k = \tfrac{1}{3k}$. Adding
   predictors does not add explained variance to the prior: a built-in
   correction for testing many predictors.

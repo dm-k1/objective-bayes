@@ -65,10 +65,8 @@ ways to extend that to $k$ predictors, and they differ in one claim:
 - **Where Beta($k/2$, 1) comes from.** Under the LKJ distribution with shape η
   (Lewandowski, Kurowicka & Joe, 2009; η = 1 is uniform), the squared multiple
   correlation of one variable on the others is Beta($k/2$, η), the classical
-  null law of the sample $R^2$ (Muirhead, 1982, Theorem 5.2.2). In our terms:
-  $1 - R^2$ is a product of independent partial-correlation factors whose Beta
-  parameters step up by ½, so the product telescopes. Checked by simulation in
-  `validation/09_variable_selection.R` (V4).
+  null law of the sample $R^2$ (Muirhead, 1982, Theorem 5.2.2). How it was
+  found and checked is in the next subsection.
 - **It is rstanarm's `stan_lm` prior.** `stan_lm` uses exactly this
   construction: $\sqrt{R^2}$ times a uniformly random direction in orthogonalised
   predictor coordinates (its QR step), with $R^2 \sim$ Beta($k/2$, η) (Gabry &
@@ -94,6 +92,56 @@ ways to extend that to $k$ predictors, and they differ in one claim:
   implies the same $R^2 \sim$ Beta($k/2$, 1) (simulation, KS ≤ 0.007 for $k$ =
   2–8, 40,000 draws). So "flat on the correlations", in either sense, gives
   $a = k/2$; only "flat on the total" gives flat-R.
+
+### How Beta($k/2$, 1) was found: simulate, then derive, then check
+
+**In one sentence:** draw whole correlation matrices with no preference,
+compute the $R^2$ each one implies, and compare the spread of those $R^2$
+values with the Beta distribution that a short argument predicts.
+
+1. **Make "the correlations, flat, as $k$ grows" well defined.** The $k$
+   correlations of $y$ with the predictors can't be drawn one by one: together
+   with the correlations among the predictors they must form a valid
+   correlation matrix, or $R^2$ can exceed 1. So the whole matrix of
+   $(y, x_1 \ldots x_k)$ is drawn at once, with every valid matrix equally
+   likely (LKJ, η = 1). At $k = 1$ that is a flat correlation, the starting
+   point of [`1_from_behaviour.md`](1_from_behaviour.md), step 1.
+2. **Draw such matrices.** The LKJ algorithm does not draw correlations
+   directly. It draws **partial correlations** (= the correlation left after
+   the earlier variables are taken out). These can be chosen independently
+   and always give a valid matrix. Each is a Beta on (−1, 1), and they are
+   converted back into ordinary correlations: `draw_uniform_correlation_matrix()`
+   in `validation/09_variable_selection.R`.
+3. **Compute each matrix's population $R^2$.** With $\rho$ the correlations of
+   $y$ with the predictors and $\Sigma$ the correlations among the predictors:
+
+   ```r
+   r_squared <- rho %*% solve(Sigma, rho)   # population R-squared of y on the x's
+   ```
+
+   Thousands of matrices at $k$ = 1, 2, 3, 5 and 8 give the spread of $R^2$:
+   the $R^2$ prior that "every correlation matrix equally likely" implies.
+4. **Predict the formula, then test it.** $R^2$ builds up one predictor at a time:
+
+   $$
+   1 - R^2 = (1 - p_1^2)(1 - p_2^2) \cdots (1 - p_k^2),
+   $$
+
+   with $p_j$ the partial correlations of step 2: independent Betas whose
+   parameters step up by ½ each time. A product of Betas like that collapses
+   into one Beta, which predicts $R^2 \sim$ Beta($k/2$, η). The simulated $R^2$
+   matches that Beta to within simulation noise (KS ≈ 0.01; check V4 in 09),
+   and η = 2 matches too, so the formula holds beyond the flat case.
+
+Neither half is enough alone: the simulation without the formula is only
+numbers, and the formula without the simulation could hide a slip. The literal
+reading "every single correlation flat" was checked the same way, with the
+correlations of an inverse-Wishart with $k + 2$ degrees of freedom (Barnard et
+al., 2000): the same Beta($k/2$, 1).
+
+This is the $R^2$ prior of the **uniform correlations** extension. The flat-R
+share per predictor, Beta(½, (k−1)/2), is a different result found the same way:
+[`1_from_behaviour.md`](1_from_behaviour.md), step 4.
 
 **In variable selection** (`validation/README.md`, 09) neither dominates:
 flat-R separates real from null predictors better in small samples with
