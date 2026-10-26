@@ -46,14 +46,43 @@ misses it for larger k, without divergent transitions: with brms at k = 8 the
 10% quantile of the implied R² was 0.027 where the prior gives 0.010 (KS
 distance 0.074; `archive/check_brms_prior.R`). Check 01 shows the contrast.
 
-**03 has not been rerun since the scripts changed.** The earlier run found, for
-the null predictor x3 at n = 200, P(BF₀₁ > 3) = 0.61 (JZS), 0.41 (flat-R),
-0.16 (R2-D2), and that the flat-R prior rarely called a small real effect
-(slope 0.1) null (0.03, against 0.19 for JZS). Rerun before quoting.
+## 03: how the methods compare (last run: October 2026, 200 datasets per cell)
+
+The null predictor x3, n = 200, P(BF₀₁ > 3), i.e. the true null found:
+
+| Method | predictors uncorrelated | correlated (0.5) |
+|---|---|---|
+| flat partial correlation, per coefficient | 0.91 | 0.90 |
+| JZS default | 0.61 | 0.65 |
+| **joint flat-R** | 0.40 | 0.54 |
+| R2-D2 matched | 0.16 | 0.12 |
+
+A small real effect (x1 = 0.1) called null, P(BF₀₁ > 3):
+
+| Method | n = 200, uncorrelated | n = 200, correlated | n = 500, uncorrelated | n = 500, correlated |
+|---|---|---|---|---|
+| flat partial correlation | 0.62 | 0.64 | 0.34 | 0.52 |
+| JZS default | 0.22 | 0.26 | 0.13 | 0.27 |
+| **joint flat-R** | 0.08 | 0.15 | 0.08 | 0.22 |
+| R2-D2 matched | 0.00 | 0.00 | 0.00 | 0.02 |
+
+- For real effects of 0.2 or more, flat-R and JZS are practically identical.
+- False effects for a true null (x1 = 0) are rare for every method (≤ 5%).
+- **Trade-off figure** (`docs/figures/7_trade_off.png`): plotted as "nulls found"
+  against "small effects called null" over n, the flat-R curve lies to the left
+  of the JZS curve in both conditions. At the same rate of finding nulls, flat-R
+  called the small effect null less often (e.g. at about 40% nulls found,
+  uncorrelated: about 8% vs 13%, interpolated). That suggests a better
+  trade-off, not just a different point on the same one, in this design; a
+  precision-matched comparison (equal error rates by adjusting thresholds)
+  is needed before claiming it.
+- Per-coefficient flat partial correlations find nulls fastest but call small
+  real effects null in 60–70% of datasets: a flat prior on each coefficient
+  puts too much weight on large effects.
 
 ## Not yet done
 
-- Precision-matched null thresholds for all four methods in 03.
+- Precision-matched null thresholds for all four methods in 03, to test whether flat-R's better trade-off holds at equal error rates.
 - An estimation simulation (coverage, bias, RMSE with `fit_flat_r_model()`),
   and a mean-squared-error comparison to test whether the shrinkage pays off.
 - Consistency when the number of predictors grows with n.

@@ -148,22 +148,59 @@ simulation_runs |>
 method_colours <- c(`JZS default` = "grey40", `joint flat-R` = "#d95f02",
                     `flat partial correlation` = "#1b9e77", `R2-D2 matched` = "#7570b3")
 x1_summaries   <- filter(cell_summaries, coefficient == "x1")
-facets_by_cell <- facet_grid(predictor_correlation ~ slope_of_x1, labeller = label_both)
+facets_by_cell <- facet_grid(
+  predictor_correlation ~ slope_of_x1,
+  labeller = labeller(slope_of_x1           = function(v) paste("slope of x1 =", v),
+                      predictor_correlation = function(v) paste("predictor correlation =", v)))
+sample_size_axis <- scale_x_log10(breaks = c(20, 100, 500))
+bottom_legend    <- theme(legend.position = "bottom")
 
 save_figure(
   ggplot(x1_summaries, aes(sample_size, correct_3, colour = method)) +
     geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = sample_sizes) + scale_colour_manual(values = method_colours) +
-    facets_by_cell +
-    labs(x = "n", y = "P(BF > 3 for the true hypothesis)", title = "x1: correct evidence"),
-  "03_correct_evidence_x1")
+    sample_size_axis + scale_colour_manual(values = method_colours) +
+    facets_by_cell + bottom_legend +
+    labs(x = "sample size (log scale)", y = "P(BF > 3 for the true hypothesis)", colour = NULL,
+         title = "x1: correct evidence",
+         subtitle = "slope 0: evidence for no effect; slope > 0: evidence for an effect"),
+  "03_correct_evidence_x1", width = 12, height = 6)
 
 save_figure(
   ggplot(x1_summaries, aes(sample_size, misleading_3, colour = method)) +
     geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = sample_sizes) + scale_colour_manual(values = method_colours) +
-    facets_by_cell +
-    labs(x = "n", y = "P(BF > 3 for the wrong hypothesis)", title = "x1: misleading evidence"),
-  "03_misleading_evidence_x1")
+    sample_size_axis + scale_colour_manual(values = method_colours) +
+    facets_by_cell + bottom_legend +
+    labs(x = "sample size (log scale)", y = "P(BF > 3 for the wrong hypothesis)", colour = NULL,
+         title = "x1: misleading evidence",
+         subtitle = "slope 0: a false effect; slope > 0: a real effect called null"),
+  "03_misleading_evidence_x1", width = 12, height = 6)
+
+## The trade-off in one picture: how often each method finds the true null
+## (x3) against how often it calls a small real effect (x1 = 0.1) null
+trade_off <- inner_join(
+  simulation_runs |> filter(coefficient == "x3") |>
+    group_by(predictor_correlation, sample_size, method) |>
+    summarise(null_found = mean(BF10 < 1/3), .groups = "drop"),
+  x1_summaries |> filter(slope_of_x1 == 0.1) |>
+    select(predictor_correlation, sample_size, method, small_effect_called_null = misleading_3),
+  by = c("predictor_correlation", "sample_size", "method"))
+
+save_figure(
+  ggplot(trade_off, aes(small_effect_called_null, null_found, colour = method)) +
+    geom_path(linewidth = 0.8) +
+    geom_point(aes(size = sample_size)) +
+    scale_size_continuous(breaks = c(20, 100, 500), range = c(1, 4)) +
+    scale_colour_manual(values = method_colours) +
+    facet_wrap(~ predictor_correlation,
+               labeller = labeller(predictor_correlation = function(v) paste("predictor correlation =", v))) +
+    bottom_legend +
+    labs(x = "P(small real effect, slope 0.1, called null: BF01 > 3)",
+         y = "P(true null found: BF01 > 3)", colour = NULL, size = "n",
+         title = "Finding nulls vs calling small effects null",
+         subtitle = "top left is best; each line runs from n = 20 to n = 500"),
+  "03_trade_off", width = 11, height = 5.5)
+## the docs show this one too
+file.copy(file.path(figures_folder, "03_trade_off.png"),
+          file.path("docs", "figures", "7_trade_off.png"), overwrite = TRUE)
 
 report_checks()
