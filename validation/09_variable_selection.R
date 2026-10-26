@@ -16,6 +16,10 @@
 ##  Bayes factors per model (each depends only on R-squared, n and k):
 ##    flat-R, JZS default (scale 0.354), Zellner-Siow (scale 1), and BIC
 ##    (exp(-BIC/2) relative to the null) as a non-Bayesian-prior reference.
+##    Experiment: "flat-R -> flat-R2", R-squared ~ Beta(a, 1) with a = k / (k + 1):
+##    flat on R for one predictor (a = 1/2), growing toward flat on R-squared
+##    (a = 1) as k grows, so bigger models claim a bit more explained variance
+##    (E[R2] = k / (2k + 1): 1/3, 2/5, 3/7, ... -> 1/2). Same uniform direction.
 ##  Priors over models:
 ##    uniform      every subset equally likely (favours models with ~6 predictors)
 ##    beta-binomial every model SIZE equally likely (Scott & Berger, 2010)
@@ -42,7 +46,24 @@ true_slopes <- c(0.3, 0.2, 0.15, 0.1, rep(0, 8))
 true_model  <- true_slopes != 0
 design <- expand.grid(sample_size = c(50, 100, 200, 500), predictor_correlation = c(0, 0.5))
 replications_per_cell <- 100
-methods <- c("flat-R", "JZS default", "Zellner-Siow (1)", "BIC")
+methods <- c("flat-R", "flat-R -> flat-R2", "JZS default", "Zellner-Siow (1)", "BIC")
+
+## R-squared ~ Beta(a, 1) with a uniform direction is the g-prior mixture
+## g/n = B * W, B ~ Beta(a, k/2 - a), W ~ Inverse-Gamma(1, 1/2) (a = 1/2: flat-R).
+## Log Bayes factor against the null: an average over B of a 1-D integral over W
+## (both on grids; checks V2 and V3 below).
+log_bf_beta_a <- function(r_squared, n, k, a, points_B = 100, points_w = 600) {
+  if (k == 0) return(0)
+  log_w <- seq(log(1e-9), log(1e9), length.out = points_w); w <- exp(log_w)
+  log_w_weight <- log(0.5) - log_w - 1 / (2 * w) + log(log_w[2] - log_w[1])   # IG(1, 1/2) x w
+  B <- if (k / 2 - a <= 1e-12) 1 else qbeta((seq_len(points_B) - 0.5) / points_B, a, k / 2 - a)
+  g <- n * outer(B, w)
+  log_integrand <- (n - 1 - k) / 2 * log1p(g) - (n - 1) / 2 * log1p(g * (1 - r_squared)) +
+                   matrix(log_w_weight, length(B), points_w, byrow = TRUE)
+  per_B <- apply(log_integrand, 1, function(v) { m <- max(v); m + log(sum(exp(v - m))) })
+  largest <- max(per_B); largest + log(mean(exp(per_B - largest)))
+}
+growing_a <- function(k) k / (k + 1)
 
 ## all 4,096 subsets as a logical matrix, one row per model
 all_models <- as.matrix(expand.grid(rep(list(c(FALSE, TRUE)), number_of_candidates)))
@@ -54,6 +75,7 @@ log_bf_direct <- function(method, r_squared, n, k) {
   if (k == 0) return(0)
   switch(method,
     `flat-R`           = log_bayes_factor_flat_r_vs_intercept_only(r_squared, n, k),
+    `flat-R -> flat-R2` = log_bf_beta_a(r_squared, n, k, growing_a(k)),
     ## simple = FALSE returns the log Bayes factor (simple = TRUE overflows to Inf)
     `JZS default`      = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4, simple = FALSE)$bf,
     `Zellner-Siow (1)` = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = FALSE)$bf,
@@ -82,11 +104,27 @@ set.seed(1)
 interpolation_errors <- sapply(1:200, function(i) {
   sizes <- unique(design$sample_size)
   n <- sizes[sample.int(length(sizes), 1)]; k <- sample.int(number_of_candidates, 1)
-  method <- sample(c("flat-R", "JZS default", "Zellner-Siow (1)"), 1); r2 <- runif(1, 0.001, 0.9)
+  method <- sample(setdiff(methods, "BIC"), 1); r2 <- runif(1, 0.001, 0.9)
   abs(log_bf_table(tables_per_n[[as.character(n)]], method, r2, n, k) - log_bf_direct(method, r2, n, k))
 })
 record_check("V1. tabulated log BF vs direct (200 random cases)", max(interpolation_errors) < 1e-3,
              sprintf("largest error %.1e", max(interpolation_errors)))
+
+## V2. the Beta(a, 1) Bayes factor with a = 1/2 is the flat-R closed form
+v2_errors <- sapply(list(c(0.19, 60, 3), c(0.05, 100, 5), c(0.3, 200, 10), c(0.4, 50, 1)), function(s)
+  abs(log_bf_beta_a(s[1], s[2], s[3], 0.5) - log_bayes_factor_flat_r_vs_intercept_only(s[1], s[2], s[3])))
+record_check("V2. Beta(a, 1) version with a = 1/2 equals flat-R", max(v2_errors) < 1e-3,
+             sprintf("largest difference %.1e", max(v2_errors)))
+
+## V3. the mixture really implies R-squared ~ Beta(k/(k+1), 1)
+set.seed(2)
+v3_distances <- sapply(c(2, 5, 12), function(k) {
+  a <- growing_a(k)
+  f_squared <- rbeta(2e5, a, k / 2 - a) / (2 * rexp(2e5)) * rchisq(2e5, k)
+  suppressWarnings(unname(ks.test(f_squared / (1 + f_squared), "pbeta", a, 1)$statistic))
+})
+record_check("V3. implied R-squared ~ Beta(k/(k+1), 1) (k = 2, 5, 12)", max(v3_distances) < 0.01,
+             sprintf("KS distances %s", paste(sprintf("%.4f", v3_distances), collapse = " ")))
 
 
 ## ---- One dataset ------------------------------------------------------------
@@ -127,7 +165,8 @@ analyse_dataset <- function(n, correlation, seed) {
 runs <- run_simulation_grid(
   design,
   results_file = file.path(results_folder, "sim_variable_selection.rds"),
-  settings = list(replications_per_cell = replications_per_cell, true_slopes = true_slopes, version = 1),
+  settings = list(replications_per_cell = replications_per_cell, true_slopes = true_slopes,
+                  methods = methods, version = 2),
   simulate_cell = function(cell)
     do.call(rbind, lapply(seq_len(replications_per_cell), function(replication)
       cbind(as.data.frame(cell), replication = replication,
@@ -150,7 +189,7 @@ summaries <- runs |>
 print(as.data.frame(summaries), digits = 3)
 saveRDS(summaries, file.path(results_folder, "variable_selection_summaries.rds"))
 
-method_colours <- c(`flat-R` = "#d95f02", `JZS default` = "grey40",
+method_colours <- c(`flat-R` = "#d95f02", `flat-R -> flat-R2` = "#e7298a", `JZS default` = "grey40",
                     `Zellner-Siow (1)` = "#7570b3", BIC = "#1b9e77")
 long <- summaries |>
   pivot_longer(c(median_model_is_true, false_inclusions, missed),
