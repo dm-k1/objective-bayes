@@ -134,9 +134,9 @@ log_bayes_factor_vs_intercept_only <- function(explained_share, sample_size, num
       explained_share, sample_size, number_of_predictors))
 }
 
-## Pull predictors and outcome out of a flat_r_fit or lm fit
+## Pull predictors and outcome out of a flatcor_fit or lm fit
 extract_predictors_and_outcome <- function(model) {
-  if (inherits(model, "flat_r_fit")) {
+  if (inherits(model, "flatcor_fit")) {
     predictors <- model$predictors
     outcome    <- model$outcome
   } else {
@@ -149,17 +149,17 @@ extract_predictors_and_outcome <- function(model) {
 #' Bayes factor between any two linear models
 #'
 #' Nested or not, as long as both use the same outcome and data rows.
-#' @param model_a,model_b Fits from \code{fit_flat_r_model()} or \code{lm()}.
-#' @param prior \code{"flat_r"} (R-squared ~ Beta(1/2, 1) for every k) or
-#'   \code{"uniform_correlations"} (every correlation matrix equally likely,
-#'   R-squared ~ Beta(k/2, 1)). See \code{docs/0_overview.md}.
+#' @param model_a,model_b Fits from \code{fit_regression()} or \code{lm()}.
+#' @param prior \code{"uniform_correlations"} (the default: every correlation
+#'   matrix equally likely, R-squared ~ Beta(k/2, 1)) or \code{"flat_r"}
+#'   (R-squared ~ Beta(1/2, 1) for every k). See \code{docs/0_overview.md}.
 #' @return The Bayes factor of model A against model B.
 #' @examples
-#' bayes_factor_flat_r(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars))
-#' bayes_factor_flat_r(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
-#'                     prior = "uniform_correlations")
+#' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars))
+#' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
+#'                     prior = "flat_r")
 #' @export
-bayes_factor_flat_r <- function(model_a, model_b, prior = c("flat_r", "uniform_correlations")) {
+bayes_factor_models <- function(model_a, model_b, prior = c("uniform_correlations", "flat_r")) {
   prior <- match.arg(prior)
   parts_a <- extract_predictors_and_outcome(model_a)
   parts_b <- extract_predictors_and_outcome(model_b)
@@ -187,15 +187,15 @@ bayes_factor_flat_r <- function(model_a, model_b, prior = c("flat_r", "uniform_c
 #' @param data A data frame.
 #' @param test \code{"conditional"} (default) or \code{"joint"} (compare the
 #'   models with and without each term, for every term).
-#' @param prior \code{"flat_r"} or \code{"uniform_correlations"}; see
-#'   \code{bayes_factor_flat_r()}.
+#' @param prior \code{"uniform_correlations"} (the default) or \code{"flat_r"}; see
+#'   \code{bayes_factor_models()}.
 #' @return A data frame with BF10 (evidence for an effect), BF01, and the test used.
 #' @examples
-#' bayes_factor_flat_r_per_term(mpg ~ wt + hp + qsec, mtcars)
-#' bayes_factor_flat_r_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "uniform_correlations")
+#' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars)
+#' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_r")
 #' @export
-bayes_factor_flat_r_per_term <- function(formula, data, test = c("conditional", "joint"),
-                                         prior = c("flat_r", "uniform_correlations")) {
+bayes_factor_per_term <- function(formula, data, test = c("conditional", "joint"),
+                                  prior = c("uniform_correlations", "flat_r")) {
   test  <- match.arg(test)
   prior <- match.arg(prior)
   log_bayes_factor_conditional <- switch(prior,
@@ -226,7 +226,7 @@ bayes_factor_flat_r_per_term <- function(formula, data, test = c("conditional", 
            used = "conditional")
     } else {
       reduced_model <- lm(update(formula, paste(". ~ . -", term_labels[index])), rows_of_full_model)
-      list(bf = bayes_factor_flat_r(full_model, reduced_model, prior = prior), used = "joint")
+      list(bf = bayes_factor_models(full_model, reduced_model, prior = prior), used = "joint")
     }
   })
   evidence_for_effect <- vapply(results, `[[`, numeric(1), "bf")

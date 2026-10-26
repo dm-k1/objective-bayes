@@ -1,21 +1,20 @@
-Package: flatr
-Title: Objective Bayes for Linear Regression with the Flat-R Prior
+Package: flatcor
+Title: Objective Bayes for Linear Regression with Flat Correlations
 Version: 0.1.0
 Authors@R:
     person("Diemithry M.", "Kloppenburg", email = "diemithrykloppenburg@hotmail.com",
            role = c("aut", "cre"))
-Description: Bayes factors and estimation for linear regression with a prior
-    that is flat on the multiple correlation R for any number of predictors,
-    with every way of dividing the explained variance over the predictors
-    equally plausible. It is a mixture of Zellner g-priors whose implied prior
-    on R-squared, Beta(1/2, 1), does not change with the number of predictors;
-    with one predictor it is Jeffreys' flat prior on the correlation. Bayes
-    factors between any two linear models come from a closed form that needs
-    only R-squared, n and k. Estimation samples the prior in its own
-    coordinates (R and a direction) with Stan. Every function also offers the
-    uniform-correlations prior (every correlation matrix of the outcome and
-    predictors equally likely, R-squared ~ Beta(k/2, 1), as rstanarm stan_lm
-    with eta = 1), under which each coefficient's partial correlation is flat.
+Description: Bayes factors and estimation for linear regression with
+    objective priors that extend Jeffreys' flat correlation to several
+    predictors. The default makes every correlation matrix of the outcome and
+    predictors equally likely: R-squared ~ Beta(k/2, 1) (as rstanarm stan_lm
+    with eta = 1), and each coefficient's partial correlation is flat for any
+    number of predictors, so testing one coefficient is Jeffreys' correlation
+    test with or without covariates. The alternative, flat-R, is flat on the
+    multiple correlation R for every number of predictors (R-squared ~
+    Beta(1/2, 1)). Both are mixtures of Zellner g-priors with closed-form Bayes
+    factors that need only R-squared, n and k; estimation samples the prior in
+    its own coordinates (R and a direction) with Stan.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

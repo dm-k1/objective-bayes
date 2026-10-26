@@ -1,8 +1,9 @@
 ## =====================================================================
-##  Vignette: the flat-R prior on one dataset, start to finish
-##  Estimation (Stan), then Bayes factors for any model comparison.
+##  Vignette: flatcor on one dataset, start to finish
+##  Estimation (Stan), then Bayes factors for any model comparison, with the
+##  default prior (uniform correlations) and the alternative (flat-R).
 ## =====================================================================
-library(flatr)   # install once, from the project folder: devtools::install()
+library(flatcor)   # install once, from the project folder: devtools::install()
 library(ggplot2)
 
 ## ---- 1. Data ---------------------------------------------------------
@@ -19,32 +20,32 @@ my_data$y  <- 0.3 * my_data$x1 + 0.2 * my_data$x2 + rnorm(sample_size)
 my_data$x4 <- rnorm(sample_size)
 
 ## ---- 2. Estimation ---------------------------------------------------
-full_model <- fit_flat_r_model(y ~ x1 + x2 + x3, data = my_data, chains = 4,
-                               iter_warmup = 1000, iter_sampling = 1000, seed = 1)
+full_model <- fit_regression(y ~ x1 + x2 + x3, data = my_data, chains = 4,
+                             iter_warmup = 1000, iter_sampling = 1000, seed = 1)
 full_model                       # estimates, intervals, Rhat, ESS, divergences
 loo(full_model)                  # leave-one-out cross-validation
 pp_check(full_model)             # posterior predictive check
 bayesplot::mcmc_trace(full_model$draws)   # trace plots (any bayesplot plot works on $draws)
 
 ## Next to the ordinary estimates: at n = 60 with three predictors the prior
-## pulls the estimates toward zero (docs/1_from_behaviour.md, step 4)
-cbind(flat_r   = colMeans(as.data.frame(full_model$draws)[, c("x1", "x2", "x3")]),
-      ordinary = coef(lm(y ~ x1 + x2 + x3, data = my_data))[c("x1", "x2", "x3")])
+## pulls the estimates toward zero; flat-R pulls harder (validation/README.md, 07)
+cbind(uniform_correlations = colMeans(as.data.frame(full_model$draws)[, c("x1", "x2", "x3")]),
+      ordinary             = coef(lm(y ~ x1 + x2 + x3, data = my_data))[c("x1", "x2", "x3")])
 
 ## ---- 3. Bayes factor per predictor ----------------------------------
 ## No Stan needed. Each predictor is tested on its own partial correlation
 ## (the conditional test); test = "joint" compares the models with and without it
-bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)
-bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, test = "joint")
-## The other prior (docs/0_overview.md): every correlation matrix equally
-## likely, so each coefficient's partial correlation is flat, whatever k is
-bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, prior = "uniform_correlations")
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data)
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, test = "joint")
+## The other prior (docs/0_overview.md): flat on the total R, so each
+## coefficient's prior narrows as predictors are added
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_r")
 
 ## ---- 4. Comparing any two models ------------------------------------
-## Takes fit_flat_r_model() fits or plain lm() fits: only R-squared, n and k matter
-bayes_factor_flat_r(full_model, lm(y ~ x2 + x3, data = my_data))   # nested: evidence for x1
-bayes_factor_flat_r(full_model, lm(y ~ x4, data = my_data))        # non-nested comparison
-bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, data = my_data), lm(y ~ 1, data = my_data))
+## Takes fit_regression() fits or plain lm() fits: only R-squared, n and k matter
+bayes_factor_models(full_model, lm(y ~ x2 + x3, data = my_data))   # nested: evidence for x1
+bayes_factor_models(full_model, lm(y ~ x4, data = my_data))        # non-nested comparison
+bayes_factor_models(lm(y ~ x1 + x2 + x3, data = my_data), lm(y ~ 1, data = my_data))
 
 ## ---- 5. What a null Bayes factor rests on ---------------------------
 ## Which effect sizes can the data not tell apart from zero? (x2 here)

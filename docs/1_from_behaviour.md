@@ -1,5 +1,11 @@
 # 1. Where the prior comes from
 
+> **Which prior this document is about.** It derives **flat-R**
+> (`prior = "flat_r"`). The package default is **uniform correlations**; its
+> case is in [`relation_to_others.md`](relation_to_others.md) ("The other
+> extension" and "Why η = 1"), and why it became the default is in
+> [`0_overview.md`](0_overview.md).
+
 **In one sentence:** the total strength of all predictors together gets one
 flat prior, the same for any number of predictors, and every way of dividing
 that total over the predictors is equally plausible.

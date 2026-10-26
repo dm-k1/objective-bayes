@@ -5,11 +5,11 @@
 # the container runs, so results are written straight into it.
 #
 # Build once (20-40 minutes: packages and CmdStan compile from source):
-#   docker build -t flatr-validation .
+#   docker build -t flatcor-validation .
 # Run every study, or a selection (see validation/run_all.R):
-#   docker run --rm -v "$PWD":/project flatr-validation
-#   docker run --rm -v "$PWD":/project flatr-validation Rscript validation/run_all.R quick
-#   docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatr-validation
+#   docker run --rm -v "$PWD":/project flatcor-validation
+#   docker run --rm -v "$PWD":/project flatcor-validation Rscript validation/run_all.R quick
+#   docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatcor-validation
 
 # R version as recorded in renv.lock
 FROM rocker/r-ver:4.6.1

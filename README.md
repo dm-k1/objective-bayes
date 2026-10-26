@@ -1,22 +1,34 @@
-# Objective Bayes for linear regression: two extensions of Jeffreys' flat correlation
+# flatcor: objective Bayes for linear regression with flat correlations
 
 > Define what's possible, not what you expect.
 
-**In one sentence:** with one predictor, a flat prior on the correlation
-(Jeffreys); with more predictors, two ways to keep that, built and validated
-as equals until the comparison studies decide:
+**In one sentence:** every correlation matrix of the outcome and the predictors
+is equally likely, so each coefficient's partial correlation gets Jeffreys'
+flat prior, whatever the number of other predictors.
+
+Two ways to extend Jeffreys' flat correlation to several predictors are built
+and validated side by side; the validation studies chose the first as the
+default (`validation/README.md`, "In short"):
 
 | | What is flat | Implied $R^2$ | One coefficient's prior |
 |---|---|---|---|
-| **flat-R** (`prior = "flat_r"`, the default) | the total, the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
-| **uniform correlations** (`prior = "uniform_correlations"`) | every correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
+| **uniform correlations** (`prior = "uniform_correlations"`, the default) | every correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
+| **flat-R** (`prior = "flat_r"`) | the total, the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
+
+Why the default: for testing one coefficient it confirms true nulls about as
+often whatever the number of covariates (0.87 at k = 2 to 20, against 0.55 to
+0.06 for flat-R), and its 95% intervals keep their coverage (0.92 or higher in
+every design; flat-R down to 0.76). Its cost: an effect of a partial
+correlation of about 0.1 is called null in about half the datasets at moderate
+n. Details: [`docs/0_overview.md`](docs/0_overview.md).
 
 Both divide the total over the predictors with no preference. As a density on
 the coefficients:
 
 ```
 P(beta) = P(total) x P(this combination | total) x unit conversion
-          flat on R   every split equally likely   noise units -> data units
+          R^2 ~ Beta(k/2, 1)   every split equally likely   noise units -> data units
+          (flat-R: R flat)
 ```
 
 - Both are mixtures of Zellner g-priors, the family of the JZS / JASP default;
@@ -43,22 +55,19 @@ devtools::install()                    # or: remotes::install_github("dm-k1/obje
 Then:
 
 ```r
-library(flatr)
+library(flatcor)
 
-fit <- fit_flat_r_model(y ~ x1 + x2 + x3, my_data)   # estimation (Stan)
-fit                                                  # estimates and diagnostics
+fit <- fit_regression(y ~ x1 + x2 + x3, my_data)   # estimation (Stan)
+fit                                                # estimates and diagnostics
 loo(fit); pp_check(fit)
 
-bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)              # BF per term (conditional test)
-bayes_factor_flat_r(fit, lm(y ~ x2 + x3, my_data))                   # any two models
-bayes_factor_flat_r(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))   # no Stan needed
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data)                     # BF per term (conditional test)
+bayes_factor_models(fit, lm(y ~ x2 + x3, my_data))                   # any two models
+bayes_factor_models(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))   # no Stan needed
 
-## the other prior: the same functions with prior = "uniform_correlations"
-bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, prior = "uniform_correlations")
+## the other prior: the same functions with prior = "flat_r"
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_r")
 ```
-
-(The function and package names still say flat-R; they will follow the
-decision between the two priors.)
 
 Requirements: R ≥ 4.3; MASS, posterior, loo and bayesplot are installed with
 the package. For estimation also cmdstanr with CmdStan (or rstan). Optional:
@@ -71,12 +80,12 @@ running the validation anywhere: `validation/README.md`.
 
 | Path | What it is |
 |---|---|
-| `R/fit.R` | `fit_flat_r_model()`, with `print()`, `loo()` and `pp_check()` |
-| `R/bayes_factor.R` | `bayes_factor_flat_r()`, `bayes_factor_flat_r_per_term()` and the closed form behind them |
+| `R/fit.R` | `fit_regression()`, with `print()`, `loo()` and `pp_check()` |
+| `R/bayes_factor.R` | `bayes_factor_models()`, `bayes_factor_per_term()` and the closed form behind them |
 | `R/conditional.R` | `log_bayes_factor_flat_r_conditional()`: the test for one coefficient |
-| `R/prior_draws.R` | `draw_coefficients_from_flat_r_prior()`: the prior as a recipe |
+| `R/prior_draws.R` | `draw_coefficients_from_prior()`: the prior as a recipe |
 | `R/support_curve.R` | Optional reporting next to a null Bayes factor: which effect sizes the data can't tell apart from zero |
-| `inst/stan/flat_r.stan` | The Stan model: samples $R$ and a direction, computes the coefficients |
+| `inst/stan/flatcor.stan` | The Stan model: samples $R$ and a direction, computes the coefficients |
 | `tests/` | Fast checks (`devtools::test()`); the full checks are in `validation/` |
 | `DESCRIPTION`, `NAMESPACE`, `man/` | Package files (`man/` and `NAMESPACE` are generated by roxygen2 from the comments in `R/`) |
 | `vignette.R` | Use it on a dataset, start to finish |
@@ -96,7 +105,7 @@ Supported: linear regression with a normal outcome, an intercept and fixed
 effects, including continuous predictors, factors (tested as one block),
 interactions, polynomials and spline columns.
 
-Not (yet) supported, and `fit_flat_r_model()` stops for some of these:
+Not (yet) supported, and `fit_regression()` stops for some of these:
 group-level (random) effects (the shared $R^2$ total would need the group-level
 variance, cf. R2D2M2), other families, distributional models, models without
 an intercept.

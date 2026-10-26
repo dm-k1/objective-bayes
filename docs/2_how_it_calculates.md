@@ -1,5 +1,11 @@
 # 2. How the prior calculates
 
+> **Which prior this document is about.** It builds **flat-R**
+> (`prior = "flat_r"`). The package default is **uniform correlations**. The
+> same machinery covers it (sections 6, 8 and 10); its case is made in
+> [`relation_to_others.md`](relation_to_others.md) ("Why η = 1"), and why it
+> became the default is in [`0_overview.md`](0_overview.md).
+
 The whole prior in one sentence:
 
 $$
@@ -24,11 +30,11 @@ And the Bayes factor in one sentence:
 
 | Sections | What | Used by |
 |---|---|---|
-| 1–5 | the density, factor by factor | `draw_coefficients_from_flat_r_prior()` |
-| 6 | how estimation samples it | `fit_flat_r_model()` |
-| 7, 9 | the Bayes factor for whole models | `bayes_factor_flat_r()` |
+| 1–5 | the density, factor by factor | `draw_coefficients_from_prior()` |
+| 6 | how estimation samples it | `fit_regression()` |
+| 7, 9 | the Bayes factor for whole models | `bayes_factor_models()` |
 | 8 | the same prior as a mixture of g-priors | (theory, and check A4) |
-| 10 | the test for one coefficient (the conditional test) | `bayes_factor_flat_r_per_term()` |
+| 10 | the test for one coefficient (the conditional test) | `bayes_factor_per_term()` |
 | 11–12 | the default-prior criteria; assumptions and limits | |
 
 Where this fits in the whole project: [`0_overview.md`](0_overview.md).
@@ -154,7 +160,7 @@ $$
 $$
 
 **Drawing from the prior** is the same sentence read forwards:
-`draw_coefficients_from_flat_r_prior()` draws $R$ flat (factor 1), a direction
+`draw_coefficients_from_prior()` draws $R$ flat (factor 1), a direction
 with no preference in explained variance (factor 2), and scales it to length $f$
 (factor 3). Counting those draws in small squares gives the formula's density
 (figure below; correlated predictors, so factor 3 is tested too).
@@ -170,7 +176,7 @@ The density above is what the prior *says*; it is not how estimation should
 sampler that moves through $\beta$ steps over it without warning (with 8
 predictors it draws far too few small effects).
 
-So `inst/stan/flat_r.stan` samples the parameters the prior is built from:
+So `inst/stan/flatcor.stan` samples the parameters the prior is built from:
 
 | Parameter | Prior | Factor |
 |---|---|---|
@@ -421,7 +427,7 @@ Everything except $g$ and $c$ integrates out exactly, so the Bayes factor needs
 no MCMC. It agrees with a brute-force Bayes factor that draws from the prior and
 uses no formula (`validation/02_bayes_factor.R`, check A3).
 
-**In the code:** `bayes_factor_flat_r()`.
+**In the code:** `bayes_factor_models()`.
 
 ---
 
@@ -475,10 +481,10 @@ its partial correlation is flat on (−1, 1) for every $k$
 ([`relation_to_others.md`](relation_to_others.md), "Why η = 1"), so the same
 formula with $P(|f| < f) = f/\sqrt{1+f^2}$, Jeffreys' one-predictor prior, whatever
 $k$ is. In the code: `log_bayes_factor_uniform_correlations_conditional()`, used
-by `bayes_factor_flat_r_per_term(..., prior = "uniform_correlations")`.
+by `bayes_factor_per_term(..., prior = "uniform_correlations")`.
 
 **In the code:** `log_bayes_factor_flat_r_conditional()`, used by
-`bayes_factor_flat_r_per_term()` for every one-column term. Terms with several
+`bayes_factor_per_term()` for every one-column term. Terms with several
 columns (factors with more than two levels) still use the joint test; a block
 version, with share ~ Beta($q/2$, $(k-q)/2$) for $q$ columns, is not built yet.
 
@@ -487,7 +493,7 @@ version, with share ~ Beta($q/2$, $(k-q)/2$) for $q$ columns, is not built yet.
 **Not one coherent model space.** The conditional test puts flat priors on the
 other coefficients, so it is not the ratio of two flat-R marginal likelihoods:
 a coefficient's conditional Bayes factor differs from
-`bayes_factor_flat_r(full, without it)` (the joint test). Use the conditional
+`bayes_factor_models(full, without it)` (the joint test). Use the conditional
 test to ask "is there evidence for this coefficient?", and the joint Bayes
 factors to compare or average over whole models.
 

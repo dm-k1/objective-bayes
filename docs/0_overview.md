@@ -1,9 +1,9 @@
 # 0. Overview: what this project claims, and how far each claim is shown
 
 **In one sentence:** two objective priors for linear regression, both
-Jeffreys' flat correlation with one predictor, compared as equals until the
-validation studies decide between them: flat on the total $R$ (flat-R), or
-every correlation matrix equally likely (uniform correlations).
+Jeffreys' flat correlation with one predictor, built and validated side by
+side: every correlation matrix equally likely (uniform correlations, the
+default of the package `flatcor`), or flat on the total $R$ (flat-R).
 
 This page is the map. Every other document goes into one part of it.
 
@@ -19,7 +19,7 @@ predictors you must choose *what* stays flat. There are two natural choices:
                             |
           ------------------+-------------------
           |                                    |
-  A. FLAT-R                         B. UNIFORM CORRELATIONS
+  A. FLAT-R                         B. UNIFORM CORRELATIONS (default)
   flat on the total R               every correlation matrix of
                                     (y, x1 ... xk) equally likely
           |                                    |
@@ -48,7 +48,8 @@ singled out by one property:
 | flat-R | the only g-mixture whose $R^2$ prior is the same for every $k$ *and* is Jeffreys at $k = 1$ | doc 2, section 8; validation 09, V5 |
 | uniform correlations | η = 1 is the only `stan_lm` shape where every coefficient's partial correlation is Jeffreys' flat correlation, whatever $k$ is | [`relation_to_others.md`](relation_to_others.md), "Why η = 1"; validation 05, C7 |
 
-Every function takes `prior = "flat_r"` (the default) or `prior = "uniform_correlations"`.
+Every function takes `prior = "uniform_correlations"` (the default, chosen on
+the validation reruns of 26 October 2026) or `prior = "flat_r"`.
 
 ---
 
@@ -56,9 +57,9 @@ Every function takes `prior = "flat_r"` (the default) or `prior = "uniform_corre
 
 | Question | Function | How it computes | Explained in |
 |---|---|---|---|
-| What are the coefficients? | `fit_flat_r_model()` | Stan, sampling $R$ and a direction (not the coefficients) | doc 2, section 6 |
-| Which of two models? (nested or not) | `bayes_factor_flat_r()` | closed form: needs only $R^2$, $n$, $k$ | doc 2, sections 7–9 |
-| Is there evidence for this one coefficient? | `bayes_factor_flat_r_per_term()` | the conditional test: its partial correlation, with the prior the joint prior implies for it (flat-R: its share of the flat total; uniform correlations: a flat partial correlation) | doc 2, section 10 |
+| What are the coefficients? | `fit_regression()` | Stan, sampling $R$ and a direction (not the coefficients) | doc 2, section 6 |
+| Which of two models? (nested or not) | `bayes_factor_models()` | closed form: needs only $R^2$, $n$, $k$ | doc 2, sections 7–9 |
+| Is there evidence for this one coefficient? | `bayes_factor_per_term()` | the conditional test: its partial correlation, with the prior the joint prior implies for it (flat-R: its share of the flat total; uniform correlations: a flat partial correlation) | doc 2, section 10 |
 
 Two ways to test one coefficient, and why the package uses the second:
 
@@ -145,7 +146,7 @@ its result; details in [`../validation/README.md`](../validation/README.md).
   predictors, 0.87 with 10. A large model whose fit is modest is then penalised.
 - **Information consistency needs $n \ge k + 3$.** With fewer observations the
   evidence for a perfect fit stays bounded.
-- **Main effects with interactions.** `bayes_factor_flat_r_per_term()` removes
+- **Main effects with interactions.** `bayes_factor_per_term()` removes
   one term at a time, so testing a main effect while its interaction stays in
   the model follows the usual marginality caveats.
 - **Stan messages.** At the start of warmup Stan may print a few "Informational
@@ -164,11 +165,11 @@ its result; details in [`../validation/README.md`](../validation/README.md).
   with share ~ Beta(q/2, (k − q)/2) for $q$ columns.
 - **Model-selection consistency, in full:** the dominated-convergence steps of the
   sketch, non-nested models, and a proof for $k$ growing with $n$ (doc 3).
-- **Decide between the paths.** The reruns are in (`validation/README.md`, "In
-  short"): for testing one coefficient, uniform correlations is stable in $k$,
-  confirms nulls and has honest intervals, at the cost of calling effects of
-  about 0.1 null at moderate $n$; flat-R loses null evidence as covariates are
-  added. Still open: the empirical question below.
+- **Decided: uniform correlations is the default** (26 October 2026), on the
+  reruns (`validation/README.md`, "In short"): for testing one coefficient it is
+  stable in $k$, confirms nulls and keeps its interval coverage, at the cost of
+  calling effects of about 0.1 null at moderate $n$. Flat-R stays available as
+  `prior = "flat_r"`. Still worth checking: the empirical question below.
 - **The empirical question between paths A and B:** how explained variance grows
   with the number of predictors in published regressions. Path B predicts a
   median $R^2$ of 0.76 with 5 predictors; flat-R predicts 0.25 at any size.

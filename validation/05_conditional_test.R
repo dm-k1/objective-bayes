@@ -44,7 +44,7 @@ record_check("C1. k = 1: equals the joint flat-R Bayes factor", max(c1_differenc
 ##     depend on how the predictors correlate.
 set.seed(1)
 correlated <- matrix(0.6, 4, 4); diag(correlated) <- 1
-joint_draws <- draw_coefficients_from_flat_r_prior(200000, correlated)
+joint_draws <- draw_coefficients_from_prior(200000, correlated, prior = "flat_r")
 spread_left <- sqrt(1 / diag(solve(correlated)))[2]
 from_joint <- joint_draws[, 2] * spread_left / sqrt(1 + (joint_draws[, 2] * spread_left)^2)
 f_formula  <- sqrt(rbeta(200000, 0.5, 1.5) * (function(R) R^2 / (1 - R^2))(runif(200000)))

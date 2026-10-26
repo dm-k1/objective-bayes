@@ -10,9 +10,9 @@ example_data <- local({
 })
 
 test_that("the vignette's Bayes factors are unchanged (joint and conditional)", {
-  joint <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data, test = "joint")
+  joint <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, test = "joint", prior = "flat_r")
   expect_equal(joint$BF10, c(18.696, 0.3827, 1.5872), tolerance = 1e-3)
-  conditional <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)
+  conditional <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, prior = "flat_r")
   expect_equal(conditional$BF10, c(17.489, 0.3911, 1.1833), tolerance = 1e-3)
   expect_equal(unique(conditional$test), "conditional")
 })
@@ -68,30 +68,30 @@ test_that("the joint test depends on what the others explain; the conditional te
 
 test_that("multi-column terms fall back to the joint test", {
   data <- transform(example_data, group = factor(rep(c("a", "b", "c"), 20)))
-  result <- bayes_factor_flat_r_per_term(y ~ x1 + group, data)
+  result <- bayes_factor_per_term(y ~ x1 + group, data)
   expect_equal(result$test, c("conditional", "joint"))
 })
 
 test_that("an aliased column stops with a clear message", {
   aliased <- transform(example_data, x4 = x1 + x2)
-  expect_error(bayes_factor_flat_r_per_term(y ~ x1 + x2 + x4, aliased), "aliased): x4")
-  expect_error(bayes_factor_flat_r(lm(y ~ x1 + x2 + x4, aliased), lm(y ~ 1, aliased)),
+  expect_error(bayes_factor_per_term(y ~ x1 + x2 + x4, aliased), "aliased): x4")
+  expect_error(bayes_factor_models(lm(y ~ x1 + x2 + x4, aliased), lm(y ~ 1, aliased)),
                "linearly dependent")
 })
 
 test_that("a term with missing values: the model without it uses the same rows", {
   with_missing <- transform(example_data, x3 = replace(x3, c(3, 8), NA))
   complete_rows <- with_missing[-c(3, 8), ]
-  expect_equal(bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, with_missing, test = "joint"),
-               bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, complete_rows, test = "joint"))
+  expect_equal(bayes_factor_per_term(y ~ x1 + x2 + x3, with_missing, test = "joint"),
+               bayes_factor_per_term(y ~ x1 + x2 + x3, complete_rows, test = "joint"))
 })
 
 test_that("rescaling or recoding predictors leaves the Bayes factor unchanged", {
-  original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data))
+  original <- bayes_factor_models(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data))
   rescaled <- transform(example_data, x1 = 100 * x1 + 7, y = 1000 * y - 3)
   recoded  <- transform(example_data, sum_12 = x1 + x2, difference_12 = x1 - x2)
-  expect_equal(bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, rescaled), lm(y ~ 1, rescaled)), original)
-  expect_equal(bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded),
+  expect_equal(bayes_factor_models(lm(y ~ x1 + x2 + x3, rescaled), lm(y ~ 1, rescaled)), original)
+  expect_equal(bayes_factor_models(lm(y ~ sum_12 + difference_12 + x3, recoded),
                                    lm(y ~ 1, recoded)), original)
 })
 
@@ -119,7 +119,7 @@ test_that("information consistency: evidence grows without limit as R-squared go
 })
 
 test_that("models must share outcome and rows", {
-  expect_error(bayes_factor_flat_r(lm(y ~ x1, example_data), lm(y ~ x1, example_data[-1, ])),
+  expect_error(bayes_factor_models(lm(y ~ x1, example_data), lm(y ~ x1, example_data[-1, ])),
                "same outcome")
 })
 
@@ -145,10 +145,10 @@ test_that("uniform correlations: predictive matching and invariance", {
   for (k in 1:5)
     expect_equal(exp(log_bayes_factor_uniform_correlations_vs_intercept_only(1 - 1e-12, k + 1, k)), 1,
                  tolerance = 1e-3)
-  original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data),
+  original <- bayes_factor_models(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data),
                                   prior = "uniform_correlations")
   recoded  <- transform(example_data, sum_12 = x1 + x2, difference_12 = x1 - x2)
-  expect_equal(bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded), lm(y ~ 1, recoded),
+  expect_equal(bayes_factor_models(lm(y ~ sum_12 + difference_12 + x3, recoded), lm(y ~ 1, recoded),
                                    prior = "uniform_correlations"), original)
 })
 
@@ -165,8 +165,8 @@ test_that("uniform correlations: the conditional test does not depend on k (flat
 })
 
 test_that("per-term table works with both priors", {
-  uniform <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data, prior = "uniform_correlations")
+  uniform <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, prior = "uniform_correlations")
   expect_equal(unique(uniform$test), "conditional")
   expect_true(all(uniform$BF10 > 0))
-  expect_false(isTRUE(all.equal(uniform$BF10, bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)$BF10)))
+  expect_false(isTRUE(all.equal(uniform$BF10, bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, prior = "flat_r")$BF10)))
 })

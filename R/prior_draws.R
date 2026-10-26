@@ -2,7 +2,7 @@
 ##  The prior as a recipe
 ## =====================================================================
 
-#' Draw coefficient sets from the flat-R or the uniform-correlations prior
+#' Draw coefficient sets from the uniform-correlations or the flat-R prior
 #'
 #' The prior as a recipe, in units of the noise (sigma = 1):
 #' 1. P(total): draw the overall correlation R; Cohen's f^2 = R^2 / (1 - R^2).
@@ -13,14 +13,14 @@
 #' 3. Scale each direction so its f^2 is exactly the drawn amount.
 #' @param number_of_draws Number of coefficient sets.
 #' @param predictor_covariance Covariance matrix of the predictors.
-#' @param prior \code{"flat_r"} or \code{"uniform_correlations"}.
+#' @param prior \code{"uniform_correlations"} (the default) or \code{"flat_r"}.
 #' @return A matrix with one coefficient set per row.
 #' @examples
-#' draws <- draw_coefficients_from_flat_r_prior(1000, diag(3))
-#' r_squared <- rowSums(draws^2) / (1 + rowSums(draws^2))   # ~ Beta(1/2, 1)
+#' draws <- draw_coefficients_from_prior(1000, diag(3))
+#' r_squared <- rowSums(draws^2) / (1 + rowSums(draws^2))   # ~ Beta(3/2, 1)
 #' @export
-draw_coefficients_from_flat_r_prior <- function(number_of_draws, predictor_covariance,
-                                                prior = c("flat_r", "uniform_correlations")) {
+draw_coefficients_from_prior <- function(number_of_draws, predictor_covariance,
+                                         prior = c("uniform_correlations", "flat_r")) {
   prior <- match.arg(prior)
   number_of_predictors <- ncol(predictor_covariance)
   overall_correlation  <- switch(prior,

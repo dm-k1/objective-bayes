@@ -5,7 +5,7 @@
 ##  Run from the project folder: Rscript docs/figures/make_figures.R
 ## =====================================================================
 library(ggplot2)
-pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
+pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
 
 figure_folder <- file.path("docs", "figures")
 save_doc_figure <- function(figure, name, width = 8, height = 4.5) {
@@ -92,7 +92,7 @@ partial_correlation_of_first <- function(coefficients) {
 share_draws <- do.call(rbind, lapply(c(1, 2, 4, 10), function(k)
   data.frame(number_of_predictors = paste("k =", k),
              partial_correlation = partial_correlation_of_first(
-               draw_coefficients_from_flat_r_prior(50000, diag(k))))))
+               draw_coefficients_from_prior(50000, diag(k), prior = "flat_r")))))
 share_draws$number_of_predictors <- factor(share_draws$number_of_predictors,
                                            levels = paste("k =", c(1, 2, 4, 10)))
 
@@ -139,7 +139,7 @@ save_doc_figure(
 ## around a point, divide by (number of draws x square area), compare with
 ## the formula. Correlated predictors, so factor 3 (unit conversion) matters.
 predictor_covariance <- matrix(c(1, 0.5, 0.5, 2), 2, 2)
-coefficient_draws    <- draw_coefficients_from_flat_r_prior(4e6, predictor_covariance)
+coefficient_draws    <- draw_coefficients_from_prior(4e6, predictor_covariance, prior = "flat_r")
 density_formula <- function(b) {
   f_squared <- drop(t(b) %*% predictor_covariance %*% b)
   (1 + f_squared)^(-3 / 2) / (2 * pi * sqrt(f_squared)) * sqrt(det(predictor_covariance))

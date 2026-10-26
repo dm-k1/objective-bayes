@@ -1,71 +1,71 @@
 ## =====================================================================
-##  Estimation: fit_flat_r_model()
+##  Estimation: fit_regression()
 ## =====================================================================
-## The Stan model samples the prior in its own coordinates: R (flat) and a
+## The Stan model samples the prior in its own coordinates: R and a
 ## direction (uniform), with the coefficients computed from them. Sampling
 ## the coefficients directly misses the prior's peak at zero for larger k
 ## (validation/01_prior_and_posterior.R).
 
-compiled_flat_r_models <- new.env()   # compile once per session
+compiled_models <- new.env()   # compile once per session
 
 ## The Stan model ships in inst/stan. cmdstanr writes its executable to a
 ## user cache folder, because the installed package folder may not be writable.
-compile_flat_r_model <- function(backend) {
-  if (is.null(compiled_flat_r_models[[backend]])) {
-    stan_file <- system.file("stan", "flat_r.stan", package = "flatr", mustWork = TRUE)
-    compiled_flat_r_models[[backend]] <- if (backend == "cmdstanr") {
-      executable_folder <- tools::R_user_dir("flatr", which = "cache")
+compile_stan_model <- function(backend) {
+  if (is.null(compiled_models[[backend]])) {
+    stan_file <- system.file("stan", "flatcor.stan", package = "flatcor", mustWork = TRUE)
+    compiled_models[[backend]] <- if (backend == "cmdstanr") {
+      executable_folder <- tools::R_user_dir("flatcor", which = "cache")
       dir.create(executable_folder, recursive = TRUE, showWarnings = FALSE)
       cmdstanr::cmdstan_model(stan_file, dir = executable_folder)
     } else {
       rstan::stan_model(stan_file)
     }
   }
-  compiled_flat_r_models[[backend]]
+  compiled_models[[backend]]
 }
 
-#' Fit a linear regression with the flat-R or the uniform-correlations prior
+#' Fit a linear regression with the uniform-correlations or the flat-R prior
 #'
 #' Samples the prior in its own coordinates, the overall correlation R
 #' and a direction (uniform), with the coefficients computed from them
-#' (\code{inst/stan/flat_r.stan}). Intercept flat, noise level \eqn{1/\sigma}.
+#' (\code{inst/stan/flatcor.stan}). Intercept flat, noise level \eqn{1/\sigma}.
 #'
 #' @param formula A model formula with an intercept and at least one predictor.
 #' @param data A data frame.
 #' @param chains,iter_warmup,iter_sampling,adapt_delta,seed Sampler settings.
 #' @param backend \code{"cmdstanr"} (default when installed) or \code{"rstan"}.
-#' @param prior \code{"flat_r"} (R flat) or \code{"uniform_correlations"}
-#'   (R-squared ~ Beta(k/2, 1)); see \code{bayes_factor_flat_r()}.
-#' @return A \code{flat_r_fit}: \code{print()} shows estimates and diagnostics,
+#' @param prior \code{"uniform_correlations"} (the default: R-squared ~
+#'   Beta(k/2, 1)) or \code{"flat_r"} (R flat); see \code{bayes_factor_models()}.
+#' @return A \code{flatcor_fit}: \code{print()} shows estimates and diagnostics,
 #'   \code{loo()} and \code{pp_check()} work as usual, and \code{$draws}
 #'   holds all posterior draws as a \code{posterior::draws_df}.
 #' @examples
 #' \dontrun{
-#' fit <- fit_flat_r_model(mpg ~ wt + hp, mtcars)
+#' fit <- fit_regression(mpg ~ wt + hp, mtcars)
 #' fit
 #' loo(fit)
 #' }
 #' @export
-fit_flat_r_model <- function(formula, data, chains = 4, iter_warmup = 1000,
-                             iter_sampling = 1000, adapt_delta = 0.95, seed = NULL,
-                             backend = if (requireNamespace("cmdstanr", quietly = TRUE))
-                                         "cmdstanr" else "rstan",
-                             prior = c("flat_r", "uniform_correlations")) {
+fit_regression <- function(formula, data, chains = 4, iter_warmup = 1000,
+                       iter_sampling = 1000, adapt_delta = 0.95, seed = NULL,
+                       backend = if (requireNamespace("cmdstanr", quietly = TRUE))
+                                   "cmdstanr" else "rstan",
+                       prior = c("uniform_correlations", "flat_r")) {
   prior <- match.arg(prior)
   model_frame <- model.frame(formula, data)
   design      <- model.matrix(formula, model_frame)
   if (!"(Intercept)" %in% colnames(design))
-    stop("fit_flat_r_model() needs a model with an intercept.")
+    stop("fit_regression() needs a model with an intercept.")
   predictors <- design[, colnames(design) != "(Intercept)", drop = FALSE]
   if (ncol(predictors) == 0)
-    stop("fit_flat_r_model() needs at least one predictor.")
+    stop("fit_regression() needs at least one predictor.")
   outcome <- as.numeric(model.response(model_frame))
   if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1)
 
   stan_data <- list(N = nrow(predictors), K = ncol(predictors), X = predictors, y = outcome,
                     prior_only = 0L, proper_stand_ins = 0L,
                     uniform_correlations = as.integer(prior == "uniform_correlations"))
-  model <- compile_flat_r_model(backend)
+  model <- compile_stan_model(backend)
   if (backend == "cmdstanr") {
     fit <- model$sample(data = stan_data, chains = chains, parallel_chains = chains,
                         iter_warmup = iter_warmup, iter_sampling = iter_sampling,
@@ -101,11 +101,11 @@ fit_flat_r_model <- function(formula, data, chains = 4, iter_warmup = 1000,
                  formula      = formula,
                  prior        = prior,
                  divergent    = divergent),
-            class = "flat_r_fit")
+            class = "flatcor_fit")
 }
 
 #' @export
-print.flat_r_fit <- function(x, digits = 3, ...) {
+print.flatcor_fit <- function(x, digits = 3, ...) {
   cat("Linear regression with the", switch(x$prior, flat_r = "flat-R",
       uniform_correlations = "uniform-correlations"), "prior\n")
   cat("Formula:", deparse(x$formula), "\n")
@@ -122,24 +122,24 @@ print.flat_r_fit <- function(x, digits = 3, ...) {
   invisible(x)
 }
 
-#' Leave-one-out cross-validation for a flat-R fit
+#' Leave-one-out cross-validation for a flatcor fit
 #'
 #' Runs on one core by default: fast enough here, and forking the R session is
 #' not allowed in Positron or RStudio.
-#' @param x A \code{flat_r_fit}.
+#' @param x A \code{flatcor_fit}.
 #' @param cores Number of cores.
 #' @param ... Passed to \code{loo::loo()}.
 #' @exportS3Method loo::loo
-loo.flat_r_fit <- function(x, cores = 1, ...) {
+loo.flatcor_fit <- function(x, cores = 1, ...) {
   relative_efficiency <- loo::relative_eff(exp(x$log_lik), chain_id = x$chain_ids, cores = cores)
   loo::loo(x$log_lik, r_eff = relative_efficiency, cores = cores, ...)
 }
-#' Posterior predictive check for a flat-R fit
-#' @param object A \code{flat_r_fit}.
+#' Posterior predictive check for a flatcor fit
+#' @param object A \code{flatcor_fit}.
 #' @param ndraws Number of predicted datasets to draw.
 #' @param ... Passed to \code{bayesplot::ppc_dens_overlay()}.
 #' @exportS3Method bayesplot::pp_check
-pp_check.flat_r_fit <- function(object, ndraws = 50, ...) {
+pp_check.flatcor_fit <- function(object, ndraws = 50, ...) {
   shown <- sample(nrow(object$y_rep), ndraws)
   bayesplot::ppc_dens_overlay(object$outcome, object$y_rep[shown, , drop = FALSE], ...)
 }

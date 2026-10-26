@@ -28,9 +28,9 @@ parallel_map <- function(items, work) {
   cluster <- parallel::makeCluster(number_of_cores)
   on.exit(parallel::stopCluster(cluster))
   parallel::clusterCall(cluster, setwd, getwd())
-  ## attach the same packages; flatr itself is loaded from this folder with
+  ## attach the same packages; flatcor itself is loaded from this folder with
   ## load_all() (as the scripts do), so internal functions are there too
-  attached_packages <- setdiff(.packages(), "flatr")
+  attached_packages <- setdiff(.packages(), "flatcor")
   parallel::clusterCall(cluster, function(packages) {
     for (package in rev(packages)) library(package, character.only = TRUE)
     if (file.exists("DESCRIPTION")) pkgload::load_all(".", quiet = TRUE)

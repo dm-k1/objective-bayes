@@ -233,7 +233,7 @@ prior(R2D2(mean_R2 = 1/3, prec_R2 = 1.5), class = b)   # Beta(1/2, 1) on R2
 
 is the different prior above. A custom brms prior can state the flat-R density,
 but brms samples the coefficients directly and misses the prior's peak at zero
-for larger $k$. That is why `fit_flat_r_model()` uses its own Stan model,
+for larger $k$. That is why `fit_regression()` uses its own Stan model,
 sampled in $R$ and a direction ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 6).
 
 Reproduce the one-predictor table:

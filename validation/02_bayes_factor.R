@@ -31,7 +31,7 @@
 ##  Run from the project folder: Rscript validation/02_bayes_factor.R
 ##  About a minute. No Stan needed.
 ## =====================================================================
-pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
+pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
 source("validation/settings.R")             # parallel cores, cache folders, record_check()
 
 
@@ -155,23 +155,23 @@ cat("\n")
 ## The BF should not depend on units or on how the same predictors are
 ## written. Criterion: identical up to 1e-8 (relative).
 
-bf_original <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)$BF10
+bf_original <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, prior = "flat_r")$BF10
 
 rescaled_data <- transform(example_data, x1 = 100 * x1 + 7, x2 = -0.01 * x2, x3 = x3 - 50)
-bf_rescaled <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, rescaled_data)$BF10
+bf_rescaled <- bayes_factor_per_term(y ~ x1 + x2 + x3, rescaled_data, prior = "flat_r")$BF10
 record_check("A2a. rescaling and shifting predictors", max(abs(bf_rescaled / bf_original - 1)) < 1e-8,
              sprintf("largest relative difference %.1e", max(abs(bf_rescaled / bf_original - 1))))
 
 outcome_rescaled <- transform(example_data, y = 1000 * y - 3)
-bf_outcome <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, outcome_rescaled)$BF10
+bf_outcome <- bayes_factor_per_term(y ~ x1 + x2 + x3, outcome_rescaled, prior = "flat_r")$BF10
 record_check("A2b. rescaling the outcome", max(abs(bf_outcome / bf_original - 1)) < 1e-8,
              sprintf("largest relative difference %.1e", max(abs(bf_outcome / bf_original - 1))))
 
 recoded_data <- transform(example_data, sum_12 = x1 + x2, difference_12 = x1 - x2)
-bf_full_original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data),
-                                                lm(y ~ 1, example_data))
-bf_full_recoded  <- bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
-                                                lm(y ~ 1, recoded_data))
+bf_full_original <- bayes_factor_models(lm(y ~ x1 + x2 + x3, example_data),
+                                        lm(y ~ 1, example_data), prior = "flat_r")
+bf_full_recoded  <- bayes_factor_models(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
+                                        lm(y ~ 1, recoded_data), prior = "flat_r")
 record_check("A2c. recoding predictors (same model, other columns)",
              abs(bf_full_recoded / bf_full_original - 1) < 1e-8,
              sprintf("original %.4f, recoded %.4f", bf_full_original, bf_full_recoded))
@@ -220,7 +220,7 @@ log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
     ## draws. Instead: draw from the flat-R recipe (R flat) and weight each draw
     ## by the ratio of the two densities of R, k R^(k-1) (importance sampling;
     ## the weights are bounded by k). For flat-R every weight is 1.
-    coefficients     <- draw_coefficients_from_flat_r_prior(draws_per_batch, predictor_covariance)
+    coefficients     <- draw_coefficients_from_prior(draws_per_batch, predictor_covariance, prior = "flat_r")
     f_squared_drawn  <- rowSums((coefficients %*% predictor_covariance) * coefficients)
     k <- ncol(predictors)
     log_weight <- if (prior == "uniform_correlations")
@@ -433,13 +433,13 @@ record_check(sprintf("CA1. uniform correlations: grid vs integrate() (%d setting
              max(uniform_errors) < 1e-3, sprintf("largest error %.1e", max(uniform_errors)))
 
 ## CA2. Invariance to units and recoding. Criterion: identical up to 1e-8.
-uniform_original <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data,
-                                                 prior = "uniform_correlations")$BF10
-uniform_rescaled <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, transform(rescaled_data, y = 1000 * y - 3),
-                                                 prior = "uniform_correlations")$BF10
-uniform_full_original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data),
+uniform_original <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data,
+                                          prior = "uniform_correlations")$BF10
+uniform_rescaled <- bayes_factor_per_term(y ~ x1 + x2 + x3, transform(rescaled_data, y = 1000 * y - 3),
+                                          prior = "uniform_correlations")$BF10
+uniform_full_original <- bayes_factor_models(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data),
                                              prior = "uniform_correlations")
-uniform_full_recoded  <- bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
+uniform_full_recoded  <- bayes_factor_models(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
                                              lm(y ~ 1, recoded_data), prior = "uniform_correlations")
 record_check("CA2. uniform correlations: rescaling and recoding",
              max(abs(uniform_rescaled / uniform_original - 1)) < 1e-8 &&

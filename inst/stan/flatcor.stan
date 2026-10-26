@@ -1,4 +1,4 @@
-// The flat-R or the uniform-correlations prior, sampled in its own coordinates:
+// The uniform-correlations (default) or the flat-R prior, sampled in its own coordinates:
 //   R          the overall correlation (factor 1): flat (flat-R), or
 //              R^2 ~ Beta(K/2, 1) (uniform correlations: every correlation
 //              matrix of (y, x1 ... xK) equally likely)

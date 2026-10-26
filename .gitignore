@@ -35,6 +35,6 @@ validation/results/figures/
 inst/stan/*.rds
 inst/stan/flat_r
 *.Rcheck/
-flatr_*.tar.gz
+flatcor_*.tar.gz
 validation/results_before_*/
 validation/results/logs/

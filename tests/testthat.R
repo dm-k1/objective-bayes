@@ -1,3 +1,3 @@
 library(testthat)
-library(flatr)
-test_check("flatr")
+library(flatcor)
+test_check("flatcor")

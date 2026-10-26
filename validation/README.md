@@ -30,18 +30,18 @@ lockfile is the record, and the image installs from it.
 
 | Where | How |
 |---|---|
-| Any machine with Docker (a cloud VM, a SURF Research Cloud workspace) | `git clone` the repository, then `docker build -t flatr-validation .` (once, 20–40 minutes) and `docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatr-validation`. Results land in `validation/results/` of the clone |
+| Any machine with Docker (a cloud VM, a SURF Research Cloud workspace) | `git clone` the repository, then `docker build -t flatcor-validation .` (once, 20–40 minutes) and `docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatcor-validation`. Results land in `validation/results/` of the clone |
 | A machine with R but no Docker | `Rscript -e 'install.packages("renv"); renv::restore(library = .libPaths()[1], prompt = FALSE)'` (into your normal library), then `Rscript -e 'cmdstanr::install_cmdstan(version = "2.40.0")'`, then `Rscript validation/run_all.R` |
-| A cluster without Docker (Snellius) | the same as the previous row, or the image through Apptainer: `apptainer build flatr.sif docker-daemon://flatr-validation:latest` |
+| A cluster without Docker (Snellius) | the same as the previous row, or the image through Apptainer: `apptainer build flatcor.sif docker-daemon://flatcor-validation:latest` |
 
 To update the lockfile after installing or upgrading packages:
-`Rscript -e 'renv::snapshot(type = "implicit", exclude = c("flatr", "rstan"), prompt = FALSE)'`
+`Rscript -e 'renv::snapshot(type = "implicit", exclude = c("flatcor", "rstan"), prompt = FALSE)'`
 (rstan is only the fallback when cmdstanr is missing, and is left out to keep
 the image small).
 
 | Script | Question | How | Run time |
 |---|---|---|---|
-| `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flat_r.stan`) get the prior and the posterior right, for both priors? | P1–P4 (flat-R): sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. P5–P7 (uniform correlations): R² ~ Beta(k/2, 1), and every partial correlation flat. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets, both priors. Contrast: flat-R sampled in coefficient coordinates | about 10 minutes |
+| `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flatcor.stan`) get the prior and the posterior right, for both priors? | P1–P4 (flat-R): sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. P5–P7 (uniform correlations): R² ~ Beta(k/2, 1), and every partial correlation flat. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets, both priors. Contrast: flat-R sampled in coefficient coordinates | about 10 minutes |
 | `02_bayes_factor.R` | Is the Bayes factor right, for both priors? | Flat-R: A1 the grid against `integrate()` over a sweep of R², n, k; A2 invariance to units and recoding; A3 against a brute-force Bayes factor that draws from the prior and uses no formula; A4 against the same prior written as a mixture of g-priors; B1–B4 predictive matching, information and model-selection consistency (B3b: the rate with and without an effect in the smaller model). Uniform correlations: the same as CA1–CA3 and CB1–CB4 | a few minutes |
 | `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); checks U1–U2 | 5–10 minutes |
 | `04_matched_comparison.R` | Is a difference in 03 discrimination or calibration? | AUC (threshold-free), each method minus JZS with a paired bootstrap, matched thresholds, and why: how much the evidence depends on what the other predictors explain | about 3 minutes |
@@ -69,7 +69,7 @@ One set, defined once in `comparison_methods.R` and used by every study.
   joint prior implies for one coefficient. For uniform correlations that is a
   flat partial correlation whatever k is, so this is the "flat partial r per
   coefficient" of earlier versions, now computed exactly.
-- Estimation (07): flat-R and uniform correlations (both `fit_flat_r_model()`,
+- Estimation (07): flat-R and uniform correlations (both `fit_regression()`,
   the same Stan model), JZS, Zellner–Siow and `lm()`; the conditional tests have
   no estimation version.
 - Dropped: R2-D2 and the approximate flat partial correlation from 03
@@ -279,7 +279,7 @@ Mean bias of real effects: flat-R −0.054, JZS −0.037, uniform correlations
   but intervals that miss real effects in sparse designs (0.76).
 - Uniform correlations shrinks less, with intervals close to nominal in every
   cell. It is the same Stan model as flat-R with one line changed
-  (`fit_flat_r_model(prior = "uniform_correlations")`).
+  (`fit_regression(prior = "uniform_correlations")`).
 
 ## 09: variable selection (12 candidates, 4 real: 0.3, 0.2, 0.15, 0.1; 100 datasets per cell)
 

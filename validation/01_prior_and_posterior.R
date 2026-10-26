@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  Validation 01: does the Stan model get the prior and the posterior right?
 ##
-##  inst/stan/flat_r.stan (used by fit_flat_r_model()) samples R (flat) and a
+##  inst/stan/flatcor.stan (used by fit_regression()) samples R (flat) and a
 ##  direction (uniform), and computes the coefficients from them. This script
 ##  checks that it gets the prior and the posterior right.
 ##
@@ -30,7 +30,7 @@
 ##  Run from the project folder: Rscript validation/01_prior_and_posterior.R
 ##  About 5 minutes on 4 cores.
 ## =====================================================================
-pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
+pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
 source("validation/settings.R")   # parallel cores, record_check()
 
 ## ---- Sampling helper: cmdstanr if installed, otherwise rstan ------------
@@ -56,10 +56,10 @@ sample_stan <- function(model, stan_data, chains, iter_warmup, iter_sampling, th
 coefficients_of <- function(draws) draws[, grep("^b\\[", colnames(draws)), drop = FALSE]
 
 ## ---- The two models ------------------------------------------------------
-## direction:    inst/stan/flat_r.stan (R and a direction as parameters)
+## direction:    inst/stan/flatcor.stan (R and a direction as parameters)
 ## coefficients: the same prior as a density on b (docs/2_how_it_calculates.md,
 ##               section 5), sampled directly
-direction_model <- compile_stan(paste(readLines("inst/stan/flat_r.stan"), collapse = "\n"))
+direction_model <- compile_stan(paste(readLines("inst/stan/flatcor.stan"), collapse = "\n"))
 flat_r_density_code <- "
   // P(b) = P(total) x P(this combination | total) x unit conversion
   real flat_r_lpdf(vector b, real sigma, matrix predictor_covariance) {
@@ -150,7 +150,7 @@ partial_correlations <- function(coefficients_in_noise_units) {
 }
 stan_partials   <- partial_correlations(coefficients_of(draws_three) / draws_three[, "sigma"])
 set.seed(7)
-recipe_partials <- partial_correlations(draw_coefficients_from_flat_r_prior(100000, covariance_three))
+recipe_partials <- partial_correlations(draw_coefficients_from_prior(100000, covariance_three, prior = "flat_r"))
 distances <- sapply(1:3, function(j) ks_distance(stan_partials[, j], recipe_partials[, j]))
 record_check("P4. k = 3: per-predictor shares match the recipe", all(distances < 0.03),
              sprintf("KS distances %s", paste(sprintf("%.3f", distances), collapse = " ")))
@@ -204,7 +204,7 @@ one_replication <- function(replication) {
     set.seed(1000 + replication + setup$seed_offset)
     true_alpha <- rnorm(1, mean = 0, sd = 10)
     true_sigma <- rlnorm(1, meanlog = 0, sdlog = 1)
-    true_b     <- true_sigma * drop(draw_coefficients_from_flat_r_prior(1, covariance, setup$prior))
+    true_b     <- true_sigma * drop(draw_coefficients_from_prior(1, covariance, setup$prior))
     outcome    <- true_alpha + drop(centered %*% true_b) + rnorm(sample_size, mean = 0, sd = true_sigma)
     true_f_squared <- sum((true_b %*% covariance) * true_b) / true_sigma^2
     true_r_squared <- true_f_squared / (1 + true_f_squared)

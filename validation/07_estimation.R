@@ -7,8 +7,8 @@
 ##  interval covers the truth; per dataset: the excess prediction error for a
 ##  new observation, (b_hat - b)' Sigma (b_hat - b). Methods (the estimation
 ##  versions of the common set in validation/comparison_methods.R):
-##    - flat-R                fit_flat_r_model(), posterior mean and 95% interval
-##    - uniform correlations  fit_flat_r_model(prior = "uniform_correlations"):
+##    - flat-R                fit_regression(), posterior mean and 95% interval
+##    - uniform correlations  fit_regression(prior = "uniform_correlations"):
 ##                            R-squared ~ Beta(k/2, 1), the same Stan model
 ##                            (the prior of rstanarm stan_lm with eta = 1)
 ##    - JZS default           BayesFactor posterior (Cauchy, scale 0.354)
@@ -61,14 +61,14 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
   formula <- reformulate(colnames(predictors), response = "y")
 
   ## flat-R
-  flat_r_fit <- suppressWarnings(fit_flat_r_model(formula, data, chains = 4, iter_warmup = 1000,
-                                                  iter_sampling = 1000, seed = seed))
+  flat_r_fit <- suppressWarnings(fit_regression(formula, data, chains = 4, iter_warmup = 1000,
+                                                iter_sampling = 1000, seed = seed, prior = "flat_r"))
   flat_r_draws <- as.data.frame(flat_r_fit$draws)[, colnames(predictors), drop = FALSE]
 
   ## uniform correlations: the same Stan model, R-squared ~ Beta(k/2, 1)
-  uniform_fit <- suppressWarnings(fit_flat_r_model(formula, data, chains = 4, iter_warmup = 1000,
-                                                   iter_sampling = 1000, seed = seed,
-                                                   prior = "uniform_correlations"))
+  uniform_fit <- suppressWarnings(fit_regression(formula, data, chains = 4, iter_warmup = 1000,
+                                                 iter_sampling = 1000, seed = seed,
+                                                 prior = "uniform_correlations"))
   uniform_draws <- as.data.frame(uniform_fit$draws)[, colnames(predictors), drop = FALSE]
 
   ## JZS default and Zellner-Siow (posterior samples from BayesFactor)

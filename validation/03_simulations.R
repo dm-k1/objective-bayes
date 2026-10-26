@@ -25,7 +25,7 @@ library(purrr)
 library(tidyr)
 library(ggplot2)
 
-pkgload::load_all(".", quiet = TRUE)   # the flatr package, from this folder
+pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
 source("validation/settings.R")        # parallel cores, cached simulation runner, record_check()
 source("validation/comparison_methods.R")
 
