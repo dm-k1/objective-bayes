@@ -435,7 +435,8 @@ uses no formula (`validation/02_bayes_factor.R`, check A3).
 
 **In one sentence:** to test one coefficient, look only at its own contribution
 (its partial correlation), with the prior that the joint flat-R prior implies
-for one coefficient.
+for one coefficient. A term with several columns is tested the same way, as a
+block (end of this section).
 
 Comparing the models with and without x1 (the *joint* test) judges x1 by how it
 moves the total, so it depends on how much the other predictors explain.
@@ -484,18 +485,83 @@ $k$ is. In the code: `log_bayes_factor_uniform_correlations_conditional()`, used
 by `bayes_factor_per_term(..., prior = "uniform_correlations")`.
 
 **In the code:** `log_bayes_factor_flat_r_conditional()`, used by
-`bayes_factor_per_term()` for every one-column term. Terms with several
-columns (factors with more than two levels) still use the joint test; a block
-version, with share ~ Beta($q/2$, $(k-q)/2$) for $q$ columns, is not built yet.
+`bayes_factor_per_term()` for every one-column term.
+
+### Terms with several columns: the block test
+
+A factor with $q + 1$ levels, or an interaction with $q$ columns, is one
+question: does the term matter? It is tested as a block of $q$ columns, in the
+same way. Now $f$ is the length of the block's effect in noise units (its
+$f^2$ is the variance it adds beyond the other predictors, over $\sigma^2$),
+and its direction within the block has no preference. The implied prior,
+checked by simulation in `validation/05`, check C9:
+
+$$
+\text{flat-R:}\quad f^2 = \text{share}\cdot\frac{R^2}{1-R^2},\quad
+\text{share} \sim \mathrm{Beta}\!\left(\tfrac q2, \tfrac{k-q}{2}\right);
+\qquad
+\text{uniform correlations:}\quad \frac{f^2}{1+f^2} \sim \mathrm{Beta}\!\left(\tfrac q2, 1\right)
+\text{ for every } k.
+$$
+
+The second is the block's population partial $R^2$: under uniform correlations
+it is Beta($q/2$, 1) whatever $k$ is, as one coefficient's partial correlation
+is flat whatever $k$ is (the case $q = 1$). Integrating out the other
+coefficients, the intercept and $\sigma$ as before:
+
+$$
+\frac{p(y \mid f)}{p(y \mid 0)} = e^{-nf^2/2}\,\frac{\mathrm E_c\, I(\sqrt n\, r f c)}{I(0)}
+= e^{-nf^2/2}\; {}_1F_1\!\left(\tfrac{m+1}{2}; \tfrac q2; \tfrac{n r^2 f^2}{2}\right),
+\qquad m = n - k + q - 2,
+$$
+
+with $r^2$ the block's sample partial $R^2$ (from the models with and without
+it) and $c$ the cosine between the effect's direction and the data's, averaged
+over directions. For $q = 1$, $c = \pm 1$ and this is the formula above. So the
+evidence depends only on $r^2$, $n$, $k$ and $q$, and not on what the other
+predictors explain. The code evaluates the integral over $v$ with the average
+over directions in closed form (a Bessel function), which stays accurate for
+large $n$; it agrees with `stats::integrate()` within $2\cdot10^{-4}$ on the log
+scale for $q$ = 2 to 5, $n$ = 50 to $10^6$ (check C10), and the likelihood
+ratio agrees with a direct integration over $\sigma$ and the direction from
+simulated data (check C11).
+
+**In the code:** the same two functions with `number_of_columns = q`, used by
+`bayes_factor_per_term()` for every term with several columns (shown as
+"conditional (block)").
 
 ---
 
-**Not one coherent model space.** The conditional test puts flat priors on the
-other coefficients, so it is not the ratio of two flat-R marginal likelihoods:
-a coefficient's conditional Bayes factor differs from
-`bayes_factor_models(full, without it)` (the joint test). Use the conditional
-test to ask "is there evidence for this coefficient?", and the joint Bayes
-factors to compare or average over whole models.
+**Not one coherent model space, but close to it.** The conditional test puts
+flat priors on the other coefficients, so it is not a ratio of marginal
+likelihoods under the joint prior, and a coefficient's conditional Bayes factor
+differs from `bayes_factor_models(full, without it)` (the joint test). How far
+is it from "one prior for everything"? Under the joint uniform-correlations
+model, the Bayes factor for a zero partial correlation of x1 is the
+Savage–Dickey ratio: the prior density of that partial correlation at 0 (1/2,
+flat on (−1, 1)) over its posterior density at 0, estimated from
+`fit_regression()` draws. On 20 datasets (k = 3, 8; n = 50, 200) the
+conditional log Bayes factor is within 0.09 of it wherever the density at 0
+can be estimated precisely (16 datasets; mean absolute difference 0.03, a few
+percent on the Bayes factor), and within Monte Carlo error for the other four
+(log BF₁₀ 2 to 9). The joint test is further away (mean absolute 0.23, up to
+0.42), because the smaller model's own prior is not the joint prior given a
+zero partial correlation. So in practice the conditional test *is* the
+Bayes factor of one model with one prior, for the hypothesis "this partial
+correlation is 0", to within a few percent.
+
+It is also calibrated on that prior: with data drawn from the joint
+uniform-correlations prior (half with x1 = 0), the share of nulls among
+datasets with Bayes factor BF₁₀ is 1/(1 + BF₁₀) within Monte Carlo error, at
+k = 3 and 8, n = 50 and 200 (`validation/README.md`, study 10). This justifies
+calling a slope of 0.1 null in about half the datasets (study 06): under a flat
+partial correlation an effect of 0.1 is rare, and at these n it predicts data
+much like no effect, so among datasets with BF₀₁ > 3, 83–89% are true nulls.
+Calibration is relative to the prior: with data from the JZS prior, which
+expects many tiny effects, the same Bayes factors say "null" too readily.
+
+Use the conditional test to ask "is there evidence for this coefficient?", and
+the joint Bayes factors to compare or average over whole models.
 
 ---
 

@@ -8,15 +8,20 @@ log_bayes_factor_uniform_correlations_conditional(
   partial_r,
   sample_size,
   number_of_predictors,
-  points_f = 600
+  points_f = 600,
+  number_of_columns = 1
 )
 }
 \arguments{
-\item{partial_r}{Sample partial correlation of the tested predictor.}
+\item{partial_r}{Sample partial correlation of the tested predictor; for a
+block, the square root of the block's sample partial R-squared.}
 
 \item{sample_size}{Number of observations, n.}
 
 \item{number_of_predictors}{Number of predictor columns in the model, k.}
+
+\item{number_of_columns}{Number of columns tested together, q (1 for one
+coefficient).}
 }
 \value{
 The log Bayes factor for an effect against no effect.
@@ -28,6 +33,11 @@ predictors equally likely) one coefficient's partial correlation is flat on
 every coefficient (validation/05, checks C4 and C7). So this is the
 conditional test with the prior P(|f| < f) = f / sqrt(1 + f^2), for any k.
 The other coefficients get flat priors, as in the flat-R version.
+}
+\details{
+For a block of q columns the block's partial R-squared is Beta(q/2, 1),
+again for any k (validation/05, check C9), so
+P(|f| < f) = (f^2 / (1 + f^2))^(q/2), with a uniform direction within the block.
 }
 \examples{
 log_bayes_factor_uniform_correlations_conditional(0.2, sample_size = 100, number_of_predictors = 3)

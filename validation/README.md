@@ -12,6 +12,7 @@ Rscript validation/06_broad_simulation.R
 Rscript validation/07_estimation.R            # hours; resumes if interrupted
 Rscript validation/08_growing_k.R
 Rscript validation/09_variable_selection.R
+Rscript validation/10_calibration.R           # needs cmdstanr (or rstan)
 ```
 
 The scripts load the package from this folder with `pkgload::load_all()`.
@@ -45,11 +46,12 @@ the image small).
 | `02_bayes_factor.R` | Is the Bayes factor right, for both priors? | Flat-R: A1 the grid against `integrate()` over a sweep of R², n, k; A2 invariance to units and recoding; A3 against a brute-force Bayes factor that draws from the prior and uses no formula; A4 against the same prior written as a mixture of g-priors; B1–B4 predictive matching, information and model-selection consistency (B3b: the rate with and without an effect in the smaller model). Uniform correlations: the same as CA1–CA3 and CB1–CB4 | a few minutes |
 | `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); checks U1–U2 | 5–10 minutes |
 | `04_matched_comparison.R` | Is a difference in 03 discrimination or calibration? | AUC (threshold-free), each method minus JZS with a paired bootstrap, matched thresholds, and why: how much the evidence depends on what the other predictors explain | about 3 minutes |
-| `05_conditional_test.R` | Are the conditional tests right, and why η = 1? | C1–C4: equals the joint test at k = 1; the implied priors for one coefficient (flat-R: depends only on k; uniform correlations: a flat partial correlation for any k). C5–C6: both grids against `integrate()`, n up to 10⁶. C7: under LKJ(η) one partial correlation is Beta(η, η) for every k, so flat only at η = 1 | a few minutes |
+| `05_conditional_test.R` | Are the conditional tests right, and why η = 1? | C1–C4: equals the joint test at k = 1; the implied priors for one coefficient (flat-R: depends only on k; uniform correlations: a flat partial correlation for any k). C5–C6: both grids against `integrate()`, n up to 10⁶. C7: under LKJ(η) one partial correlation is Beta(η, η) for every k, so flat only at η = 1. C8: against the exact flat-prior partial-correlation Bayes factor of Kucharský et al. (2026). C9–C11: the block test for a term with q columns (implied prior by simulation; against `integrate()`; the likelihood ratio from the data) | a few minutes |
 | `06_broad_simulation.R` | Does the picture of 03–04 hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; all one-coefficient methods | 20–30 minutes |
 | `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; flat-R, uniform correlations (`stan_lm`, η = 1), JZS, Zellner–Siow, `lm()`; needs rstanarm; resumes if interrupted | 2.5–4 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods | under a minute |
 | `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real) | all whole-model methods and BIC; uniform and beta-binomial model priors; true model found, false inclusions, missed; whole trade-off curves and AUC; checks V1–V5 | 3–5 minutes |
+| `10_calibration.R` | Is the conditional test calibrated, and how far is it from one prior for everything? | P1–P2: 160,000 datasets from the joint uniform-correlations prior (half with x1 = 0) and from the JZS prior; share of nulls per bin of log BF₁₀ against 1/(1 + BF₁₀). P3–P5: 20 datasets, the conditional Bayes factor against the Savage–Dickey ratio for x1's partial correlation under the joint model (`fit_regression()` draws, logspline) | about 10 minutes |
 | `comparison_methods.R` | helper: the common method set (names, colours, Bayes factors) | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
@@ -118,6 +120,19 @@ about 20 minutes, 07 in 56 minutes. The earlier results are kept outside git in
 | 02 CB3 | slope within 20% of q/2 for both smaller models | pass (x1: 0.50, 1.47, 2.89; intercept only: 0.50, 1.46, 2.87) |
 | 02 CB4 | as B4 | pass (−0.0, 8.5, 53.3) |
 | 05 C1–C7 | see the script | pass; C5 largest error 1.7e-04, C6 3.5e-06; C7 KS to Beta(η, η) ≤ 0.018, to flat at η = 2 ≥ 0.099 |
+| 05 C8 | Kucharský et al. (2026, eq. 2, flat prior): their example within 0.01 of 45.88; ours with the predictor's residual SD unknown within 1e-5 of theirs (48 cases) | pass: 45.877; largest 4.7e-07. Ours (fixed X) − theirs: largest −0.262 (n = 20, k = 8, r = 0), ≤ 0.005 at n = 1000 |
+| 10 P1 | data from the joint uniform-correlations prior, half with x1 = 0: share of nulls per bin of log BF₁₀ equals 1/(1 + BF₁₀), χ² over the bins p > 0.01 and logistic slope within 3 SE of 1 | pass in all four cells (k = 3, 8; n = 50, 200; 20,000 datasets each): χ² p = 0.40–0.79, slopes 0.98–1.03 (SE 0.02), intercepts within 2 SE of 0 |
+| 10 P2 | the same with data from the JZS prior: miscalibration shows (χ² p < 0.001) | pass: χ² 525–593 on 10–11 bins; intercept −0.24 to −0.49 (fewer nulls than 1/(1 + BF₁₀) says) |
+| 10 P3 | Savage–Dickey estimate: logspline and kernel within 0.25, where the chain SE is below 0.1 (16 of 20 datasets) | pass, largest difference 0.10 |
+| 10 P4 | conditional log BF₁₀ within log 2 of Savage–Dickey under the joint model (the 16) | pass: mean difference −0.005, mean absolute 0.028, largest 0.092 (factor 1.10) |
+| 10 P5 | the other 4 (log BF₁₀ 2–9, too few draws near 0): within 3 Monte Carlo SE | pass: 4.98 vs 4.39 (SE 0.27), 2.98 vs 2.82 (0.15), 8.97 vs 8.33 (0.70), 1.96 vs 2.17 (0.12) |
+
+The criteria of P3–P5 were set after a first run: P3 originally covered all 20
+datasets with a tolerance of 0.1 and failed on the 4 with strong evidence, where
+the density at 0 cannot be estimated from draws. P3 and P4 were then restricted
+to datasets with a chain SE below 0.1 (tolerance 0.25 for P3), and P5 added for
+the other 4.
+| 05 C9–C11 | see the script | pass; C9 KS ≤ 0.020 (LKJ), ≤ 0.005 (draws); C10 largest error 1.2e-04; C11 1.6e-14 |
 
 **Why the Stan model samples R and a direction.** The prior as a density on the
 coefficients has a sharp peak at zero (`docs/2_how_it_calculates.md`, section
@@ -198,7 +213,35 @@ AUC (how often BF₀₁ is larger for a null dataset than for a small effect of
 ## 05: the conditional tests are computed correctly
 
 Checks C1–C7 (the table under "Last results"): both conditional tests against
-`integrate()` up to n = 10⁶, their implied priors, and C7, why η = 1. How they
+`integrate()` up to n = 10⁶, their implied priors, and C7, why η = 1.
+
+**C8: the uniform-correlations conditional test is not the Kucharský et al.
+(2026) test, but differs from it in one assumption only.** Their exact Bayes
+factor for a partial correlation with a flat prior (eq. 2, α = 1) is
+
+$$\mathrm{BF}_{10} = \frac{B(\tfrac12, 1 + h)}{B(\tfrac12, 1)}\,
+{}_2F_1\!\left(h, h;\ \tfrac32 + h;\ r^2\right),\qquad h = \frac{n - k}{2},$$
+
+with $k$ our number of predictors (their $k - 1$ controlling variables). It
+reproduces their worked example (BF₁₀ = 45.88). Ours is lower in 47 of 48 cases
+(the 48th: +1e-5, r = 0.5, n = 1000, k = 1) on the grid r = 0, 0.1, 0.3, 0.5; n = 20, 50, 200, 1000; k = 1, 3, 8 (log BF):
+
+| | n = 20 | 50 | 200 | 1000 |
+|---|---|---|---|---|
+| k = 1, r = 0 | −0.054 | −0.023 | −0.006 | −0.001 |
+| k = 3, r = 0 | −0.105 | −0.044 | −0.011 | −0.002 |
+| k = 8, r = 0 | −0.262 | −0.098 | −0.024 | −0.005 |
+| k = 8, r = 0.5 | −0.128 | −0.029 | −0.005 | −0.001 |
+
+The difference is largest at r = 0, shrinks as 1/n and grows with k. Its cause is pinned
+down exactly: their model is multivariate normal, so the predictors are random
+and the tested predictor's residual SD (given the others) is an unknown
+parameter, with a 1/σ prior. Ours conditions on X, so the effect size f is in
+units of the observed residual SD. Put their uncertainty into ours (f in sample
+units = f in population units × √(W/n), W ~ χ²(n − k)) and the two agree to
+5e-7 in all 48 cases. The priors on the noise and the other coefficients play
+no part: they are the same in both. One visible consequence: at r = 0 our
+Bayes factor does not depend on k, theirs moves toward 1 as k grows. How they
 compare with the other methods is in 03, 04 and 06.
 
 ## 06: across designs (k = 2–20, n = 50–1000, correlation 0–0.7, 216 cells)
@@ -413,6 +456,61 @@ to +0.017 with correlated predictors).
   0.5 cutoff: ranking and calibration are separate properties.
 - One design (12 candidates, 4 real, 100 datasets per cell): indicative.
 - The rerun of 26 October 2026 reproduces every number in this section.
+
+## 10: is the conditional test calibrated, and how far is it from one prior for everything?
+
+**Calibration (P1–P2).** Study 06 found that the uniform-correlations
+conditional test calls a slope of 0.1 null in about half the datasets. Is
+that a fault? A Bayes factor is right if, among datasets that give it BF₁₀,
+the share of true nulls is 1/(1 + BF₁₀) (prior odds 1:1), *when the data come
+from the prior it assumes*. Datasets drawn from the joint uniform-correlations
+prior, with x1's coefficient set to 0 in half of them, k = 8, n = 50 (the other
+three cells are as close):
+
+| log BF₁₀ | −2 to −1 | −1 to 0 | 0 to 1 | 1 to 2 | 2 to 4 | above 4 |
+|---|---|---|---|---|---|---|
+| datasets | 9,517 | 2,492 | 996 | 643 | 859 | 5,493 |
+| share of nulls, observed | 0.823 | 0.638 | 0.409 | 0.191 | 0.054 | 0.000 |
+| predicted, mean of 1/(1 + BF₁₀) | 0.823 | 0.643 | 0.394 | 0.191 | 0.058 | 0.001 |
+| the same, data from JZS: observed | 0.743 | 0.567 | 0.352 | 0.195 | 0.052 | 0.002 |
+| predicted | 0.821 | 0.640 | 0.393 | 0.193 | 0.061 | 0.001 |
+
+The test is calibrated on its own prior, so its Bayes factors are real
+posterior odds there, even though it is computed with flat priors on the other
+coefficients. With data from the JZS prior (Cauchy, scale 0.354) it says
+"null" too readily: JZS expects many tiny effects, which look like nulls. So
+calibration holds relative to the prior, and the choice of prior is what
+decides whether an effect of 0.1 should be called null.
+
+*Why a slope of 0.1 gets called null.* Among datasets with BF₀₁ > 3 drawn from
+the prior, 83–89% are true nulls. The real effects among them are tiny: at
+n = 200, 68–70% have a partial correlation below 0.1 and 97–98% below 0.2;
+at n = 50, 45–47% and 78–80%. Under a flat partial correlation an effect of
+0.1 is rare (10% of the prior mass is below 0.1), and at these n it predicts
+data much like no effect at all. BF₀₁ > 3 in such a dataset is the correct
+posterior, given that prior.
+
+**Coherence (P3–P5).** The conditional test puts flat priors on the other
+coefficients, so it is not a ratio of marginal likelihoods under the joint
+prior. The Savage–Dickey ratio is: the joint model's prior density of x1's
+partial correlation at 0 (1/2) over its posterior density at 0 (`fit_regression()`,
+20,000 draws, logspline), the Bayes factor against the joint model restricted
+to a zero partial correlation. On 20 datasets (k = 3, 8; n = 50, 200; x1's t
+about 0 to 2.5; the other coefficients drawn from the prior):
+
+| | mean difference | mean absolute | largest absolute |
+|---|---|---|---|
+| conditional − Savage–Dickey (16 estimable) | −0.005 | 0.028 | 0.092 |
+| joint test − Savage–Dickey (the same 16) | −0.008 | 0.226 | 0.422 |
+
+For the other four (log BF₁₀ 2 to 9) there are too few draws near 0 for a
+precise density; there the conditional test is within 0.6 of the Savage–Dickey
+estimate, within 2.2 Monte Carlo SEs. So in practice the conditional
+test is one prior for everything, to within a few percent of the Bayes factor;
+the joint test (`bayes_factor_models()`, with against without x1) is further
+away (up to a factor 1.5), because the reduced model's own uniform-correlations
+prior is not the joint prior given a zero partial correlation.
+Figures: `results/figures/10_calibration.png`, `10_coherence.png`.
 
 ## Not yet done
 

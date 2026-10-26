@@ -174,15 +174,14 @@ bayes_factor_models <- function(model_a, model_b, prior = c("uniform_correlation
 
 #' Bayes factor for every term of a model
 #'
-#' With against without each term. By default, a term that is one column (a
-#' continuous predictor, a two-level factor) gets the conditional test
-#' (\code{log_bayes_factor_flat_r_conditional()} or
+#' With against without each term. By default every term gets the conditional
+#' test (\code{log_bayes_factor_flat_r_conditional()} or
 #' \code{log_bayes_factor_uniform_correlations_conditional()}): its evidence
 #' depends only on its own contribution, which avoids the conditional Lindley
-#' paradox. Terms
-#' with several columns (factors with more levels, multi-column interactions)
-#' are tested as a block by comparing the models with and without them (the
-#' joint test); a block version of the conditional test is not available yet.
+#' paradox. A term with one column (a continuous predictor, a two-level factor)
+#' is tested by its partial correlation; a term with several columns (a factor
+#' with more levels, a multi-column interaction) as a block, by its partial
+#' R-squared given all the other columns.
 #' @param formula A model formula.
 #' @param data A data frame.
 #' @param test \code{"conditional"} (default) or \code{"joint"} (compare the
@@ -215,15 +214,20 @@ bayes_factor_per_term <- function(formula, data, test = c("conditional", "joint"
   term_labels <- attr(terms(formula), "term.labels")
   design      <- model.matrix(full_model)
   columns_of_term <- split(colnames(design)[-1], attr(design, "assign")[-1])
+  outcome     <- model.response(model.frame(full_model))
   sample_size <- nrow(design)
   number_of_predictors <- ncol(design) - 1
   results <- lapply(seq_along(term_labels), function(index) {
     columns <- columns_of_term[[as.character(index)]]
-    if (test == "conditional" && length(columns) == 1) {
-      t_value   <- summary(full_model)$coefficients[columns, "t value"]
-      partial_r <- t_value / sqrt(t_value^2 + full_model$df.residual)
-      list(bf = exp(log_bayes_factor_conditional(partial_r, sample_size, number_of_predictors)),
-           used = "conditional")
+    if (test == "conditional") {
+      ## the term's sample partial R-squared given all the other columns (one
+      ## column: its squared partial correlation; the sign does not matter)
+      residuals_without <- qr.resid(qr(design[, setdiff(colnames(design), columns), drop = FALSE]),
+                                    outcome)
+      partial_r <- sqrt(1 - sum(residuals(full_model)^2) / sum(residuals_without^2))
+      list(bf = exp(log_bayes_factor_conditional(partial_r, sample_size, number_of_predictors,
+                                                 number_of_columns = length(columns))),
+           used = if (length(columns) == 1) "conditional" else "conditional (block)")
     } else {
       reduced_model <- lm(update(formula, paste(". ~ . -", term_labels[index])), rows_of_full_model)
       list(bf = bayes_factor_models(full_model, reduced_model, prior = prior), used = "joint")

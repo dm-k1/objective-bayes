@@ -69,7 +69,7 @@ Two ways to test one coefficient, and why the package uses the second:
 | Depends on what the other predictors explain? | yes (the conditional Lindley paradox) | no |
 | Depends on how many other predictors there are? | yes | flat-R: yes (the share shrinks with $k$); uniform correlations: no |
 | Separates nulls from small effects, against JZS | worse | equal, better with correlated predictors |
-| Used for | factors with more than two levels (a block version is not built yet) | every one-column term |
+| Used for | only when asked (`test = "joint"`), or to compare whole models | every term; a term with several columns (a factor with more than two levels) as a block, by its partial $R^2$ |
 
 ---
 
@@ -81,6 +81,7 @@ Two ways to test one coefficient, and why the package uses the second:
 | [`2_how_it_calculates.md`](2_how_it_calculates.md) | *How* it computes: the density, the Stan model, the Bayes factor, the conditional test, the default-prior criteria |
 | [`3_consistency.md`](3_consistency.md) | The proofs and sketches behind the consistency criteria |
 | [`relation_to_others.md`](relation_to_others.md) | How it relates to JZS, `stan_lm` (path B), R2-D2 and other priors |
+| [`4_why_this_default.md`](4_why_this_default.md) | *Why* uniform correlations is the default: the stance (weights follow what is possible), the comparison with JZS, Zellner–Siow, BIC and flat-R, and its one cost |
 | [`../validation/README.md`](../validation/README.md) | Every check and simulation study, with its numbers |
 | [`../vignette.R`](../vignette.R) | Use it on one dataset, start to finish |
 
@@ -119,9 +120,12 @@ its result; details in [`../validation/README.md`](../validation/README.md).
 | Model-selection consistency, $k$ growing with $n$ | run: consistent, but slow (log BF₀₁ 1.9 at n = 2000, k = n/4) | run: consistent (408) | validation 08 |
 | What singles the prior out | checked (V5) | checked (C7) | validation 09, 05 |
 | The conditional test is computed correctly | checked (C1, C2, C5) | checked (C4, C6) | validation 05 |
+| The block conditional test (terms with $q$ columns) is computed correctly | checked (C9–C11) | checked (C9–C11) | validation 05 |
 | The conditional test separates nulls from small effects at least as well as JZS | run: yes (the two tests rank identically) | run: yes | validation 04, 06 |
 | Confirming a true null, one coefficient | run: falls with k (0.55 at k = 2, 0.06 at k = 20) | run: about 0.87 at every k | validation 06 |
 | Calling a small effect (0.1) null | run: rare (0.19 to 0.005) | run: about half (0.52–0.60) | validation 06 |
+| The conditional test is calibrated on its own prior (share of nulls = 1/(1 + BF₁₀)) | – | checked (P1); miscalibrated on JZS data, as expected (P2) | validation 10 |
+| The conditional test is close to one prior for everything (Savage–Dickey under the joint model) | – | checked: within 0.09 on the log scale (mean 0.03) where estimable; the joint test is further away (up to 0.42) | validation 10 |
 | Variable selection: the trade-off curves nearly coincide | run: yes; the most inclusive | run: yes; next to Zellner–Siow | validation 09 |
 | Estimation: prediction error, interval coverage | run: largest gains at small n; coverage down to 0.76 | run: moderate gains; coverage 0.92 or higher | validation 07 |
 
@@ -161,8 +165,9 @@ its result; details in [`../validation/README.md`](../validation/README.md).
 
 ## Open
 
-- **A block version of the conditional test** for multi-column terms (factors),
-  with share ~ Beta(q/2, (k − q)/2) for $q$ columns.
+- **The block conditional test in simulation studies.** It is built and checked
+  for correctness (validation 05, C9–C11; doc 2, section 10), but not yet
+  compared with JZS and the joint test on factors in a study like 04 or 06.
 - **Model-selection consistency, in full:** the dominated-convergence steps of the
   sketch, non-nested models, and a proof for $k$ growing with $n$ (doc 3).
 - **Decided: uniform correlations is the default** (26 October 2026), on the

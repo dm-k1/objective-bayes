@@ -20,7 +20,8 @@ often whatever the number of covariates (0.87 at k = 2 to 20, against 0.55 to
 0.06 for flat-R), and its 95% intervals keep their coverage (0.92 or higher in
 every design; flat-R down to 0.76). Its cost: an effect of a partial
 correlation of about 0.1 is called null in about half the datasets at moderate
-n. Details: [`docs/0_overview.md`](docs/0_overview.md).
+n. The reasoning: [`docs/4_why_this_default.md`](docs/4_why_this_default.md); the
+map: [`docs/0_overview.md`](docs/0_overview.md).
 
 Both divide the total over the predictors with no preference. As a density on
 the coefficients:
@@ -93,6 +94,7 @@ running the validation anywhere: `validation/README.md`.
 | `docs/1_from_behaviour.md` | Where the prior comes from: from what effects can do to the one sentence, with simulated figures |
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
 | `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
+| `docs/4_why_this_default.md` | Why uniform correlations is the default: the stance, the comparison with JZS, Zellner–Siow and flat-R, and its one cost |
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; the other extension (flat over correlation matrices, `stan_lm`); why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
 | `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `validation/README.md` |

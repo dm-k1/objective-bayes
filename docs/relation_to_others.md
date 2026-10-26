@@ -153,7 +153,7 @@ predictors**.
 
 Point 1 is why it matters for testing one coefficient: the test of a coefficient
 is Jeffreys' correlation test on its partial correlation, with or without
-covariates, and it follows from one prior on the whole model, not from a
+covariates (in its fixed-X form: see "What is not new" below), and it follows from one prior on the whole model, not from a
 separate rule per test. It holds for correlated predictors too, because the
 partial correlation already takes the other predictors out.
 
@@ -172,11 +172,20 @@ Simulated (4,000 matrices per cell, KS distance):
 | η = 2, to flat | 0.107 | 0.099 | 0.110 |
 | η = 2, to Beta(2, 2) | 0.014 | 0.012 | 0.027 |
 
-**What is not new.** A flat prior on each partial correlation is close to the
-default partial-correlation test (Wetzels & Wagenmakers, 2012; Kucharský et al.,
-2026, with a flat prior). What uniform correlations adds is that this test
-follows from one prior on the whole model, and that the same prior gives Bayes
-factors between whole models and estimates (`stan_lm` with η = 1).
+**What is not new.** A flat prior on each partial correlation is the default
+partial-correlation test (Wetzels & Wagenmakers, 2012; Kucharský et al., 2026,
+with a flat prior, α = 1). Ours is not the same Bayes factor, but it differs
+from the exact one of Kucharský et al. in one assumption only (`validation/05`,
+C8). Theirs is for multivariate normal data, so the predictors are random and
+the tested predictor's residual SD is an unknown parameter; ours conditions on
+X, as regression does, so the effect is in units of the observed residual SD.
+Give ours that extra uncertainty and the two agree to 5e-7; the priors on the
+noise and the other coefficients are the same in both. As it is, ours is lower
+on the log scale by up to 0.26 (n = 20, k = 8, r = 0), 0.10 at n = 50 and
+0.005 at n = 1000, largest at r = 0 (where ours does not depend on k).
+What uniform correlations adds is: the fixed-X version of their test, that this
+test follows from one prior on the whole model, and that the same prior gives
+Bayes factors between whole models and estimates (`stan_lm` with η = 1).
 
 **In variable selection** (`validation/README.md`, 09) neither dominates:
 flat-R separates real from null predictors better in small samples with
@@ -266,7 +275,9 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
 - Jeffreys' flat prior on a correlation; Ly, Verhagen & Wagenmakers on
   Jeffreys' default tests: flat-R is this prior with one predictor.
 - Kucharský, Wagenmakers, van den Bergh & Ly (2026), *Test*: exact Bayes factor
-  for one partial correlation with a stretched-beta prior. Flat-R puts the
+  for one partial correlation with a stretched-beta prior. With α = 1 it is
+  the uniform-correlations conditional test with random instead of fixed
+  predictors (`validation/05`, C8). Flat-R puts the
   same kind of prior on the *total* instead of on each partial correlation. The
   conditional flat-R test uses the same inputs (the sample partial correlation,
   $n$ and $k$), with the prior the flat total implies for one coefficient.

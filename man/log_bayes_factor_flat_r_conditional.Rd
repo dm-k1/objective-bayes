@@ -9,11 +9,13 @@ log_bayes_factor_flat_r_conditional(
   sample_size,
   number_of_predictors,
   points_f = 600,
-  points_share = 500
+  points_share = 500,
+  number_of_columns = 1
 )
 }
 \arguments{
-\item{partial_r}{Sample partial correlation of the tested predictor.}
+\item{partial_r}{Sample partial correlation of the tested predictor; for a
+block, the square root of the block's sample partial R-squared.}
 
 \item{sample_size}{Number of observations, n.}
 
@@ -23,6 +25,9 @@ log_bayes_factor_flat_r_conditional(
 likelihood, and for the share, inside the prior. With the defaults the
 error is below about 2e-4 on the log scale for n = 50 to 1e6, k = 1 to 30
 (against \code{stats::integrate()}, validation/05, check C5).}
+
+\item{number_of_columns}{Number of columns tested together, q (1 for one
+coefficient).}
 }
 \value{
 The log Bayes factor for an effect against no effect.
@@ -32,6 +37,12 @@ Tests one coefficient's partial correlation, with the prior that the joint
 flat-R prior implies for one of \code{number_of_predictors} coefficients.
 Depends only on the sample partial correlation, n and k. With one predictor
 it equals the joint test.
+}
+\details{
+A block of q columns (a factor with q + 1 levels, a multi-column
+interaction) is tested the same way: its share of the flat total is
+Beta(q/2, (k - q)/2), its direction within the block uniform, and the
+evidence depends only on the block's sample partial R-squared, n, k and q.
 }
 \examples{
 log_bayes_factor_flat_r_conditional(0.2, sample_size = 100, number_of_predictors = 3)

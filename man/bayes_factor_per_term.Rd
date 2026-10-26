@@ -26,15 +26,14 @@ models with and without each term, for every term).}
 A data frame with BF10 (evidence for an effect), BF01, and the test used.
 }
 \description{
-With against without each term. By default, a term that is one column (a
-continuous predictor, a two-level factor) gets the conditional test
-(\code{log_bayes_factor_flat_r_conditional()} or
+With against without each term. By default every term gets the conditional
+test (\code{log_bayes_factor_flat_r_conditional()} or
 \code{log_bayes_factor_uniform_correlations_conditional()}): its evidence
 depends only on its own contribution, which avoids the conditional Lindley
-paradox. Terms
-with several columns (factors with more levels, multi-column interactions)
-are tested as a block by comparing the models with and without them (the
-joint test); a block version of the conditional test is not available yet.
+paradox. A term with one column (a continuous predictor, a two-level factor)
+is tested by its partial correlation; a term with several columns (a factor
+with more levels, a multi-column interaction) as a block, by its partial
+R-squared given all the other columns.
 }
 \examples{
 bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars)

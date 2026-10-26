@@ -66,10 +66,59 @@ test_that("the joint test depends on what the others explain; the conditional te
   expect_equal(exp(log_bayes_factor_flat_r_conditional(0.2, 100, 3)), 1.37, tolerance = 0.01)
 })
 
-test_that("multi-column terms fall back to the joint test", {
+test_that("multi-column terms get the block conditional test", {
   data <- transform(example_data, group = factor(rep(c("a", "b", "c"), 20)))
   result <- bayes_factor_per_term(y ~ x1 + group, data)
-  expect_equal(result$test, c("conditional", "joint"))
+  expect_equal(result$test, c("conditional", "conditional (block)"))
+  ## the block's partial R-squared, from the models with and without it
+  full <- lm(y ~ x1 + group, data)
+  partial_r_squared <- 1 - deviance(full) / deviance(lm(y ~ x1, data))
+  expect_equal(result$BF10[2], exp(log_bayes_factor_uniform_correlations_conditional(
+    sqrt(partial_r_squared), 60, 3, number_of_columns = 2)))
+  expect_equal(bayes_factor_per_term(y ~ x1 + group, data, test = "joint")$test, c("joint", "joint"))
+})
+
+test_that("block conditional test: q = 1 is the one-column test, and q = k the joint test (flat-R)", {
+  for (case in list(c(0.3, 30, 3), c(0.1, 1e4, 5))) {
+    expect_equal(log_bayes_factor_flat_r_conditional(case[1], case[2], case[3], number_of_columns = 1),
+                 log_bayes_factor_flat_r_conditional(case[1], case[2], case[3]))
+  }
+  ## a block of all k columns: its share is 1, so it is the joint flat-R test
+  ## with flat priors on nothing else
+  for (case in list(c(0.2, 40, 2), c(0.05, 300, 3)))
+    expect_equal(log_bayes_factor_flat_r_conditional(sqrt(case[1]), case[2], case[3],
+                                                     number_of_columns = case[3]),
+                 log_bayes_factor_flat_r_vs_intercept_only(case[1], case[2], case[3]),
+                 tolerance = 1e-3)
+})
+
+test_that("block conditional test: the likelihood ratio is exp(-n f^2/2) 1F1((m+1)/2; q/2; n r^2 f^2/2)", {
+  log_kummer <- function(a, c, z) {
+    j <- 0:3000
+    terms <- lgamma(a + j) - lgamma(a) - lgamma(c + j) + lgamma(c) - lgamma(j + 1) + j * log(z)
+    max(terms) + log(sum(exp(terms - max(terms))))
+  }
+  for (case in list(c(40, 4, 2, 0.1, 0.3), c(200, 6, 3, 0.05, 0.2), c(100, 5, 5, 0.3, 0.5))) {
+    n <- case[1]; k <- case[2]; q <- case[3]; r_squared <- case[4]; f <- case[5]
+    m <- n - k + q - 2
+    expect_equal(log_likelihood_ratio_block(f, r_squared, n, k, q),
+                 -n * f^2 / 2 + log_kummer((m + 1) / 2, q / 2, n * r_squared * f^2 / 2),
+                 tolerance = 1e-8)
+  }
+})
+
+test_that("block conditional test: does not depend on what the other predictors explain", {
+  set.seed(9)
+  data <- data.frame(x1 = rnorm(90), group = factor(rep(c("a", "b", "c"), 30)))
+  noise <- rnorm(90)
+  weak  <- transform(data, y = 0.1 * x1 + 0.3 * (group == "b") + noise)
+  ## residualise x1 out of the noise, so both datasets have the same partial R^2
+  ## for group; then let x1 explain much more in the second
+  strong <- transform(weak, y = y + 3 * x1)
+  expect_equal(bayes_factor_per_term(y ~ x1 + group, weak)$BF10[2],
+               bayes_factor_per_term(y ~ x1 + group, strong)$BF10[2], tolerance = 1e-6)
+  joint <- function(data) bayes_factor_per_term(y ~ x1 + group, data, test = "joint")$BF10[2]
+  expect_gt(abs(log(joint(weak)) - log(joint(strong))), 0.3)
 })
 
 test_that("an aliased column stops with a clear message", {

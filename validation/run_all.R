@@ -7,7 +7,7 @@
 ##  here.
 ##
 ##  Run from the project folder:
-##    Rscript validation/run_all.R            all studies, 01 to 09 (hours: 07)
+##    Rscript validation/run_all.R            all studies, 01 to 10 (hours: 07)
 ##    Rscript validation/run_all.R quick      the correctness checks 01, 02, 05
 ##    Rscript validation/run_all.R 03 04 09   a selection
 ##  Cores: all but one by default; set VALIDATION_CORES to choose
@@ -23,7 +23,7 @@
 
 all_studies <- c("01_prior_and_posterior", "02_bayes_factor", "03_simulations",
                  "04_matched_comparison", "05_conditional_test", "06_broad_simulation",
-                 "07_estimation", "08_growing_k", "09_variable_selection")
+                 "07_estimation", "08_growing_k", "09_variable_selection", "10_calibration")
 quick_studies <- c("01_prior_and_posterior", "02_bayes_factor", "05_conditional_test")
 
 ## ---- Which studies -------------------------------------------------------------
@@ -34,7 +34,7 @@ studies <- if (length(requested) == 0) all_studies else
     unknown <- setdiff(requested, substr(all_studies, 1, 2))
     if (length(unknown) > 0)
       stop("Unknown study number(s): ", paste(unknown, collapse = ", "),
-           ". Use 01 to 09, or 'quick'.")
+           ". Use 01 to 10, or 'quick'.")
     chosen
   }
 
