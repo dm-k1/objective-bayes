@@ -20,6 +20,9 @@ P(beta) = P(total) x P(this combination | total) x unit conversion
   built-in correction for testing many predictors.
 - Intercept and noise get the usual neutral priors (flat, and $1/\sigma$), as in
   the JZS / JASP default.
+- It is a mixture of Zellner g-priors, the family of the JZS default: the member
+  whose implied $R^2$ stays the same for every number of predictors
+  ([`docs/2_how_it_calculates.md`](docs/2_how_it_calculates.md), section 8).
 
 It does carry expectations, stated rather than hidden: flat on $R$ means
 $E[R^2] = \tfrac13$, and the per-predictor shrinkage follows from the shared

@@ -1,9 +1,29 @@
 # Relation to other priors
 
-**In one sentence:** most default priors put a prior on each coefficient, so the
-explained variance they claim grows with every predictor; the priors built to
-avoid that put a prior on the total, and the flat-R prior is one of those, with
-the total flat on $R$ and an even split.
+**In one sentence:** the flat-R prior is a mixture of Zellner g-priors, the
+family of the JZS default, and the only member found whose implied $R^2$ stays
+the same for every number of predictors.
+
+## Its family: mixtures of g-priors
+
+Zellner–Siow (JZS, the BayesFactor/JASP default), hyper-g, hyper-g/n,
+beta-prime, robust and intrinsic priors all put a prior on Zellner's $g$. The
+flat-R prior does too, with $g/n = B \cdot W$, $B \sim$ Beta(½, (k−1)/2),
+$W \sim$ Inverse-Gamma(1, ½) ([`2_how_it_calculates.md`](2_how_it_calculates.md),
+section 8). Median implied $R^2$ before any data ($n = 100$):
+
+| Prior | $k = 1$ | $k = 3$ | $k = 10$ | $k = 30$ |
+|---|---|---|---|---|
+| Zellner–Siow (scale 1) | 0.50 | 0.84 | 0.95 | 0.98 |
+| hyper-g/n ($a = 3$) | 0.54 | 0.87 | 0.96 | 0.99 |
+| robust (Bayarri et al., 2012) | 0.52 | 0.72 | 0.77 | 0.78 |
+| intrinsic | 0.39 | 0.59 | 0.65 | 0.66 |
+| **flat-R** | 0.25 | 0.25 | 0.25 | 0.25 |
+
+The flat-R hyperprior involves Kummer's confluent hypergeometric function, so
+it is not a special case of the tCCH family of Li & Clyde (2018), which unifies
+hyper-g, beta-prime, robust and intrinsic priors. A search of the g-prior
+literature did not turn it up; that is a finding of a search, not a proof.
 
 ## Which priors drift with the number of predictors
 
@@ -97,6 +117,14 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
   same kind of prior on the *total* instead of on each partial correlation.
 
 ## References
+
+- Li, Y., & Clyde, M. A. (2018). Mixtures of g-priors in generalized linear
+  models. *JASA*.
+- Wetzels, R., & Wagenmakers, E.-J. (2012). A default Bayesian hypothesis test
+  for correlations and partial correlations. *Psychonomic Bulletin & Review*.
+- Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
+  Analytic posterior distribution and Bayes factor for Pearson partial
+  correlations. *TEST*.
 
 - Aguilar, J. E., & Bürkner, P.-C. (2023). Intuitive joint priors for Bayesian
   linear multilevel models: The R2D2M2 prior. *Electronic Journal of Statistics*.

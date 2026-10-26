@@ -22,8 +22,9 @@ And the Bayes factor in one sentence:
 > **The Bayes factor with $k$ predictors is the one-predictor Bayes factor,
 > averaged over every direction the effect could take.**
 
-Sections 1–5 build the density, section 6 shows how estimation samples it, and
-sections 7–8 build the Bayes factor (used by `bayes_factor_flat_r()`).
+Sections 1–5 build the density, section 6 shows how estimation samples it,
+sections 7 and 9 build the Bayes factor (used by `bayes_factor_flat_r()`), and
+section 8 places the prior in the known family of mixtures of g-priors.
 
 ---
 
@@ -303,7 +304,64 @@ the log scale (`validation/02_bayes_factor.R`, check A1).
 
 ---
 
-## 8. Comparing any two models
+## 8. The same prior as a mixture of g-priors
+
+**In one sentence:** the flat-R prior is a mixture of Zellner g-priors, and the
+only one in that family whose implied $R^2$ is the same for every $k$.
+
+Zellner's g-prior is $\beta \mid g, \sigma \sim N\bigl(0,\ g\,\sigma^2 (X_c^\top X_c)^{-1}\bigr)$:
+a uniform direction (in explained variance) with $f^2 = (g/n)\,\chi^2_k$. Putting a
+prior on $g$ gives a *mixture of g-priors* (Liang et al., 2008); Zellner–Siow
+(JZS), hyper-g, hyper-g/n, beta-prime, robust and intrinsic priors are all
+members. The flat-R prior is the member with
+
+$$
+\frac{g}{n} = B \cdot W, \qquad B \sim \mathrm{Beta}\!\left(\tfrac12, \tfrac{k-1}{2}\right),
+\qquad W \sim \text{Inverse-Gamma}\!\left(1, \tfrac12\right).
+$$
+
+- $W$ is the one-predictor part: for $k = 1$, $B = 1$ and this is the
+  Inverse-Gamma(1, $n/2$) of section 7, step 2.
+- $B$ is the distribution of the squared alignment $c^2$ of section 7: averaging
+  over directions there is the same as averaging over $B$ here.
+- Why it works: $f^2 = B W \chi^2_k$, and $B\,\chi^2_k$ has the distribution of
+  $\chi^2_1$ (a Beta(½, (k−1)/2) share of a $\chi^2_k$ is a $\chi^2_1$). So
+  $f^2 = W\chi^2_1$ for every $k$: exactly the one-predictor prior on the total.
+
+The hyperprior density is $p(g/n = t) = \dfrac{1}{2kt^2}\, {}_1F_1\!\left(\tfrac32;
+\tfrac k2 + 1; -\tfrac{1}{2t}\right)$ (Kummer's confluent hypergeometric
+function). That factor is why it is not a special case of the tCCH family of
+Li & Clyde (2018), which covers hyper-g, beta-prime, robust and intrinsic: their
+densities are products of powers and an exponential.
+
+**The Bayes factor** is then the standard g-prior Bayes factor averaged over
+this hyperprior, a single integral over $g$:
+
+$$
+\mathrm{BF}_k = \int_0^\infty (1+g)^{(n-1-k)/2}\,\bigl(1+g(1-R^2)\bigr)^{-(n-1)/2}\, p(g)\, dg ,
+$$
+
+which agrees with section 7 to $3.5\times10^{-4}$ on the log scale
+(`validation/02_bayes_factor.R`, check A4).
+
+**Where it sits in the family.** Median implied $R^2$ before any data ($n = 100$):
+
+| Prior | $k = 1$ | $k = 3$ | $k = 10$ | $k = 30$ |
+|---|---|---|---|---|
+| Zellner–Siow (scale 1) | 0.50 | 0.84 | 0.95 | 0.98 |
+| hyper-g/n ($a = 3$) | 0.54 | 0.87 | 0.96 | 0.99 |
+| robust (Bayarri et al., 2012) | 0.52 | 0.72 | 0.77 | 0.78 |
+| intrinsic | 0.39 | 0.59 | 0.65 | 0.66 |
+| **flat-R** | 0.25 | 0.25 | 0.25 | 0.25 |
+
+The robust and intrinsic priors also scale $g$ with $k$, and drift less, but
+still drift.
+
+![](figures/6_g_prior_family.png)
+
+---
+
+## 9. Comparing any two models
 
 Every model's Bayes factor is taken against the same intercept-only model,
 with the same priors on $\alpha$ and $\sigma$. So for any two models A and B
@@ -325,7 +383,7 @@ uses no formula (`validation/02_bayes_factor.R`, check A3).
 
 ---
 
-## 9. Properties
+## 10. Properties
 
 Checked numerically in `validation/02_bayes_factor.R`, not proved:
 
@@ -341,7 +399,7 @@ Proofs (for example along the lines of Bayarri et al., 2012) are still open.
 
 ---
 
-## 10. Assumptions and limits
+## 11. Assumptions and limits
 
 - Normal errors, fixed effects, an intercept.
 - The prior uses the **sample** covariance of the predictors (it conditions
