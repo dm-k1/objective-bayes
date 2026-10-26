@@ -173,6 +173,30 @@ coefficient to be small (on average 1/(3k) of the variance), so "no effect" and
 undecided rather than wrong. That is the multiplicity correction, seen from the
 null side.
 
+## 09: variable selection (12 candidates, 4 real: 0.3, 0.2, 0.15, 0.1)
+
+Finding the exact true model is hard for every method; flat-R and JZS tie for
+best (n = 500: 0.37 vs 0.38 uncorrelated, 0.15 vs 0.15 correlated, uniform
+model prior). The methods differ in where they sit on a trade-off
+(n = 500, uncorrelated, beta-binomial model prior):
+
+| | real predictors missed (of 4) | null predictors included (of 8) | inclusion of the 0.1 effect |
+|---|---|---|---|
+| flat-R | **0.45** | **0.91** | **0.64** |
+| JZS default | 0.58 | 0.42 | 0.58 |
+| Zellner–Siow (1) | 0.89 | 0.12 | 0.43 |
+| BIC | 1.01 | 0.05 | 0.34 |
+
+- Flat-R is the most inclusive: it misses the fewest real predictors and admits
+  the most null ones. At n = 50 its inclusion probabilities for null predictors
+  are near 0.5: close to undecided.
+- Why: the other priors claim more explained variance for bigger models, so
+  bigger models that don't show it are penalised automatically. Flat-R claims
+  the same R² for every model size, so that hidden size penalty is gone; control
+  over how many predictors enter then has to come from the prior over models.
+- With correlated predictors, flat-R and JZS are nearly identical.
+- No method dominates; flat-R sits at the sensitive end, BIC at the strict end.
+
 ## Not yet done
 
 - A block version of the conditional test for multi-column terms (factors), with share ~ Beta(q/2, (k − q)/2). The conditional test is now the default in `bayes_factor_flat_r_per_term()` for one-column terms.
