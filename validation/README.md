@@ -237,6 +237,31 @@ effect), not something a better a(k) schedule closes. Conclusion: keep flat-R
 as is; put any wanted strictness in the prior over models, where it is visible
 and adjustable. The method stays in 09 as a documented experiment.
 
+### Experiment: uniform correlations (R² ~ Beta(k/2, 1))
+
+If every valid correlation matrix of (y, x₁ … x_k) is equally likely (LKJ,
+η = 1), the population R² is exactly Beta(k/2, η): flat-R at k = 1, flat R² at
+k = 2, then growing (1 − R² is a product of independent partial-correlation
+terms that telescopes; check V4, KS ≤ 0.013). The same growth law a = k/2 is
+forced by requiring models of different sizes to agree (a fixed g-mixture,
+B ≡ 1). Given R² the direction is uniform, so it is a member of the same family.
+
+Result: it lands on Zellner–Siow, the strict end, marginally ahead of it
+(slightly fewer misses at the same false inclusions):
+
+| n = 500, uncorrelated | false inclusions (beta-binomial / uniform) | missed (beta-binomial / uniform) | true model found (uniform) |
+|---|---|---|---|
+| flat-R | 0.91 / 0.60 | 0.45 / 0.43 | 0.37 |
+| JZS default | 0.42 / 0.47 | 0.58 / 0.47 | 0.38 |
+| uniform correlations | 0.13 / 0.20 | 0.84 / 0.64 | 0.36 |
+| Zellner–Siow (1) | 0.12 / 0.17 | 0.89 / 0.67 | 0.33 |
+
+So each principled stance has its own place on the same trade-off: one claim
+about the total (flat-R, sensitive), every correlation structure equally likely
+(a = k/2, strict), and JZS in between (its median prior R² is close to LKJ with
+η ≈ 2: 0.11 vs 0.12 at k = 1, 0.67 vs 0.69 at k = 8). None dominates; the choice
+of stance, not a better growth law, decides where a method sits.
+
 ## Not yet done
 
 - A block version of the conditional test for multi-column terms (factors), with share ~ Beta(q/2, (k − q)/2). The conditional test is now the default in `bayes_factor_flat_r_per_term()` for one-column terms.
