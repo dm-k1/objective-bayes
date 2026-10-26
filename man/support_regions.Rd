@@ -7,12 +7,14 @@
 support_regions(support_table, band = 3)
 }
 \arguments{
-\item{support_table}{Output of \code{support_per_partial_correlation()}.}
+\item{support_table}{Output of \code{support_per_partial_correlation()} or
+\code{support_per_partial_r_squared()}.}
 
 \item{band}{Within this factor of zero counts as "can't be told apart".}
 }
 \value{
-A data frame of regions, read from left to right.
+A data frame of regions, read from left to right, on the scale of
+the table's first column.
 }
 \description{
 Split the effect-size axis into regions of support

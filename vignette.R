@@ -62,6 +62,13 @@ ggplot(support_x2, aes(partial_correlation, support_vs_zero)) +
        title = "x2: which effect sizes can't be told apart from zero?",
        subtitle = "grey band: within a factor 3 of zero")
 
+## A term with several columns (a factor with more than two levels): one curve
+## for the whole term, over its partial R-squared
+my_data$group <- factor(rep(c("a", "b", "c"), length.out = nrow(my_data)))
+support_group <- support_per_partial_r_squared(lm(y ~ x1 + x2 + x3 + group, data = my_data),
+                                               "group")
+support_regions(support_group, band = 3)
+
 ## ---- 6. Comparison with the default (JZS / JASP) --------------------
 ## Optional; needs the BayesFactor package
 if (requireNamespace("BayesFactor", quietly = TRUE)) {

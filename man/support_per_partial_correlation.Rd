@@ -11,9 +11,10 @@ support_per_partial_correlation(
 )
 }
 \arguments{
-\item{lm_fit}{A fitted \code{lm()}.}
+\item{lm_fit}{A fitted \code{lm()} with an intercept.}
 
-\item{column_name}{A design-matrix column (for a factor, one dummy column).}
+\item{column_name}{A one-column term or a design-matrix column (see
+\code{colnames(model.matrix(lm_fit))}).}
 
 \item{partial_correlations}{The partial correlations to evaluate.}
 }
@@ -22,6 +23,14 @@ A data frame with \code{partial_correlation} and \code{support_vs_zero}.
 }
 \description{
 Reporting next to a Bayes factor that favours "no effect": which effect
-sizes the data can and cannot tell apart from zero. Treats the noise level
-and predictor spread as known, so boundaries are approximate.
+sizes the data can and cannot tell apart from zero. Exact: the likelihood
+ratio of the conditional test, with the noise level and the other
+coefficients integrated out (no plug-in values). The conditional Bayes
+factor is this curve averaged over the prior. For a term with several
+columns (a factor with more than two levels) use
+\code{support_per_partial_r_squared()}.
+}
+\examples{
+support <- support_per_partial_correlation(lm(mpg ~ wt + hp + qsec, mtcars), "qsec")
+support_regions(support)
 }

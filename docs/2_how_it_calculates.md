@@ -530,6 +530,13 @@ simulated data (check C11).
 `bayes_factor_per_term()` for every term with several columns (shown as
 "conditional (block)").
 
+**The support curve** is this likelihood ratio itself, as a function of the
+effect size: `support_per_partial_correlation()` for one column (signed, over
+the partial correlation) and `support_per_partial_r_squared()` for a term with
+any number of columns (over its partial $R^2$). It shows which effect sizes the
+data can and cannot tell apart from zero; the conditional Bayes factor is this
+curve averaged over the prior (`tests/testthat/test-support-curve.R`).
+
 ---
 
 **Not one coherent model space, but close to it.** The conditional test puts
