@@ -78,18 +78,10 @@ partial_correlation_of <- function(lm_fit, coefficient_row) {
 ## Conditional test under uniform correlations: the implied prior for one
 ## coefficient is a flat partial correlation whatever k is (f^2 = W chi^2_1,
 ## the one-predictor prior), so this is the conditional flat-R test with the
-## share fixed at 1. Uses log_peak_integral() from R/conditional.R.
-log_bayes_factor_uniform_correlations_conditional <- function(partial_r, n, k, points_R = 400) {
-  m <- n - k - 1
-  R <- (seq_len(points_R) - 0.5) / points_R
-  f <- R / sqrt(1 - R^2)
-  b <- sqrt(n) * partial_r * f
-  log_null <- log_peak_integral(0, m)
-  log_ratio <- c(-n * f^2 / 2 + log_peak_integral( b, m) - log_null,
-                 -n * f^2 / 2 + log_peak_integral(-b, m) - log_null)
-  largest <- max(log_ratio)
-  largest + log(mean(exp(log_ratio - largest)))
-}
+## share fixed at 1: P(|f| < f) = f / sqrt(1 + f^2). Uses the grid of
+## log_bayes_factor_from_prior_cdf_of_f() in R/conditional.R.
+log_bayes_factor_uniform_correlations_conditional <- function(partial_r, n, k)
+  log_bayes_factor_from_prior_cdf_of_f(partial_r, n, k, function(f) f / sqrt(1 + f^2))
 
 ## Log Bayes factor for one coefficient (effect against none), every method.
 ## Needs the R-squared of the model with and without it, its partial

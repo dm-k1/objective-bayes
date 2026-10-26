@@ -53,27 +53,11 @@ prior_cdf_of_f <- function(f_values, number_of_predictors, points_share) {
   colSums(share_probability * cdf_given_share)
 }
 
-#' Log Bayes factor for one coefficient (conditional flat-R test)
-#'
-#' Tests one coefficient's partial correlation, with the prior that the joint
-#' flat-R prior implies for one of \code{number_of_predictors} coefficients.
-#' Depends only on the sample partial correlation, n and k. With one predictor
-#' it equals the joint test.
-#' @param partial_r Sample partial correlation of the tested predictor.
-#' @param sample_size Number of observations, n.
-#' @param number_of_predictors Number of predictor columns in the model, k.
-#' @param points_f,points_share Grid sizes: for f, around the peak of the
-#'   likelihood, and for the share, inside the prior. With the defaults the
-#'   error is below about 2e-4 on the log scale for n = 50 to 1e6, k = 1 to 30
-#'   (against \code{stats::integrate()}, validation/05, check C5).
-#' @return The log Bayes factor for an effect against no effect.
-#' @examples
-#' log_bayes_factor_flat_r_conditional(0.2, sample_size = 100, number_of_predictors = 3)
-#' @export
-log_bayes_factor_flat_r_conditional <- function(partial_r, sample_size, number_of_predictors,
-                                                points_f = 600, points_share = 500) {
-  if (sample_size < number_of_predictors + 2)
-    stop("Need at least two more observations than predictors.")
+## Log Bayes factor for one coefficient, for any prior on |f| given by its
+## CDF (a function of a vector of f values). Used by the conditional flat-R
+## test, and in validation/comparison_methods.R by the uniform-correlations one.
+log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_of_predictors,
+                                                 prior_cdf, points_f = 600) {
   m <- sample_size - number_of_predictors - 1
 
   ## 1. A grid in f around the peak of the likelihood ratio, which is at
@@ -95,7 +79,33 @@ log_bayes_factor_flat_r_conditional <- function(partial_r, sample_size, number_o
 
   ## 3. Averaged over the prior: each cell weighs with its exact prior
   ##    probability (a difference of the prior's CDF), so where the prior
-  ##    piles up (near f = 0 for small shares) needs no fine grid
-  prior_probability <- diff(prior_cdf_of_f(f_edges, number_of_predictors, points_share))
+  ##    piles up (for flat-R, near f = 0 for small shares) needs no fine grid
+  prior_probability <- diff(prior_cdf(f_edges))
   log_sum_exp(log_likelihood_ratio + log(prior_probability))
+}
+
+#' Log Bayes factor for one coefficient (conditional flat-R test)
+#'
+#' Tests one coefficient's partial correlation, with the prior that the joint
+#' flat-R prior implies for one of \code{number_of_predictors} coefficients.
+#' Depends only on the sample partial correlation, n and k. With one predictor
+#' it equals the joint test.
+#' @param partial_r Sample partial correlation of the tested predictor.
+#' @param sample_size Number of observations, n.
+#' @param number_of_predictors Number of predictor columns in the model, k.
+#' @param points_f,points_share Grid sizes: for f, around the peak of the
+#'   likelihood, and for the share, inside the prior. With the defaults the
+#'   error is below about 2e-4 on the log scale for n = 50 to 1e6, k = 1 to 30
+#'   (against \code{stats::integrate()}, validation/05, check C5).
+#' @return The log Bayes factor for an effect against no effect.
+#' @examples
+#' log_bayes_factor_flat_r_conditional(0.2, sample_size = 100, number_of_predictors = 3)
+#' @export
+log_bayes_factor_flat_r_conditional <- function(partial_r, sample_size, number_of_predictors,
+                                                points_f = 600, points_share = 500) {
+  if (sample_size < number_of_predictors + 2)
+    stop("Need at least two more observations than predictors.")
+  log_bayes_factor_from_prior_cdf_of_f(
+    partial_r, sample_size, number_of_predictors,
+    function(f_values) prior_cdf_of_f(f_values, number_of_predictors, points_share), points_f)
 }

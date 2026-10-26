@@ -20,6 +20,7 @@
 ##        partial correlation is flat, for any k and correlated predictors.
 ##    C5. the conditional flat-R grid against stats::integrate() over
 ##        n = 50 to 1e6, k = 1 to 30 and t-values 0 to 6.
+##    C6. the same for the uniform-correlations conditional test.
 ##
 ##  Run from the project folder: Rscript validation/05_conditional_test.R
 ##  Under a minute.
@@ -56,8 +57,7 @@ c3_differences <- sapply(c(60, 100, 200, 400), function(n) {
   X <- matrix(rnorm(n * 3), n) %*% chol(0.5 + 0.5 * diag(3))
   y <- drop(X %*% c(0.15, 0.3, 0)) + rnorm(n)
   fit <- lm(y ~ X)
-  abs(log_bayes_factor_uniform_correlations_conditional(partial_correlation_of(fit, 2), n, 3,
-                                                        points_R = 4000) -
+  abs(log_bayes_factor_uniform_correlations_conditional(partial_correlation_of(fit, 2), n, 3) -
       log(bayes_factor_flat_partial_correlation(fit, 1, X)))
 })
 record_check("C3. exact vs approximate flat partial correlation", max(c3_differences) < 0.05,
@@ -93,7 +93,11 @@ log_I_by_integration <- function(b, m) {        # log of integral v^m exp(-v^2/2
   log_peak + log(integrate(function(v) exp(m * log(v) - v^2 / 2 + b * v - log_peak),
                            max(0, peak - 40), peak + 40, rel.tol = 1e-10)$value)
 }
-log_bayes_factor_conditional_by_integration <- function(partial_r, n, k) {
+##     The uniform-correlations prior for |f| is the flat-R one with k = 1
+##     (share 1), whatever k is; only m = n - k - 1 changes with k.
+log_bayes_factor_conditional_by_integration <- function(partial_r, n, k,
+                                                        prior = c("flat-R", "uniform correlations")) {
+  prior <- match.arg(prior)
   m <- n - k - 1
   likelihood_ratio <- function(f) {
     b <- sqrt(n) * partial_r * f
@@ -102,7 +106,7 @@ log_bayes_factor_conditional_by_integration <- function(partial_r, n, k) {
     mean(exp(log_ratio_by_sign))
   }
   prior_density <- function(f) {
-    if (k == 1) return((1 + f^2)^(-3 / 2))
+    if (k == 1 || prior == "uniform correlations") return((1 + f^2)^(-3 / 2))
     given_share <- function(s) stats::dbeta(s, 0.5, (k - 1) / 2) * s * (s + f^2)^(-3 / 2)
     ## shares below 1/2 on the log scale (the density changes near s = f^2),
     ## above 1/2 as they are (the Beta density is infinite at 1 when k = 2)
@@ -128,6 +132,21 @@ worst <- c5_cases[which.max(c5_differences), ]
 record_check("C5. conditional flat-R grid = stats::integrate (n 50 to 1e6, k 1 to 30, t 0 to 6)",
              max(c5_differences) < 2e-4,
              sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c5_differences),
+                     worst$n, worst$k, worst$t_value))
+
+## C6. The uniform-correlations conditional test (validation/comparison_methods.R)
+##     against adaptive integration, on the same cases with k > 1.
+c6_cases <- subset(c5_cases, k > 1)
+c6_differences <- unlist(parallel_map(seq_len(nrow(c6_cases)), function(row) {
+  n <- c6_cases$n[row]; k <- c6_cases$k[row]; t_value <- c6_cases$t_value[row]
+  partial_r <- t_value / sqrt(t_value^2 + n - k - 1)
+  abs(log_bayes_factor_uniform_correlations_conditional(partial_r, n, k) -
+      log_bayes_factor_conditional_by_integration(partial_r, n, k, "uniform correlations"))
+}))
+worst <- c6_cases[which.max(c6_differences), ]
+record_check("C6. uniform-correlations conditional grid = stats::integrate (same cases, k > 1)",
+             max(c6_differences) < 2e-4,
+             sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c6_differences),
                      worst$n, worst$k, worst$t_value))
 
 report_checks()
