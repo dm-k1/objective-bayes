@@ -1,6 +1,7 @@
 ## =====================================================================
 ##  Shared settings for the validation scripts
-##   - parallel: use all cores but one (leaves one free for the computer)
+##   - parallel: use all cores but one (leaves one free for the computer),
+##               or VALIDATION_CORES if set
 ##   - caching:  simulation results are saved in
 ##               validation/results/ and reused when nothing changed
 ##   - figures:  saved to validation/results/figures/
@@ -13,7 +14,10 @@
 ## Rscript on macOS and Linux. Where forking is not allowed (Windows; Positron
 ## and RStudio sessions), it starts fresh R processes instead and copies the
 ## global objects and attached packages into them.
-number_of_cores <- max(1, parallel::detectCores() - 1)
+## VALIDATION_CORES overrides it (a cloud machine or a cluster job that should
+## use exactly the cores it was given).
+number_of_cores <- as.integer(Sys.getenv("VALIDATION_CORES",
+                                         max(1, parallel::detectCores() - 1)))
 options(mc.cores = number_of_cores)
 
 forking_allowed <- .Platform$OS.type != "windows" &&

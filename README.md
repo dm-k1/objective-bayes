@@ -63,7 +63,9 @@ decision between the two priors.)
 Requirements: R ≥ 4.3; MASS, posterior, loo and bayesplot are installed with
 the package. For estimation also cmdstanr with CmdStan (or rstan). Optional:
 BayesFactor (JZS comparison), ggplot2, dplyr, purrr, tidyr (vignette, figures
-and validation). Run the tests with `devtools::test()`.
+and validation). Run the tests with `devtools::test()`. The exact package
+versions are in `renv.lock`, and `Dockerfile` builds the whole environment;
+running the validation anywhere: `validation/README.md`.
 
 ## What's where
 
@@ -84,7 +86,8 @@ and validation). Run the tests with `devtools::test()`.
 | `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; the other extension (flat over correlation matrices, `stan_lm`); why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
-| `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; see `validation/README.md` |
+| `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `validation/README.md` |
+| `renv.lock`, `Dockerfile` | The pinned environment: R packages, and R + packages + CmdStan as a container |
 | `archive/` | Superseded code (by-hand tutorials, the brms version of the prior, earlier approaches), kept for history |
 
 ## Scope

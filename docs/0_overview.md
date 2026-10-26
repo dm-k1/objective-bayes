@@ -102,8 +102,8 @@ Two ways to test one coefficient, and why the package uses the second:
 
 **proven** = a complete proof in doc 3; **checked** = a numerical check that
 passes on the current code; **sketch** = the steps of a proof, with a check;
-**stale** = results from a run before the current method set, to be rerun;
-**not run** = written, not yet run in full.
+**run** = a simulation study run on the current code (26 October 2026), with
+its result; details in [`../validation/README.md`](../validation/README.md).
 
 | Claim | Flat-R | Uniform correlations | Where |
 |---|---|---|---|
@@ -115,12 +115,14 @@ passes on the current code; **sketch** = the steps of a proof, with a check;
 | Information consistency, for $n \ge k + 3$ | proven, checked | proven, checked | doc 3; validation 02 (B2b, CB2) |
 | Intrinsic consistency | proven | proven | doc 3 |
 | Model-selection consistency, fixed $k$ | sketch, checked: ½ log n against the intercept-only model, q/2 log n otherwise | sketch, checked: q/2 log n in every case | doc 3; validation 02 (B3, B3b, B4; CB3, CB4) |
-| Model-selection consistency, $k$ growing with $n$ | development run only | not run | validation 08 |
+| Model-selection consistency, $k$ growing with $n$ | run: consistent, but slow (log BF₀₁ 1.9 at n = 2000, k = n/4) | run: consistent (408) | validation 08 |
 | What singles the prior out | checked (V5) | checked (C7) | validation 09, 05 |
 | The conditional test is computed correctly | checked (C1, C2, C5) | checked (C4, C6) | validation 05 |
-| The conditional test separates nulls from small effects at least as well as JZS | stale | stale | validation 05, 06 |
-| Variable selection: the trade-off curves nearly coincide | stale | stale | validation 09 |
-| Estimation quality (bias, error, coverage) | not run | not run (as `stan_lm`) | validation 07 |
+| The conditional test separates nulls from small effects at least as well as JZS | run: yes (the two tests rank identically) | run: yes | validation 04, 06 |
+| Confirming a true null, one coefficient | run: falls with k (0.55 at k = 2, 0.06 at k = 20) | run: about 0.87 at every k | validation 06 |
+| Calling a small effect (0.1) null | run: rare (0.19 to 0.005) | run: about half (0.52–0.60) | validation 06 |
+| Variable selection: the trade-off curves nearly coincide | run: yes; the most inclusive | run: yes; next to Zellner–Siow | validation 09 |
+| Estimation: prediction error, interval coverage | run: largest gains at small n; coverage down to 0.76 | run: moderate gains; coverage 0.92 or higher | validation 07 |
 
 ---
 
@@ -158,15 +160,15 @@ passes on the current code; **sketch** = the steps of a proof, with a check;
 
 ## Open
 
-- **Rerun** studies 03–06 and 09 with the common method set; run 07 (estimation)
-  and 08 (growing $k$) in full; record the results in `validation/README.md` and
-  update the status table above.
 - **A block version of the conditional test** for multi-column terms (factors),
   with share ~ Beta(q/2, (k − q)/2) for $q$ columns.
 - **Model-selection consistency, in full:** the dominated-convergence steps of the
   sketch, non-nested models, and a proof for $k$ growing with $n$ (doc 3).
-- **Decide between the paths** on the reruns: for testing one coefficient
-  (studies 05, 06) and for whole models (08, 09), and on the empirical question.
+- **Decide between the paths.** The reruns are in (`validation/README.md`, "In
+  short"): for testing one coefficient, uniform correlations is stable in $k$,
+  confirms nulls and has honest intervals, at the cost of calling effects of
+  about 0.1 null at moderate $n$; flat-R loses null evidence as covariates are
+  added. Still open: the empirical question below.
 - **The empirical question between paths A and B:** how explained variance grows
   with the number of predictors in published regressions. Path B predicts a
   median $R^2$ of 0.76 with 5 predictors; flat-R predicts 0.25 at any size.

@@ -16,6 +16,29 @@ Rscript validation/09_variable_selection.R
 
 The scripts load the package from this folder with `pkgload::load_all()`.
 
+**All at once:** `Rscript validation/run_all.R` runs every study, each in its
+own R process, and writes `results/run_summary.md` (the commit, R and CmdStan
+versions, cores, and every PASS/FAIL check) plus a log per study in
+`results/logs/`. `run_all.R quick` runs the correctness checks 01, 02 and 05;
+`run_all.R 03 04 09` runs a selection. `VALIDATION_CORES=32` sets the cores.
+
+### Running it on another machine
+
+The environment is pinned: `renv.lock` (the R packages) and `Dockerfile` (R,
+those packages and CmdStan). renv is not activated in this folder; the
+lockfile is the record, and the image installs from it.
+
+| Where | How |
+|---|---|
+| Any machine with Docker (a cloud VM, a SURF Research Cloud workspace) | `git clone` the repository, then `docker build -t flatr-validation .` (once, 20–40 minutes) and `docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatr-validation`. Results land in `validation/results/` of the clone |
+| A machine with R but no Docker | `Rscript -e 'install.packages("renv"); renv::restore(library = .libPaths()[1], prompt = FALSE)'` (into your normal library), then `Rscript -e 'cmdstanr::install_cmdstan(version = "2.40.0")'`, then `Rscript validation/run_all.R` |
+| A cluster without Docker (Snellius) | the same as the previous row, or the image through Apptainer: `apptainer build flatr.sif docker-daemon://flatr-validation:latest` |
+
+To update the lockfile after installing or upgrading packages:
+`Rscript -e 'renv::snapshot(type = "implicit", exclude = c("flatr", "rstan"), prompt = FALSE)'`
+(rstan is only the fallback when cmdstanr is missing, and is left out to keep
+the image small).
+
 | Script | Question | How | Run time |
 |---|---|---|---|
 | `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flat_r.stan`) get the prior and the posterior right, for both priors? | P1–P4 (flat-R): sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. P5–P7 (uniform correlations): R² ~ Beta(k/2, 1), and every partial correlation flat. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets, both priors. Contrast: flat-R sampled in coefficient coordinates | about 10 minutes |
@@ -46,8 +69,9 @@ One set, defined once in `comparison_methods.R` and used by every study.
   joint prior implies for one coefficient. For uniform correlations that is a
   flat partial correlation whatever k is, so this is the "flat partial r per
   coefficient" of earlier versions, now computed exactly.
-- Estimation (07): flat-R, uniform correlations (`stan_lm`), JZS, Zellner–Siow
-  and `lm()`; the conditional tests have no estimation version.
+- Estimation (07): flat-R and uniform correlations (both `fit_flat_r_model()`,
+  the same Stan model), JZS, Zellner–Siow and `lm()`; the conditional tests have
+  no estimation version.
 - Dropped: R2-D2 and the approximate flat partial correlation from 03
   (`archive/03_simulations_with_r2d2.R`), and the experiment R² ~ Beta(k/(k+1), 1)
   from 09 (its result is kept below).
@@ -66,9 +90,11 @@ so the counts per bin should be flat.
 ## Last results
 
 What each result means for the project's claims, with its status, is summarised
-in [`docs/0_overview.md`](../docs/0_overview.md). The sections for 03–06 and 09 below come from runs **before** the common method
-set; 03–06 and 09 have to be rerun with it, and 07 and 08 run for the first
-time. The checks of 01 and 02 are unaffected.
+in [`docs/0_overview.md`](../docs/0_overview.md). Every study below was run on
+26 October 2026 on the current code (commit 604db78 plus the portability
+changes), with the common method set, on an 8-core Mac: 03–06, 08 and 09 in
+about 20 minutes, 07 in 56 minutes. The earlier results are kept outside git in
+`validation/results_before_2026-10-26/`.
 
 | Check | Criterion | Last result |
 |---|---|---|
@@ -100,120 +126,162 @@ misses it for larger k, without divergent transitions: with brms at k = 8 the
 10% quantile of the implied R² was 0.027 where the prior gives 0.010 (KS
 distance 0.074; `archive/check_brms_prior.R`). Check 01 shows the contrast.
 
-## 03: how the methods compare (last run: October 2026, 200 datasets per cell)
+## In short: what the studies say about the two priors
 
-The null predictor x3, n = 200, P(BF₀₁ > 3), i.e. the true null found:
+| Question | Flat-R | Uniform correlations | Study |
+|---|---|---|---|
+| Separating nulls from small effects, one coefficient (AUC) | conditional test = uniform's, ≥ JZS | the same | 04, 06 |
+| Confirming a true null, one coefficient (BF₀₁ > 3) | falls with the number of covariates: 0.55 (k = 2) to 0.06 (k = 20) | about 0.87 for every k | 06 |
+| Calling a small effect (0.1) null | rare: 0.19 (k = 2) to 0.005 (k = 20) | about half: 0.52–0.60 | 06 |
+| Evidence for the null when k grows with n (k = n/4, n = 2000) | log BF₀₁ 1.9 | 408 | 08 |
+| Variable selection | the most inclusive | next to Zellner–Siow, the strict end | 09 |
+| Estimation: prediction error against OLS | the largest gains at small n | moderate gains | 07 |
+| Estimation: 95% interval coverage, real effects | as low as 0.76 in sparse designs | 0.92 or higher in every cell | 07 |
 
-| Method | predictors uncorrelated | correlated (0.5) |
-|---|---|---|
-| flat partial correlation, per coefficient | 0.91 | 0.90 |
-| JZS default | 0.61 | 0.65 |
-| **joint flat-R** | 0.40 | 0.54 |
-| R2-D2 matched | 0.16 | 0.12 |
+Both conditional tests rank datasets by the same partial correlation, so they
+separate nulls from effects equally well; the priors differ only in where the
+Bayes factors land relative to 3 (calibration).
+
+## 03: one coefficient, one design (200 datasets per cell)
+
+Four predictors, x1's slope varies, x3 is null; n = 20 to 500; predictors
+uncorrelated or correlated 0.5. The null predictor found, P(BF₀₁ > 3):
+
+| Method | n = 200, uncorrelated | n = 200, correlated | n = 500, uncorrelated | n = 500, correlated |
+|---|---|---|---|---|
+| JZS default | 0.55 | 0.49 | 0.81 | 0.76 |
+| Zellner–Siow | 0.85 | 0.81 | 0.96 | 0.94 |
+| flat-R joint | 0.18 | 0.17 | 0.67 | 0.62 |
+| **flat-R conditional** | 0.41 | 0.39 | 0.77 | 0.72 |
+| uniform correlations joint | 0.82 | 0.79 | 0.94 | 0.92 |
+| **uniform correlations conditional** | 0.90 | 0.87 | 0.97 | 0.96 |
 
 A small real effect (x1 = 0.1) called null, P(BF₀₁ > 3):
 
 | Method | n = 200, uncorrelated | n = 200, correlated | n = 500, uncorrelated | n = 500, correlated |
 |---|---|---|---|---|
-| flat partial correlation | 0.62 | 0.64 | 0.34 | 0.52 |
 | JZS default | 0.22 | 0.26 | 0.13 | 0.27 |
-| **joint flat-R** | 0.08 | 0.15 | 0.08 | 0.22 |
-| R2-D2 matched | 0.00 | 0.00 | 0.00 | 0.02 |
+| Zellner–Siow | 0.52 | 0.55 | 0.28 | 0.45 |
+| flat-R joint | 0.08 | 0.15 | 0.08 | 0.22 |
+| **flat-R conditional** | 0.16 | 0.20 | 0.12 | 0.22 |
+| uniform correlations joint | 0.47 | 0.51 | 0.25 | 0.40 |
+| **uniform correlations conditional** | 0.62 | 0.64 | 0.34 | 0.52 |
 
-- For real effects of 0.2 or more, flat-R and JZS are practically identical.
-- False effects for a true null (x1 = 0) are rare for every method (≤ 5%).
-- **Trade-off figure** (`docs/figures/7_trade_off.png`): plotted as "nulls found"
-  against "small effects called null", the flat-R curve lies left of JZS's. But
-  check 04 shows this is **calibration, not discrimination**: where each
-  method's Bayes factors sit relative to 3, not how well they separate nulls
-  from small effects (see below).
-- Per-coefficient flat partial correlations find nulls fastest but call small
-  real effects null in 60–70% of datasets: a flat prior on each coefficient
-  puts too much weight on large effects.
+- An effect of 0.3 is found (BF₁₀ > 3) in 0.69–0.80 of datasets at n = 100 and
+  in 0.975 or more from n = 200 on, by every method; false effects for a true
+  null stay at 5.5% or below.
+- Checks U1 (at k = 1 all four flat-R and uniform-correlations versions agree,
+  4.9e-06) and U2 (the uniform-correlations grid against Monte Carlo, 0.0015) pass.
 
-## 04: compared at equal error rates
+## 04: discrimination, threshold-free
 
-**Discrimination** (AUC: how often BF₀₁ is larger for a null dataset than for a
-small effect of 0.1; threshold-free), flat-R minus JZS, paired bootstrap 95% CI:
+AUC (how often BF₀₁ is larger for a null dataset than for a small effect of
+0.1), each method minus JZS, paired bootstrap 95% CI:
 
 | | n = 100 | n = 200 | n = 500 |
 |---|---|---|---|
-| predictors uncorrelated | −0.010 [−0.034, 0.012] | −0.006 [−0.019, 0.007] | −0.004 [−0.009, 0.001] |
-| correlated (0.5) | **−0.039** [−0.058, −0.020] | **−0.034** [−0.049, −0.019] | **−0.028** [−0.036, −0.021] |
+| both conditional tests, uncorrelated | +0.003 [−0.018, 0.023] | +0.003 [−0.010, 0.015] | −0.000 [−0.004, 0.003] |
+| both conditional tests, correlated (0.5) | **+0.047** [0.027, 0.067] | **+0.027** [0.014, 0.040] | **+0.028** [0.018, 0.039] |
+| uniform correlations joint, correlated | **+0.029** [0.015, 0.042] | **+0.018** [0.009, 0.028] | **+0.022** [0.014, 0.031] |
+| flat-R joint, correlated | **−0.039** [−0.058, −0.020] | **−0.034** [−0.049, −0.019] | **−0.028** [−0.036, −0.021] |
 
-- Uncorrelated predictors: all four methods discriminate equally well. The
-  difference in 03 is only where the Bayes factors sit relative to 3.
-- Correlated predictors: flat-R discriminates slightly but clearly **worse** than
-  JZS (and than R2-D2 and per-coefficient flat partial correlations).
-- **Why** (M4, correlated, n = 200): at a fixed t-statistic for x1, flat-R's log
-  BF for x1 drops by 5.2 per unit of R² explained by the other predictors,
-  against 1.9 for JZS. Its evidence for x1 depends 2.7 times as strongly on
-  what the rest of the model explains: the shared total at work. With
-  correlated predictors, that R² partly contains x1's own effect, so the
-  dependence adds noise (rank correlation of log BF with t²: 0.78 vs 0.93).
-- This is the cost of the shared total for testing **one coefficient** in a model with
-  correlated predictors. It does not affect comparing whole models.
+- The two conditional tests have identical AUCs: both rank datasets by the
+  coefficient's partial correlation, the best ranking any prior can give.
+- **Why the joint tests differ** (M4, correlated, n = 200): at a fixed t-statistic
+  for x1, the log BF for x1 changes by −5.19 per unit of R² explained by the
+  other predictors under flat-R joint, −1.93 under JZS, −0.52 under Zellner–Siow
+  and uniform correlations joint, and about 0 under both conditional tests. Rank
+  correlation of the log BF with t²: 0.78 (flat-R joint), 0.93 (JZS), 0.99
+  (Zellner–Siow, uniform correlations joint), 1.00 (conditional tests). The
+  joint flat-R test is the one most affected by the conditional Lindley paradox.
 
-## 05: the conditional test (the default for one coefficient)
+## 05: the conditional tests are computed correctly
 
-**In one sentence:** test one coefficient's partial correlation only, with the
-prior the joint flat-R prior implies for it, so the multiplicity correction
-stays but the evidence no longer depends on what the other predictors explain.
+Checks C1–C7 (the table under "Last results"): both conditional tests against
+`integrate()` up to n = 10⁶, their implied priors, and C7, why η = 1. How they
+compare with the other methods is in 03, 04 and 06.
 
-The implied prior per coefficient: $f_j^2 = \text{share} \cdot R^2/(1-R^2)$,
-$R$ flat, share ~ Beta(½, (k−1)/2). It depends only on k, not on how the
-predictors correlate (C2, KS 0.002). The other coefficients get flat priors, as
-in Kucharský et al. (2026), so the Bayes factor depends only on the sample
-partial correlation, n and k.
+## 06: across designs (k = 2–20, n = 50–1000, correlation 0–0.7, 216 cells)
 
-Checks: C1 equals the joint test for k = 1 (difference 3e-12); C2 as above;
-C3 with a flat prior it matches the approximate flat partial r (within 0.012).
+**Discrimination** (AUC null vs 0.1, minus JZS, mean over n and the pattern of
+the other coefficients):
 
-Discrimination (AUC, null vs 0.1), paired bootstrap 95% CI, design of 03:
+| k | 2 | 5 | 10 | 20 |
+|---|---|---|---|---|
+| both conditional tests, correlation 0 | +0.001 | +0.004 | +0.002 | +0.007 |
+| both conditional tests, correlation 0.7 | **+0.035** | **+0.045** | **+0.041** | **+0.031** |
+| uniform correlations joint, correlation 0.7 | +0.022 | +0.027 | +0.020 | +0.012 |
+| flat-R joint, correlation 0.7 | −0.064 | −0.035 | −0.022 | −0.013 |
 
-| | n = 100 | n = 200 | n = 500 |
+**Calibration at 3**, averaged over everything except the method and k:
+
+| | k = 2 | k = 5 | k = 10 | k = 20 |
+|---|---|---|---|---|
+| True null found: flat-R conditional | 0.55 | 0.29 | 0.20 | **0.06** |
+| True null found: uniform correlations conditional | 0.86 | 0.88 | 0.87 | 0.88 |
+| True null found: JZS | 0.54 | 0.38 | 0.30 | 0.30 |
+| Small effect (0.1) called null: flat-R conditional | 0.19 | 0.05 | 0.02 | 0.005 |
+| Small effect (0.1) called null: uniform correlations conditional | 0.52 | 0.56 | 0.57 | **0.60** |
+| Small effect (0.1) called null: JZS | 0.21 | 0.12 | 0.08 | 0.11 |
+| Effect 0.2 found: flat-R / uniform / JZS | .53 / .51 / .56 | .52 / .47 / .55 | .50 / .45 / .53 | .48 / .44 / .52 |
+
+False effects for a true null: at most 3.3% for every method.
+
+- **Uniform correlations behaves the same whatever the number of covariates**:
+  its prior for one coefficient is a flat partial correlation for every k. It
+  confirms true nulls, and it calls an effect of 0.1 (a partial correlation of
+  about 0.1, below Cohen's "small") null in about half the datasets at these n.
+- **Flat-R's conditional test loses the ability to confirm a null as covariates
+  are added**: its prior expects each coefficient to be small (on average
+  1/(3k) of the variance), so "no effect" and "a tiny effect" predict nearly the
+  same data.
+
+## 08: k growing with n
+
+Median log BF₀₁ for the true null model against the full model (200 datasets
+per n):
+
+| | n = 200 | n = 2000 |
+|---|---|---|
+| k = n/4: flat-R / uniform correlations / JZS / Zellner–Siow | 1.3 / 39.2 / 15.1 / 41.2 | **1.9** / 407.7 / 149.3 / 410.9 |
+| k = √n: flat-R / uniform correlations / JZS / Zellner–Siow | 1.7 / 18.1 / 8.8 / 19.6 | **2.5** / 82.6 / 44.2 / 84.7 |
+
+All four keep growing (checks G1–G2 pass for flat-R), but flat-R's evidence for
+the null barely moves: with 500 null predictors at n = 2000, BF₀₁ ≈ 7. When the
+small model is true, every method finds it (flat-R: log BF 175 at n = 2000,
+k = n/4; uniform correlations 444).
+
+## 07: estimation (24 designs, 100 datasets each; 0 divergent transitions in 4,800 Stan fits)
+
+Excess prediction error for a new observation, relative to OLS (below 1 =
+better), mean over correlation and pattern:
+
+| | k = 3: n = 30 / 60 / 200 | k = 8: n = 30 / 60 / 200 |
+|---|---|---|
+| flat-R | 0.70 / 0.85 / 1.02 | **0.51** / 0.73 / 0.94 |
+| uniform correlations | 0.83 / 0.89 / 0.97 | 0.74 / 0.84 / 0.95 |
+| JZS default | 0.68 / 0.80 / 0.95 | 0.56 / 0.72 / 0.91 |
+| Zellner–Siow | 0.86 / 0.91 / 0.97 | 0.77 / 0.85 / 0.95 |
+
+Coverage of the 95% intervals (OLS: 0.945–0.953):
+
+| | real effects, k = 3 / 8 | true zeros, k = 3 / 8 | lowest cell, real effects |
 |---|---|---|---|
-| conditional − JZS, correlated (0.5) | **+0.052** [0.030, 0.074] | **+0.034** [0.022, 0.046] | **+0.025** [0.018, 0.034] |
-| conditional − joint, correlated (0.5) | **+0.113** [0.069, 0.150] | **+0.078** [0.054, 0.102] | **+0.053** [0.039, 0.068] |
-| conditional − JZS, uncorrelated | −0.004 [−0.022, 0.012] | +0.004 [−0.008, 0.016] | −0.002 [−0.007, 0.002] |
+| flat-R | 0.947 / 0.928 | 0.977 / 0.982 | **0.76** (k = 8, n = 60, sparse) |
+| uniform correlations | 0.957 / 0.940 | 0.952 / 0.948 | 0.92 |
+| JZS default | 0.959 / 0.951 | 0.965 / 0.971 | 0.87 |
+| Zellner–Siow | 0.952 / 0.939 | 0.953 / 0.946 | 0.91 |
 
-Calibration at 3 (correlated, n = 200): nulls found 0.43 (JZS 0.55, joint 0.22);
-slope 0.1 called null 0.21 (JZS 0.27); slope 0.3 found 0.94 (JZS 0.94).
+Mean bias of real effects: flat-R −0.054, JZS −0.037, uniform correlations
+−0.016, Zellner–Siow −0.014, OLS 0.000.
 
-So in this design the conditional test separates nulls from small effects
-**better than JZS** with correlated predictors and equally well without, while
-keeping the flat-R expectation per coefficient. Study 06 checks whether this
-holds across designs. Not yet covered: factors and other multi-column terms
-(the block version would use a share ~ Beta(q/2, (k−q)/2) for q columns).
+- Flat-R shrinks the most: the best predictions at small n with many predictors,
+  but intervals that miss real effects in sparse designs (0.76).
+- Uniform correlations shrinks less, with intervals close to nominal in every
+  cell. It is the same Stan model as flat-R with one line changed
+  (`fit_flat_r_model(prior = "uniform_correlations")`).
 
-## 06: across designs (k = 2–20, n = 50–1000, correlation 0–0.7, 72 designs)
-
-**Discrimination** (AUC null vs 0.1, minus JZS, mean over n and pattern of the
-other coefficients):
-
-| k | correlation 0 | 0.3 | 0.7 |
-|---|---|---|---|
-| conditional flat-R: 2 / 5 / 10 / 20 | +0.001 / +0.004 / +0.002 / +0.007 | +0.009 / +0.011 / +0.013 / +0.012 | **+0.035 / +0.045 / +0.041 / +0.031** |
-| joint flat-R: 2 / 5 / 10 / 20 | −0.015 / −0.011 / −0.007 / −0.005 | −0.022 / −0.020 / −0.009 / −0.008 | −0.064 / −0.035 / −0.022 / −0.013 |
-
-- The conditional test is at least as good as JZS in every group (worst single
-  cell −0.013, noise level), and better with correlated predictors.
-- The conditional test and the per-coefficient flat partial r have **identical**
-  AUCs: both depend only on the coefficient's partial correlation, so they rank
-  datasets the same way. That is the best ranking any prior can give; the prior
-  only changes calibration.
-- The joint test ranks worse than JZS everywhere.
-
-**Calibration at 3** (figure `06_calibration.png`): with many predictors the
-conditional test almost never calls a small real effect null (k = 10–20: 0–7%,
-JZS 11–16%, flat partial r about 70%), but it also rarely confirms a true null
-(k = 20, n = 1000: 18%, JZS 65%). With k predictors the prior expects each
-coefficient to be small (on average 1/(3k) of the variance), so "no effect" and
-"a tiny effect" predict nearly the same data: the Bayes factor stays near 1,
-undecided rather than wrong. That is the multiplicity correction, seen from the
-null side.
-
-## 09: variable selection (12 candidates, 4 real: 0.3, 0.2, 0.15, 0.1)
+## 09: variable selection (12 candidates, 4 real: 0.3, 0.2, 0.15, 0.1; 100 datasets per cell)
 
 Finding the exact true model is hard for every method; flat-R and JZS tie for
 best (n = 500: 0.37 vs 0.38 uncorrelated, 0.15 vs 0.15 correlated, uniform
@@ -241,7 +309,7 @@ model prior). The methods differ in where they sit on a trade-off
 - With correlated predictors, flat-R and JZS are nearly identical.
 - No method dominates; flat-R sits at the sensitive end, BIC at the strict end.
 
-### Experiment: growing from flat-R toward flat-R² (negative result)
+### Experiment: growing from flat-R toward flat-R² (negative result; earlier run, method since dropped)
 
 Idea: let the prior on R² open up with model size, R² ~ Beta(a, 1) with
 a = k / (k + 1): flat on R for one predictor (a = ½), flat on R² as k grows
@@ -281,7 +349,7 @@ effect), not something a better a(k) schedule closes. Conclusion: keep flat-R
 as is; put any wanted strictness in the prior over models, where it is visible
 and adjustable. The method stays in 09 as a documented experiment.
 
-### Experiment: uniform correlations (R² ~ Beta(k/2, 1), `stan_lm` with η = 1)
+### Uniform correlations in variable selection
 
 If every valid correlation matrix of (y, x₁ … x_k) is equally likely (LKJ,
 η = 1), the population R² is exactly Beta(k/2, η): flat-R at k = 1, flat R² at
@@ -330,7 +398,8 @@ over datasets (* = interval excludes 0):
 | | 200 | +0.007* | +0.022* | +0.023* | +0.035* |
 | | 500 | +0.003* | +0.011* | +0.011* | +0.019* |
 
-With the uniform model prior every difference is within ±0.01.
+With the uniform model prior the differences are within about ±0.01 (BIC up
+to +0.017 with correlated predictors).
 
 - The curves nearly coincide; the priors mainly choose where on the curve the
   0.5 cutoff lands.
@@ -343,11 +412,7 @@ With the uniform model prior every difference is within ±0.01.
 - BIC ranks best or equal-best almost everywhere, while missing the most at its
   0.5 cutoff: ranking and calibration are separate properties.
 - One design (12 candidates, 4 real, 100 datasets per cell): indicative.
-
-## 07 and 08
-
-Written, not yet run in full on the reference machine. The growing-k table in
-`docs/3_consistency.md` comes from a development run of 08; rerun to confirm.
+- The rerun of 26 October 2026 reproduces every number in this section.
 
 ## Not yet done
 

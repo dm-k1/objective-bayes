@@ -1,0 +1,3 @@
+# The image needs only renv.lock; the project is mounted at run time
+*
+!renv.lock

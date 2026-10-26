@@ -1,15 +1,16 @@
 ## =====================================================================
 ##  Validation 07: how good are the estimates?
 ##
-##  The prior shrinks estimates toward zero when several predictors share the
-##  budget. Does that help or hurt? Fixed true coefficients, many datasets,
+##  The priors shrink estimates toward zero when several predictors share the
+##  total. Does that help or hurt? Fixed true coefficients, many datasets,
 ##  and for every coefficient: bias, error (RMSE), and whether the 95%
 ##  interval covers the truth; per dataset: the excess prediction error for a
 ##  new observation, (b_hat - b)' Sigma (b_hat - b). Methods (the estimation
 ##  versions of the common set in validation/comparison_methods.R):
 ##    - flat-R                fit_flat_r_model(), posterior mean and 95% interval
-##    - uniform correlations  rstanarm stan_lm() with R-squared ~ Beta(k/2, 1)
-##                            (R2(location = k/(k+2), what = "mean"), i.e. eta = 1)
+##    - uniform correlations  fit_flat_r_model(prior = "uniform_correlations"):
+##                            R-squared ~ Beta(k/2, 1), the same Stan model
+##                            (the prior of rstanarm stan_lm with eta = 1)
 ##    - JZS default           BayesFactor posterior (Cauchy, scale 0.354)
 ##    - Zellner-Siow          BayesFactor posterior (Cauchy, scale 1)
 ##    - ordinary              lm(): estimate and 95% confidence interval
@@ -21,14 +22,14 @@
 ##    correlation       0, 0.5 (all pairs equal)
 ##    true coefficients sparse: 0.4, 0.2, and the rest 0
 ##                      dense:  all 0.15
-##  100 datasets per cell: 2,400 flat-R fits and 2,400 stan_lm fits.
-##  Needs cmdstanr (or rstan), rstanarm and BayesFactor.
+##  100 datasets per cell: 2,400 fits per prior.
+##  Needs cmdstanr (or rstan) and BayesFactor.
 ##
 ##  Run from the project folder, in a terminal, and leave it running:
 ##    Rscript validation/07_estimation.R
 ##  Roughly 2.5-4 hours. Each design cell is saved when it finishes
-##  (validation/results/estimation_v2/), so an interrupted run resumes where
-##  it stopped. (estimation/, from the version without stan_lm, is not used.)
+##  (validation/results/estimation_v3/), so an interrupted run resumes where
+##  it stopped.
 ## =====================================================================
 library(dplyr)
 library(tidyr)
@@ -36,7 +37,7 @@ library(ggplot2)
 source("validation/settings.R")   # results folder, save_figure()
 pkgload::load_all(".", quiet = TRUE)
 
-cell_folder <- file.path(results_folder, "estimation_v2")
+cell_folder <- file.path(results_folder, "estimation_v3")
 dir.create(cell_folder, recursive = TRUE, showWarnings = FALSE)
 
 design <- expand_grid(number_of_predictors  = c(3, 8),
@@ -64,14 +65,11 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
                                                   iter_sampling = 1000, seed = seed))
   flat_r_draws <- as.data.frame(flat_r_fit$draws)[, colnames(predictors), drop = FALSE]
 
-  ## uniform correlations: rstanarm stan_lm, R-squared ~ Beta(k/2, eta) with
-  ## mean (k/2) / (k/2 + eta); mean k / (k + 2) gives eta = 1
-  stan_lm_fit <- suppressWarnings(rstanarm::stan_lm(
-    formula, data = data, prior = rstanarm::R2(location = k / (k + 2), what = "mean"),
-    chains = 4, iter = 2000, seed = seed, refresh = 0))
-  stan_lm_draws <- as.data.frame(as.matrix(stan_lm_fit, pars = colnames(predictors)))
-  stan_lm_divergent <- sum(sapply(rstan::get_sampler_params(stan_lm_fit$stanfit, inc_warmup = FALSE),
-                                  function(chain) sum(chain[, "divergent__"])))
+  ## uniform correlations: the same Stan model, R-squared ~ Beta(k/2, 1)
+  uniform_fit <- suppressWarnings(fit_flat_r_model(formula, data, chains = 4, iter_warmup = 1000,
+                                                   iter_sampling = 1000, seed = seed,
+                                                   prior = "uniform_correlations"))
+  uniform_draws <- as.data.frame(uniform_fit$draws)[, colnames(predictors), drop = FALSE]
 
   ## JZS default and Zellner-Siow (posterior samples from BayesFactor)
   bayesfactor_draws <- function(scale)
@@ -90,7 +88,7 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
     lower = apply(draws, 2, quantile, probs = 0.025),
     upper = apply(draws, 2, quantile, probs = 0.975))
   rbind(summarise_draws(flat_r_draws, "flat-R"),
-        summarise_draws(stan_lm_draws, "uniform correlations"),
+        summarise_draws(uniform_draws, "uniform correlations"),
         summarise_draws(jzs_draws, "JZS default"),
         summarise_draws(zs_draws, "Zellner-Siow"),
         data.frame(method = "ordinary (lm)", coefficient = colnames(predictors),
@@ -102,7 +100,7 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
                                             (estimate - true_value))) |>
     ungroup() |>
     mutate(divergent_transitions = ifelse(method == "flat-R", flat_r_fit$divergent,
-                                          ifelse(method == "uniform correlations", stan_lm_divergent, NA)))
+                                          ifelse(method == "uniform correlations", uniform_fit$divergent, NA)))
 }
 
 

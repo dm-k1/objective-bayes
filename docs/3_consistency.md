@@ -183,11 +183,23 @@ The sketch above also shows why this is harder. Under the null,
 $nR^2 \approx \chi^2_k$ grows with $k$, so the factor
 $\exp\bigl(\tfrac{nR^2}{2}\tfrac{s}{1+s}\bigr)$ is no longer bounded: the evidence
 for the null still grows, but more slowly. `validation/08_growing_k.R` checks
-this for $k = n/4$ and $k = \sqrt n$. Under the null, with 200 null datasets
-per $n$ (median $\log\mathrm{BF}_{01}$):
+this for $k = n/4$ and $k = \sqrt n$ (200 null datasets per $n$, median
+$\log\mathrm{BF}_{01}$ of the null model against the full model):
 
-| $n$ | 50 | 200 | 1000 | 5000 | 20000 |
-|---|---|---|---|---|---|
+| | $n$ = 50 | 200 | 1000 | 2000 |
+|---|---|---|---|---|
+| flat-R, $k = n/4$ | 1.0 | 1.3 | 1.7 | 1.9 |
+| flat-R, $k = \sqrt n$ | 1.1 | 1.7 | 2.3 | 2.5 |
+| uniform correlations, $k = n/4$ | 8.8 | 39.2 | 202.8 | 407.7 |
+| uniform correlations, $k = \sqrt n$ | 6.3 | 18.1 | 52.6 | 82.6 |
+
+Flat-R stays consistent, but its evidence for the null barely moves: with 500
+null predictors at $n = 2000$, $\mathrm{BF}_{01} \approx 7$. Its alternative stays at
+"$R$ flat", which predicts data close to the null's; uniform correlations and
+Zellner–Siow expect $R^2$ near 1 when $k$ is large, which the data easily rule
+out. That is the shared-total property, seen from the null side.
+
+---|---|---|---|---|---|
 | $k$ fixed at 5 | 1.19 | 1.86 | 2.59 | 3.43 | 4.12 |
 | $k = \sqrt n$ | 1.18 | 1.64 | 2.25 | 2.98 | 3.49 |
 | $k = n/4$ | 0.99 | 1.34 | 1.80 | 2.15 | 2.49 |
@@ -237,12 +249,12 @@ faster than any power as $t \to 0$, so the integral of the null case above has
 no $t^{-1/2}$ region near $t \approx 1/n$, and the $(1+s)^{-k/2}$ factor sets the rate.
 
 Checked (`validation/02`, CB3; slope of the median $\log \mathrm{BF}_{01}$
-against $\log n$, expected $\tfrac q2$ in every cell; development run):
+against $\log n$, expected $\tfrac q2$ in every cell):
 
 | $q$ null predictors added to | $q = 1$ | $q = 3$ | $q = 6$ |
 |---|---|---|---|
-| intercept only | 0.49 | 1.49 | 2.92 |
-| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | 0.49 | 1.44 | 2.84 |
+| intercept only | 0.50 | 1.46 | 2.87 |
+| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | 0.50 | 1.47 | 2.89 |
 
-**Not yet done for uniform correlations:** the growing-$k$ study (08 runs it
-for every whole-model method, including this one; not yet run in full).
+With $k$ growing with $n$ it accumulates evidence for the null at the
+Zellner–Siow rate (the table in "When k grows with n" above).

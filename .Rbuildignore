@@ -1,3 +1,5 @@
+^renv$
+^renv\.lock$
 ^archive$
 ^docs$
 ^validation$
@@ -7,3 +9,6 @@
 ^\.git$
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.renvignore$
+^Dockerfile$
+^\.dockerignore$
