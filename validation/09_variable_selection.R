@@ -20,6 +20,9 @@
 ##    flat on R for one predictor (a = 1/2), growing toward flat on R-squared
 ##    (a = 1) as k grows, so bigger models claim a bit more explained variance
 ##    (E[R2] = k / (2k + 1): 1/3, 2/5, 3/7, ... -> 1/2). Same uniform direction.
+##    Experiment: "uniform correlations", R-squared ~ Beta(k/2, 1): what you get when
+##    every valid correlation matrix of (y, x1 ... xk) is equally likely (LKJ, eta = 1);
+##    flat-R at k = 1, flat R-squared at k = 2, then growing (check V4).
 ##  Priors over models:
 ##    uniform      every subset equally likely (favours models with ~6 predictors)
 ##    beta-binomial every model SIZE equally likely (Scott & Berger, 2010)
@@ -46,7 +49,7 @@ true_slopes <- c(0.3, 0.2, 0.15, 0.1, rep(0, 8))
 true_model  <- true_slopes != 0
 design <- expand.grid(sample_size = c(50, 100, 200, 500), predictor_correlation = c(0, 0.5))
 replications_per_cell <- 100
-methods <- c("flat-R", "flat-R -> flat-R2", "JZS default", "Zellner-Siow (1)", "BIC")
+methods <- c("flat-R", "flat-R -> flat-R2", "uniform correlations", "JZS default", "Zellner-Siow (1)", "BIC")
 
 ## R-squared ~ Beta(a, 1) with a uniform direction is the g-prior mixture
 ## g/n = B * W, B ~ Beta(a, k/2 - a), W ~ Inverse-Gamma(1, 1/2) (a = 1/2: flat-R).
@@ -76,6 +79,7 @@ log_bf_direct <- function(method, r_squared, n, k) {
   switch(method,
     `flat-R`           = log_bayes_factor_flat_r_vs_intercept_only(r_squared, n, k),
     `flat-R -> flat-R2` = log_bf_beta_a(r_squared, n, k, growing_a(k)),
+    `uniform correlations` = log_bf_beta_a(r_squared, n, k, k / 2),
     ## simple = FALSE returns the log Bayes factor (simple = TRUE overflows to Inf)
     `JZS default`      = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4, simple = FALSE)$bf,
     `Zellner-Siow (1)` = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = FALSE)$bf,
@@ -126,6 +130,37 @@ v3_distances <- sapply(c(2, 5, 12), function(k) {
 record_check("V3. implied R-squared ~ Beta(k/(k+1), 1) (k = 2, 5, 12)", max(v3_distances) < 0.01,
              sprintf("KS distances %s", paste(sprintf("%.4f", v3_distances), collapse = " ")))
 
+## V4. "uniform correlations": draw whole correlation matrices of (y, x1 ... xk) uniformly
+## (LKJ with eta = 1, C-vine sampler of Lewandowski, Kurowicka & Joe, 2009) and compute
+## the population R-squared of y on the x's; it should be Beta(k/2, 1)
+draw_uniform_correlation_matrix <- function(dimension) {
+  partial <- matrix(0, dimension, dimension); correlation <- diag(dimension)
+  beta_parameter <- 1 + (dimension - 1) / 2
+  for (level in seq_len(dimension - 1)) {
+    beta_parameter <- beta_parameter - 0.5
+    for (i in (level + 1):dimension) {
+      partial[level, i] <- 2 * rbeta(1, beta_parameter, beta_parameter) - 1
+      value <- partial[level, i]
+      if (level > 1) for (l in (level - 1):1)
+        value <- value * sqrt((1 - partial[l, i]^2) * (1 - partial[l, level]^2)) +
+                 partial[l, i] * partial[l, level]
+      correlation[level, i] <- correlation[i, level] <- value
+    }
+  }
+  correlation
+}
+set.seed(3)
+v4_distances <- sapply(c(1, 2, 5), function(k) {
+  r_squared <- replicate(4000, {
+    correlation <- draw_uniform_correlation_matrix(k + 1)   # variable 1 is the outcome
+    rho <- correlation[1, -1]
+    drop(rho %*% solve(correlation[-1, -1, drop = FALSE], rho))
+  })
+  suppressWarnings(unname(ks.test(r_squared, "pbeta", k / 2, 1)$statistic))
+})
+record_check("V4. uniform correlation matrices imply R-squared ~ Beta(k/2, 1) (k = 1, 2, 5)", max(v4_distances) < 0.03,
+             sprintf("KS distances %s", paste(sprintf("%.4f", v4_distances), collapse = " ")))
+
 
 ## ---- One dataset ------------------------------------------------------------
 log_model_prior <- list(
@@ -166,7 +201,7 @@ runs <- run_simulation_grid(
   design,
   results_file = file.path(results_folder, "sim_variable_selection.rds"),
   settings = list(replications_per_cell = replications_per_cell, true_slopes = true_slopes,
-                  methods = methods, version = 2),
+                  methods = methods, version = 3),
   simulate_cell = function(cell)
     do.call(rbind, lapply(seq_len(replications_per_cell), function(replication)
       cbind(as.data.frame(cell), replication = replication,
@@ -189,7 +224,7 @@ summaries <- runs |>
 print(as.data.frame(summaries), digits = 3)
 saveRDS(summaries, file.path(results_folder, "variable_selection_summaries.rds"))
 
-method_colours <- c(`flat-R` = "#d95f02", `flat-R -> flat-R2` = "#e7298a", `JZS default` = "grey40",
+method_colours <- c(`flat-R` = "#d95f02", `flat-R -> flat-R2` = "#e7298a", `uniform correlations` = "#a6761d", `JZS default` = "grey40",
                     `Zellner-Siow (1)` = "#7570b3", BIC = "#1b9e77")
 long <- summaries |>
   pivot_longer(c(median_model_is_true, false_inclusions, missed),
