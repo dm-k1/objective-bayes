@@ -113,13 +113,13 @@ sweep_settings <- expand.grid(explained_share      = c(0.01, 0.1, 0.3, 0.6, 0.9,
 sweep_settings <- subset(sweep_settings, sample_size > number_of_predictors + 1)
 
 message("Ground truth for ", nrow(sweep_settings), " settings (adaptive integration) ...")
-sweep_values <- parallel::mclapply(seq_len(nrow(sweep_settings)), function(row) {
+sweep_values <- parallel_map(seq_len(nrow(sweep_settings)), function(row) {
   s <- sweep_settings[row, ]
   c(code         = log_bayes_factor_flat_r_vs_intercept_only(s$explained_share, s$sample_size,
                                                                      s$number_of_predictors),
     ground_truth = log_bayes_factor_flat_r_by_integration(s$explained_share, s$sample_size,
                                                                   s$number_of_predictors))
-}, mc.cores = number_of_cores)
+})
 sweep_settings <- cbind(sweep_settings, do.call(rbind, sweep_values))
 sweep_settings$error <- abs(sweep_settings$code - sweep_settings$ground_truth)
 

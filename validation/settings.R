@@ -8,10 +8,28 @@
 ## =====================================================================
 
 ## ---- Parallel ----------------------------------------------------------------
-## Forking (mclapply) is not available on Windows, so it runs serially there.
-number_of_cores <- if (.Platform$OS.type == "windows") 1 else
-  max(1, parallel::detectCores() - 1)
+## parallel_map(items, work) runs work(item) for every item on all cores but one.
+## It forks the R session (fast, shares everything) where that is allowed: under
+## Rscript on macOS and Linux. Where forking is not allowed (Windows; Positron
+## and RStudio sessions), it starts fresh R processes instead and copies the
+## global objects and attached packages into them.
+number_of_cores <- max(1, parallel::detectCores() - 1)
 options(mc.cores = number_of_cores)
+
+forking_allowed <- .Platform$OS.type != "windows" &&
+  !inherits(try(parallel::mclapply(1:2, identity, mc.cores = 2), silent = TRUE), "try-error")
+
+parallel_map <- function(items, work) {
+  if (forking_allowed) return(parallel::mclapply(items, work, mc.cores = number_of_cores))
+  cluster <- parallel::makeCluster(number_of_cores)
+  on.exit(parallel::stopCluster(cluster))
+  parallel::clusterCall(cluster, setwd, getwd())
+  attached_packages <- .packages()
+  parallel::clusterCall(cluster, function(packages)
+    for (package in rev(packages)) library(package, character.only = TRUE), attached_packages)
+  parallel::clusterExport(cluster, ls(globalenv()), envir = globalenv())
+  parallel::parLapply(cluster, items, work)
+}
 
 ## ---- Cache folders -------------------------------------------------------------
 results_folder <- file.path("validation", "results")
@@ -53,10 +71,10 @@ run_simulation_grid <- function(design, simulate_cell, results_file, settings,
   }
   message(sprintf("Running %d design cells on %d cores ...", nrow(design), number_of_cores))
   started <- Sys.time()
-  cell_results <- parallel::mclapply(seq_len(nrow(design)), function(row) {
+  cell_results <- parallel_map(seq_len(nrow(design)), function(row) {
     set.seed(base_seed + row)
     simulate_cell(design[row, , drop = FALSE])
-  }, mc.cores = number_of_cores)
+  })
   failed <- vapply(cell_results, inherits, logical(1), what = "try-error")
   if (any(failed)) stop("Simulation failed in design rows: ", paste(which(failed), collapse = ", "),
                         "\nFirst error: ", cell_results[[which(failed)[1]]])

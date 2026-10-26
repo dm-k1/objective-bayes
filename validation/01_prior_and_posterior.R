@@ -181,7 +181,7 @@ one_replication <- function(replication) {
   })
 }
 message("Simulation-based calibration: ", replications, " datasets x 2 models ...")
-ranks <- parallel::mclapply(seq_len(replications), one_replication, mc.cores = number_of_cores)
+ranks <- parallel_map(seq_len(replications), one_replication)
 
 for (model_name in c("direction", "coefficients")) for (quantity in c("r_squared", "b1", "sigma")) {
   quantity_ranks <- sapply(ranks, function(r) r[quantity, model_name])
