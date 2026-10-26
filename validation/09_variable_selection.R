@@ -80,7 +80,8 @@ names(tables_per_n) <- unique(design$sample_size)
 ## V1. interpolation error against direct computation, random R-squared values
 set.seed(1)
 interpolation_errors <- sapply(1:200, function(i) {
-  n <- sample(unique(design$sample_size), 1); k <- sample(1:number_of_candidates, 1)
+  sizes <- unique(design$sample_size)
+  n <- sizes[sample.int(length(sizes), 1)]; k <- sample.int(number_of_candidates, 1)
   method <- sample(c("flat-R", "JZS default", "Zellner-Siow (1)"), 1); r2 <- runif(1, 0.001, 0.9)
   abs(log_bf_table(tables_per_n[[as.character(n)]], method, r2, n, k) - log_bf_direct(method, r2, n, k))
 })

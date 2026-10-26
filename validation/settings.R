@@ -24,9 +24,14 @@ parallel_map <- function(items, work) {
   cluster <- parallel::makeCluster(number_of_cores)
   on.exit(parallel::stopCluster(cluster))
   parallel::clusterCall(cluster, setwd, getwd())
-  attached_packages <- .packages()
-  parallel::clusterCall(cluster, function(packages)
-    for (package in rev(packages)) library(package, character.only = TRUE), attached_packages)
+  ## attach the same packages; flatr itself is loaded from this folder with
+  ## load_all() (as the scripts do), so internal functions are there too
+  attached_packages <- setdiff(.packages(), "flatr")
+  parallel::clusterCall(cluster, function(packages) {
+    for (package in rev(packages)) library(package, character.only = TRUE)
+    if (file.exists("DESCRIPTION")) pkgload::load_all(".", quiet = TRUE)
+    NULL
+  }, attached_packages)
   parallel::clusterExport(cluster, ls(globalenv()), envir = globalenv())
   parallel::parLapply(cluster, items, work)
 }
