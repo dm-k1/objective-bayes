@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit.R
 \name{fit_flat_r_model}
 \alias{fit_flat_r_model}
-\title{Fit a linear regression with the flat-R prior}
+\title{Fit a linear regression with the flat-R or the uniform-correlations prior}
 \usage{
 fit_flat_r_model(
   formula,
@@ -12,7 +12,8 @@ fit_flat_r_model(
   iter_sampling = 1000,
   adapt_delta = 0.95,
   seed = NULL,
-  backend = if (requireNamespace("cmdstanr", quietly = TRUE)) "cmdstanr" else "rstan"
+  backend = if (requireNamespace("cmdstanr", quietly = TRUE)) "cmdstanr" else "rstan",
+  prior = c("flat_r", "uniform_correlations")
 )
 }
 \arguments{
@@ -23,6 +24,9 @@ fit_flat_r_model(
 \item{chains, iter_warmup, iter_sampling, adapt_delta, seed}{Sampler settings.}
 
 \item{backend}{\code{"cmdstanr"} (default when installed) or \code{"rstan"}.}
+
+\item{prior}{\code{"flat_r"} (R flat) or \code{"uniform_correlations"}
+(R-squared ~ Beta(k/2, 1)); see \code{bayes_factor_flat_r()}.}
 }
 \value{
 A \code{flat_r_fit}: \code{print()} shows estimates and diagnostics,
@@ -30,7 +34,7 @@ A \code{flat_r_fit}: \code{print()} shows estimates and diagnostics,
 holds all posterior draws as a \code{posterior::draws_df}.
 }
 \description{
-Samples the prior in its own coordinates, the overall correlation R (flat)
+Samples the prior in its own coordinates, the overall correlation R
 and a direction (uniform), with the coefficients computed from them
 (\code{inst/stan/flat_r.stan}). Intercept flat, noise level \eqn{1/\sigma}.
 }

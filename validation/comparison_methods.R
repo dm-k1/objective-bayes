@@ -54,13 +54,37 @@ log_bayes_factor_beta_r_squared <- function(r_squared, n, k, a, points_B = 100, 
 }
 
 
+## ---- Correlation matrices from the LKJ distribution -------------------------
+## Every valid correlation matrix has density proportional to det^(eta - 1);
+## eta = 1 is uniform. C-vine sampler of Lewandowski, Kurowicka & Joe (2009):
+## draw partial correlations (independent Betas on (-1, 1) whose parameters
+## step down by 1/2 per level, ending at Beta(eta, eta)), then convert them
+## into ordinary correlations. Used by 05 (C7) and 09 (V4).
+draw_lkj_correlation_matrix <- function(dimension, eta = 1) {
+  partial <- matrix(0, dimension, dimension); correlation <- diag(dimension)
+  beta_parameter <- eta + (dimension - 1) / 2
+  for (level in seq_len(dimension - 1)) {
+    beta_parameter <- beta_parameter - 0.5
+    for (i in (level + 1):dimension) {
+      partial[level, i] <- 2 * rbeta(1, beta_parameter, beta_parameter) - 1
+      value <- partial[level, i]
+      if (level > 1) for (l in (level - 1):1)
+        value <- value * sqrt((1 - partial[l, i]^2) * (1 - partial[l, level]^2)) +
+                 partial[l, i] * partial[l, level]
+      correlation[level, i] <- correlation[i, level] <- value
+    }
+  }
+  correlation
+}
+
+
 ## ---- Whole models: log Bayes factor against the intercept-only model --------
 ## simple = FALSE returns the log Bayes factor (simple = TRUE overflows to Inf)
 log_bayes_factor_model <- function(method, r_squared, n, k) {
   if (k == 0) return(0)
   switch(method,
     `flat-R`               = log_bayes_factor_flat_r_vs_intercept_only(r_squared, n, k),
-    `uniform correlations` = log_bayes_factor_beta_r_squared(r_squared, n, k, a = k / 2),
+    `uniform correlations` = log_bayes_factor_uniform_correlations_vs_intercept_only(r_squared, n, k),
     `JZS default`  = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4, simple = FALSE)$bf,
     `Zellner-Siow` = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = FALSE)$bf,
     BIC            = -(n * log(1 - r_squared) + k * log(n)) / 2,
@@ -75,13 +99,7 @@ partial_correlation_of <- function(lm_fit, coefficient_row) {
   t_value / sqrt(t_value^2 + lm_fit$df.residual)
 }
 
-## Conditional test under uniform correlations: the implied prior for one
-## coefficient is a flat partial correlation whatever k is (f^2 = W chi^2_1,
-## the one-predictor prior), so this is the conditional flat-R test with the
-## share fixed at 1: P(|f| < f) = f / sqrt(1 + f^2). Uses the grid of
-## log_bayes_factor_from_prior_cdf_of_f() in R/conditional.R.
-log_bayes_factor_uniform_correlations_conditional <- function(partial_r, n, k)
-  log_bayes_factor_from_prior_cdf_of_f(partial_r, n, k, function(f) f / sqrt(1 + f^2))
+## Both conditional tests are in the package (R/conditional.R).
 
 ## Log Bayes factor for one coefficient (effect against none), every method.
 ## Needs the R-squared of the model with and without it, its partial

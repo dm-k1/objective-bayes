@@ -24,9 +24,9 @@ compile_flat_r_model <- function(backend) {
   compiled_flat_r_models[[backend]]
 }
 
-#' Fit a linear regression with the flat-R prior
+#' Fit a linear regression with the flat-R or the uniform-correlations prior
 #'
-#' Samples the prior in its own coordinates, the overall correlation R (flat)
+#' Samples the prior in its own coordinates, the overall correlation R
 #' and a direction (uniform), with the coefficients computed from them
 #' (\code{inst/stan/flat_r.stan}). Intercept flat, noise level \eqn{1/\sigma}.
 #'
@@ -34,6 +34,8 @@ compile_flat_r_model <- function(backend) {
 #' @param data A data frame.
 #' @param chains,iter_warmup,iter_sampling,adapt_delta,seed Sampler settings.
 #' @param backend \code{"cmdstanr"} (default when installed) or \code{"rstan"}.
+#' @param prior \code{"flat_r"} (R flat) or \code{"uniform_correlations"}
+#'   (R-squared ~ Beta(k/2, 1)); see \code{bayes_factor_flat_r()}.
 #' @return A \code{flat_r_fit}: \code{print()} shows estimates and diagnostics,
 #'   \code{loo()} and \code{pp_check()} work as usual, and \code{$draws}
 #'   holds all posterior draws as a \code{posterior::draws_df}.
@@ -47,7 +49,9 @@ compile_flat_r_model <- function(backend) {
 fit_flat_r_model <- function(formula, data, chains = 4, iter_warmup = 1000,
                              iter_sampling = 1000, adapt_delta = 0.95, seed = NULL,
                              backend = if (requireNamespace("cmdstanr", quietly = TRUE))
-                                         "cmdstanr" else "rstan") {
+                                         "cmdstanr" else "rstan",
+                             prior = c("flat_r", "uniform_correlations")) {
+  prior <- match.arg(prior)
   model_frame <- model.frame(formula, data)
   design      <- model.matrix(formula, model_frame)
   if (!"(Intercept)" %in% colnames(design))
@@ -59,7 +63,8 @@ fit_flat_r_model <- function(formula, data, chains = 4, iter_warmup = 1000,
   if (is.null(seed)) seed <- sample.int(.Machine$integer.max, 1)
 
   stan_data <- list(N = nrow(predictors), K = ncol(predictors), X = predictors, y = outcome,
-                    prior_only = 0L, proper_stand_ins = 0L)
+                    prior_only = 0L, proper_stand_ins = 0L,
+                    uniform_correlations = as.integer(prior == "uniform_correlations"))
   model <- compile_flat_r_model(backend)
   if (backend == "cmdstanr") {
     fit <- model$sample(data = stan_data, chains = chains, parallel_chains = chains,
@@ -94,13 +99,15 @@ fit_flat_r_model <- function(formula, data, chains = 4, iter_warmup = 1000,
                  outcome      = outcome,
                  predictors   = predictors,
                  formula      = formula,
+                 prior        = prior,
                  divergent    = divergent),
             class = "flat_r_fit")
 }
 
 #' @export
 print.flat_r_fit <- function(x, digits = 3, ...) {
-  cat("Linear regression with the flat-R prior\n")
+  cat("Linear regression with the", switch(x$prior, flat_r = "flat-R",
+      uniform_correlations = "uniform-correlations"), "prior\n")
   cat("Formula:", deparse(x$formula), "\n")
   cat("Observations:", length(x$outcome), "  Predictors:", ncol(x$predictors),
       "  Divergent transitions:", x$divergent, "\n\n")
@@ -109,7 +116,9 @@ print.flat_r_fit <- function(x, digits = 3, ...) {
     ~ quantile(.x, probs = c(0.025, 0.975)),
     rhat = posterior::rhat, ess_bulk = posterior::ess_bulk)
   print(as.data.frame(estimates), digits = digits, row.names = FALSE)
-  cat("\nR_squared is the population explained share; its prior is Beta(1/2, 1).\n")
+  cat("\nR_squared is the population explained share; its prior is",
+      switch(x$prior, flat_r = "Beta(1/2, 1).\n",
+             uniform_correlations = sprintf("Beta(%g, 1).\n", ncol(x$predictors) / 2)))
   invisible(x)
 }
 

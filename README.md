@@ -1,23 +1,28 @@
-# Objective Bayes for linear regression: the flat-R prior
+# Objective Bayes for linear regression: two extensions of Jeffreys' flat correlation
 
 > Define what's possible, not what you expect.
 
-**In one sentence:** the total strength of all predictors together (the
-multiple correlation $R$) is flat from 0 to 1, for any number of predictors,
-and every way of dividing it over the predictors is equally plausible.
+**In one sentence:** with one predictor, a flat prior on the correlation
+(Jeffreys); with more predictors, two ways to keep that, built and validated
+as equals until the comparison studies decide:
 
-As a density on the coefficients:
+| | What is flat | Implied $R^2$ | One coefficient's prior |
+|---|---|---|---|
+| **flat-R** (`prior = "flat_r"`, the default) | the total, the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
+| **uniform correlations** (`prior = "uniform_correlations"`) | every correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
+
+Both divide the total over the predictors with no preference. As a density on
+the coefficients:
 
 ```
 P(beta) = P(total) x P(this combination | total) x unit conversion
           flat on R   every split equally likely   noise units -> data units
 ```
 
-- With one predictor this is Jeffreys' flat prior on the correlation.
-- With more predictors the claimed explained variance stays the same,
-  $R^2 \sim$ Beta(½, 1), instead of rising with every predictor added.
-- It is a mixture of Zellner g-priors, the family of the JZS / JASP default;
+- Both are mixtures of Zellner g-priors, the family of the JZS / JASP default;
   intercept and noise get the same neutral priors as there (flat, and $1/\sigma$).
+- Uniform correlations is rstanarm `stan_lm`'s prior with η = 1, the one shape
+  for which every coefficient's partial correlation is flat.
 
 **What you get:** estimation with Stan (with `loo()`, `pp_check()`, bayesplot),
 Bayes factors between any two linear models from a closed form that needs only
@@ -47,7 +52,13 @@ loo(fit); pp_check(fit)
 bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)              # BF per term (conditional test)
 bayes_factor_flat_r(fit, lm(y ~ x2 + x3, my_data))                   # any two models
 bayes_factor_flat_r(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))   # no Stan needed
+
+## the other prior: the same functions with prior = "uniform_correlations"
+bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, prior = "uniform_correlations")
 ```
+
+(The function and package names still say flat-R; they will follow the
+decision between the two priors.)
 
 Requirements: R ≥ 4.3; MASS, posterior, loo and bayesplot are installed with
 the package. For estimation also cmdstanr with CmdStan (or rstan). Optional:

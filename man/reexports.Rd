@@ -12,8 +12,8 @@ These objects are imported from other packages. Follow the links
 below to see their documentation.
 
 \describe{
-  \item{bayesplot}{\code{\link[bayesplot]{pp_check}}}
+  \item{bayesplot}{\code{\link[bayesplot:pp_check]{pp_check()}}}
 
-  \item{loo}{\code{\link[loo]{loo}}}
+  \item{loo}{\code{\link[loo:loo]{loo()}}}
 }}
 

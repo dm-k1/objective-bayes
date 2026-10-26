@@ -18,11 +18,11 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 
 | Script | Question | How | Run time |
 |---|---|---|---|
-| `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flat_r.stan`) get the prior and the posterior right? | P1–P4: sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets. Contrast: the same prior sampled in coefficient coordinates | about 5 minutes |
-| `02_bayes_factor.R` | Is the Bayes factor right? | A1: the grid against `integrate()` over a sweep of R², n, k. A2: invariance to units and recoding. A3: against a brute-force Bayes factor that draws from the prior and uses no formula. A4: against the same prior written as a mixture of g-priors. B1–B3b: predictive matching, information and null consistency (B3b: the rate with and without an effect in the smaller model) | about a minute |
+| `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flat_r.stan`) get the prior and the posterior right, for both priors? | P1–P4 (flat-R): sample the prior alone; it must give a flat correlation (k = 1), R² ~ Beta(½, 1) (k = 3 correlated, k = 8), and the same per-predictor shares as the drawing recipe. P5–P7 (uniform correlations): R² ~ Beta(k/2, 1), and every partial correlation flat. S: simulation-based calibration of the posterior, k = 8, n = 60, 400 datasets, both priors. Contrast: flat-R sampled in coefficient coordinates | about 10 minutes |
+| `02_bayes_factor.R` | Is the Bayes factor right, for both priors? | Flat-R: A1 the grid against `integrate()` over a sweep of R², n, k; A2 invariance to units and recoding; A3 against a brute-force Bayes factor that draws from the prior and uses no formula; A4 against the same prior written as a mixture of g-priors; B1–B4 predictive matching, information and model-selection consistency (B3b: the rate with and without an effect in the smaller model). Uniform correlations: the same as CA1–CA3 and CB1–CB4 | a few minutes |
 | `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); checks U1–U2 | 5–10 minutes |
 | `04_matched_comparison.R` | Is a difference in 03 discrimination or calibration? | AUC (threshold-free), each method minus JZS with a paired bootstrap, matched thresholds, and why: how much the evidence depends on what the other predictors explain | about 3 minutes |
-| `05_conditional_test.R` | Are the conditional tests right? | C1–C4: equals the joint test at k = 1; the implied priors for one coefficient (flat-R: depends only on k; uniform correlations: a flat partial correlation for any k) | under a minute |
+| `05_conditional_test.R` | Are the conditional tests right, and why η = 1? | C1–C4: equals the joint test at k = 1; the implied priors for one coefficient (flat-R: depends only on k; uniform correlations: a flat partial correlation for any k). C5–C6: both grids against `integrate()`, n up to 10⁶. C7: under LKJ(η) one partial correlation is Beta(η, η) for every k, so flat only at η = 1 | a few minutes |
 | `06_broad_simulation.R` | Does the picture of 03–04 hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; all one-coefficient methods | 20–30 minutes |
 | `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; flat-R, uniform correlations (`stan_lm`, η = 1), JZS, Zellner–Siow, `lm()`; needs rstanarm; resumes if interrupted | 2.5–4 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods | under a minute |
@@ -52,7 +52,7 @@ One set, defined once in `comparison_methods.R` and used by every study.
   (`archive/03_simulations_with_r2d2.R`), and the experiment R² ~ Beta(k/(k+1), 1)
   from 09 (its result is kept below).
 
-Package tests (`devtools::test()`): 31 pass on cmdstanr.
+Package tests (`devtools::test()`): 56 pass on cmdstanr.
 
 Each check prints PASS/FAIL with its criterion; 01 and 02 stop with an error if
 anything failed. Simulation results and figures are cached in
@@ -73,17 +73,25 @@ time. The checks of 01 and 02 are unaffected.
 | Check | Criterion | Last result |
 |---|---|---|
 | 01 P1–P4 | KS distance < 0.03 | pass (cmdstanr, current model): k = 1 0.006, k = 3 0.006, k = 8 0.008, shares 0.004–0.009 |
-| 01 S | rank bins, χ² p > 0.01 | pass (cmdstanr, current model): R² p = 0.65, β₁ 0.73, σ 0.52. Contrast, coefficient coordinates: all p < 0.001; R² bins 38 15 24 23 23 18 24 19 26 **190**, σ bins **191** 15 17 … (40 expected per bin) |
+| 01 S | rank bins, χ² p > 0.01 | pass (cmdstanr, current model). Flat-R: R² p = 0.61, β₁ 0.86, σ 0.67. Uniform correlations: R² 0.43, β₁ 0.94, σ 0.76. Contrast, flat-R in coefficient coordinates: all p < 0.001; R² bins 36 18 24 24 26 18 19 19 25 **191**, σ bins **189** 14 25 … (40 expected per bin) |
 | 02 A1 | log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 4.1e-05 |
 | 02 A2 | identical up to 1e-8 | pass |
-| 02 A3 | within 0.05 of brute force (400,000 draws) | pass: 1.644 vs 1.638 (k = 3), −0.692 vs −0.691 (k = 1), 2.507 vs 2.518 (k = 5) |
+| 02 A3 | within 0.05 of brute force (400,000 draws) | pass: 1.644 vs 1.629 (k = 3), −0.692 vs −0.689 (k = 1), 2.507 vs 2.524 (k = 5) |
 | 02 A4 | within 0.002 of the Bayes factor computed as a mixture of g-priors | pass, largest difference 3.5e-04 |
 | 02 B1 | BF within 0.001 of 1, k = 1–6 | pass |
 | 02 B2 | increasing; log BF > 50 at R² = 0.9999 | pass (12.6, 28.6, 44.7, 60.9) |
 | 02 B2b | bounded at n = k + 2, growing at n = k + 3 (the analytic boundary) | pass |
 | 02 B3 | median log BF₀₁ increasing, slope vs log n in 0.35–0.65 | pass (slope 0.53) |
-| 02 B3b | q = 1, 3, 6 null predictors added: slope within 20% of q/2 when the smaller model is x1 (y = 0.5 x1 + e); in 0.35–0.65 for every q when it is the intercept-only model | pass (0.55, 1.59, 2.91; 0.51, 0.51, 0.51) |
+| 02 B3b | q = 1, 3, 6 null predictors added: slope within 20% of q/2 when the smaller model is x1 (y = 0.5 x1 + e); in 0.35–0.65 for every q when it is the intercept-only model | pass (0.55, 1.55, 2.89; 0.51, 0.49, 0.49) |
 | 02 B4 | effect x1 = 0.15: median log BF₁₀ increasing, > 20 at n = 5000 | pass (0.9, 9.3, 54.1 at n = 200, 1000, 5000) |
+| 01 P5–P7 | uniform correlations, KS distance < 0.03 | pass: R² k = 3 0.003, k = 8 0.004; partial correlations flat 0.012, 0.012, 0.006 |
+| 02 CA1 | uniform correlations, log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 2.6e-07 |
+| 02 CA2 | identical up to 1e-8 | pass |
+| 02 CA3 | within 0.05 of brute force (400,000 flat-R draws weighted by k R^(k−1): plain draws from this prior rarely reach small R and come out too low, 0.161 for k = 5) | pass: 0.817 vs 0.815 (k = 3), −0.692 vs −0.692 (k = 1), 0.284 vs 0.319 (k = 5) |
+| 02 CB1–CB2 | as B1, B2b | pass; information consistency from n = k + 3, as flat-R |
+| 02 CB3 | slope within 20% of q/2 for both smaller models | pass (x1: 0.50, 1.47, 2.89; intercept only: 0.50, 1.46, 2.87) |
+| 02 CB4 | as B4 | pass (−0.0, 8.5, 53.3) |
+| 05 C1–C7 | see the script | pass; C5 largest error 1.7e-04, C6 3.5e-06; C7 KS to Beta(η, η) ≤ 0.018, to flat at η = 2 ≥ 0.099 |
 
 **Why the Stan model samples R and a direction.** The prior as a density on the
 coefficients has a sharp peak at zero (`docs/2_how_it_calculates.md`, section

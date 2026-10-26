@@ -122,3 +122,51 @@ test_that("models must share outcome and rows", {
   expect_error(bayes_factor_flat_r(lm(y ~ x1, example_data), lm(y ~ x1, example_data[-1, ])),
                "same outcome")
 })
+
+## Uniform correlations (R-squared ~ Beta(k/2, 1)): fast versions of validation/02, part C
+
+test_that("uniform correlations: the grid agrees with adaptive integration", {
+  r_squared <- 0.2; n <- 50; k <- 3
+  by_integration <- integrate(function(g)
+    (1 + g)^((n - 1 - k) / 2) * (1 + g * (1 - r_squared))^(-(n - 1) / 2) *
+      (n / 2) * g^(-2) * exp(-n / (2 * g)), 0, Inf)$value
+  expect_equal(log_bayes_factor_uniform_correlations_vs_intercept_only(r_squared, n, k),
+               log(by_integration), tolerance = 1e-4)
+})
+
+test_that("with one predictor the two priors are the same", {
+  expect_equal(log_bayes_factor_uniform_correlations_vs_intercept_only(0.09, 40, 1),
+               log_bayes_factor_flat_r_vs_intercept_only(0.09, 40, 1), tolerance = 1e-4)
+  expect_equal(log_bayes_factor_uniform_correlations_conditional(0.3, 40, 1),
+               log_bayes_factor_flat_r_conditional(0.3, 40, 1), tolerance = 1e-4)
+})
+
+test_that("uniform correlations: predictive matching and invariance", {
+  for (k in 1:5)
+    expect_equal(exp(log_bayes_factor_uniform_correlations_vs_intercept_only(1 - 1e-12, k + 1, k)), 1,
+                 tolerance = 1e-3)
+  original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data),
+                                  prior = "uniform_correlations")
+  recoded  <- transform(example_data, sum_12 = x1 + x2, difference_12 = x1 - x2)
+  expect_equal(bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded), lm(y ~ 1, recoded),
+                                   prior = "uniform_correlations"), original)
+})
+
+test_that("uniform correlations: the conditional test does not depend on k (flat partial r for every k)", {
+  ## the prior is the same for every k; only the residual degrees of freedom
+  ## n - k - 1 change, so at a fixed partial correlation the log Bayes factor
+  ## moves little with k (1.57, 1.53, 1.39 for k = 1, 3, 10)
+  by_k <- sapply(c(1, 3, 10), function(k) log_bayes_factor_uniform_correlations_conditional(0.2, 200, k))
+  expect_lt(diff(range(by_k)), 0.25)
+  ## flat-R's per-coefficient prior narrows with k, so its Bayes factor moves
+  ## more (1.57, 1.94, 1.90)
+  flat_r_by_k <- sapply(c(1, 3, 10), function(k) log_bayes_factor_flat_r_conditional(0.2, 200, k))
+  expect_gt(diff(range(flat_r_by_k)), diff(range(by_k)))
+})
+
+test_that("per-term table works with both priors", {
+  uniform <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data, prior = "uniform_correlations")
+  expect_equal(unique(uniform$test), "conditional")
+  expect_true(all(uniform$BF10 > 0))
+  expect_false(isTRUE(all.equal(uniform$BF10, bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data)$BF10)))
+})

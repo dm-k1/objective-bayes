@@ -12,11 +12,13 @@ Description: Bayes factors and estimation for linear regression with a prior
     with one predictor it is Jeffreys' flat prior on the correlation. Bayes
     factors between any two linear models come from a closed form that needs
     only R-squared, n and k. Estimation samples the prior in its own
-    coordinates (R and a direction) with Stan.
+    coordinates (R and a direction) with Stan. Every function also offers the
+    uniform-correlations prior (every correlation matrix of the outcome and
+    predictors equally likely, R-squared ~ Beta(k/2, 1), as rstanarm stan_lm
+    with eta = 1), under which each coefficient's partial correlation is flat.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.1
 Depends: R (>= 4.3)
 Imports:
     MASS,
@@ -38,3 +40,4 @@ Suggests:
     testthat (>= 3.0.0)
 Additional_repositories: https://stan-dev.r-universe.dev
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

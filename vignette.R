@@ -36,6 +36,9 @@ cbind(flat_r   = colMeans(as.data.frame(full_model$draws)[, c("x1", "x2", "x3")]
 ## (the conditional test); test = "joint" compares the models with and without it
 bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data)
 bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, test = "joint")
+## The other prior (docs/0_overview.md): every correlation matrix equally
+## likely, so each coefficient's partial correlation is flat, whatever k is
+bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, my_data, prior = "uniform_correlations")
 
 ## ---- 4. Comparing any two models ------------------------------------
 ## Takes fit_flat_r_model() fits or plain lm() fits: only R-squared, n and k matter

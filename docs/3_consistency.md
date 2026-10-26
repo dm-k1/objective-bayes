@@ -197,3 +197,52 @@ accumulates evidence for the null much faster here, because its prior expects
 $R^2$ near 1 when $k$ is large, which the data easily rule out; flat-R's
 alternative stays at "$R$ flat", which is harder to tell apart from the null.
 That is the same shared-total property, seen from the null side.
+
+---
+
+## The uniform-correlations prior: the same criteria
+
+**In one sentence:** uniform correlations meets the same criteria by the same
+arguments, with one difference: leaving the null model costs the usual
+$\tfrac k2 \log n$, because its prior has no peak at $\beta = 0$.
+
+As a g-mixture its hyperprior is the same for every $k$ (document 2, section 8,
+$B \equiv 1$):
+
+$$
+t = \frac gn \sim \text{Inverse-Gamma}\!\left(1, \tfrac12\right), \qquad
+p(t) = \frac{1}{2t^2}\, e^{-1/(2t)} .
+$$
+
+| Criterion | Flat-R | Uniform correlations | Why |
+|---|---|---|---|
+| Information consistency | from $n \ge k + 3$ | from $n \ge k + 3$ | the same $t^{-2}$ tail; the proof above with $p(t) \le 1/(2t^2)$ (`validation/02`, B2b and CB2) |
+| Intrinsic consistency | yes | yes | the hyperprior does not involve $n$; the prior density is continuous in $\Sigma$ |
+| Predictive matching | yes | yes | every g-mixture gives BF = 1 at $n = k + 1$ (B1, CB1) |
+| Null rate, smaller model = intercept only | $\tfrac12 \log n$ | $\tfrac q2 \log n$ | the prior mass near $\beta = 0$, below |
+| Null rate, smaller model with an effect | $\tfrac q2 \log n$ | $\tfrac q2 \log n$ | the Laplace argument above holds for any finite, positive prior density |
+| Under an effect | linear in $n$ | linear in $n$ | (B4, CB4) |
+
+**Why the null rate differs.** The Occam factor of the picture above is the
+prior mass within $n^{-1/2}$ of $\beta = 0$, which is $P(R \lesssim n^{-1/2})$:
+
+| | prior on $R$ | $P(R \le a)$ | Occam factor at $a = n^{-1/2}$ | $\log \mathrm{BF}_{01}$ grows like |
+|---|---|---|---|---|
+| flat-R | flat | $a$ | $n^{-1/2}$ | $\tfrac12 \log n$ |
+| uniform correlations | density $k R^{k-1}$ ($R^2 \sim$ Beta($k/2$, 1)) | $a^k$ | $n^{-k/2}$ | $\tfrac k2 \log n$ |
+
+So under uniform correlations the null model gets the ordinary penalty per
+dimension, like Zellner–Siow and BIC. In the g-mixture form: $p(t)$ vanishes
+faster than any power as $t \to 0$, so the integral of the null case above has
+no $t^{-1/2}$ region near $t \approx 1/n$, and the $(1+s)^{-k/2}$ factor sets the rate.
+
+Checked (`validation/02`, CB3; slope of the median $\log \mathrm{BF}_{01}$
+against $\log n$, expected $\tfrac q2$ in every cell; development run):
+
+| $q$ null predictors added to | $q = 1$ | $q = 3$ | $q = 6$ |
+|---|---|---|---|
+| intercept only | 0.49 | 1.49 | 2.92 |
+| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | 0.49 | 1.44 | 2.84 |
+
+**Not yet done for uniform correlations:** the growing-$k$ study (08 runs it
+for every whole-model method, including this one; not yet run in full).

@@ -21,6 +21,13 @@
 ##         with a real effect in the smaller model it is q/2 log n (q extra nulls)
 ##    B4. consistency under the alternative (log BF10 grows with n), simulated
 ##
+##  PART C. The same checks for the uniform-correlations prior
+##    (R-squared ~ Beta(k/2, 1); log_bayes_factor_uniform_correlations_vs_intercept_only())
+##    CA1 grid vs integrate(), CA2 invariance, CA3 brute force, CB1 predictive
+##    matching, CB2 information consistency from n = k + 3, CB3 the null rate:
+##    q/2 log n for q extra null predictors, also against the intercept-only
+##    model (unlike flat-R), CB4 consistency under the alternative
+##
 ##  Run from the project folder: Rscript validation/02_bayes_factor.R
 ##  About a minute. No Stan needed.
 ## =====================================================================
@@ -186,7 +193,8 @@ record_check("A2c. recoding predictors (same model, other columns)",
 ## average. Slow and noisy (Monte Carlo); agrees to about 0.05 on the log scale.
 log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
                                                         number_of_draws = 40000,
-                                                        draws_per_batch = 2000) {
+                                                        draws_per_batch = 2000,
+                                                        prior = "flat_r") {
   sample_size            <- length(outcome)
   centered_predictors    <- scale(predictors, scale = FALSE)
   centered_outcome       <- outcome - mean(outcome)
@@ -207,7 +215,16 @@ log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
   ## how well each drawn coefficient set predicts the data
   log_evidence_per_draw <- numeric(0)
   for (batch in seq_len(number_of_draws / draws_per_batch)) {
+    ## Uniform correlations puts little mass at small R (R = U^(1/k)), where
+    ## the data usually are, so plain Monte Carlo would rest on a few rare
+    ## draws. Instead: draw from the flat-R recipe (R flat) and weight each draw
+    ## by the ratio of the two densities of R, k R^(k-1) (importance sampling;
+    ## the weights are bounded by k). For flat-R every weight is 1.
     coefficients     <- draw_coefficients_from_flat_r_prior(draws_per_batch, predictor_covariance)
+    f_squared_drawn  <- rowSums((coefficients %*% predictor_covariance) * coefficients)
+    k <- ncol(predictors)
+    log_weight <- if (prior == "uniform_correlations")
+      log(k) + (k - 1) / 2 * log(f_squared_drawn / (1 + f_squared_drawn)) else 0
     predicted_values <- centered_predictors %*% t(coefficients)
     overlap_with_outcome     <- drop(crossprod(centered_outcome, predicted_values))
     predicted_sum_of_squares <- colSums(predicted_values^2)
@@ -216,7 +233,7 @@ log_bayes_factor_flat_r_by_sampling <- function(predictors, outcome,
       (outer(rep(outcome_sum_of_squares, draws_per_batch), inverse_noise_values^2) -
        2 * outer(overlap_with_outcome, inverse_noise_values) + predicted_sum_of_squares) / 2
     log_evidence_per_draw <- c(log_evidence_per_draw,
-                               log_sum_exp_per_row(log_integrand) + log(inverse_noise_step))
+                               log_sum_exp_per_row(log_integrand) + log(inverse_noise_step) + log_weight)
   }
   log_sum_exp(log_evidence_per_draw) - log(number_of_draws) - log_evidence_null
 }
@@ -385,6 +402,116 @@ record_check("B4. consistency under the alternative (simulated)",
              all(diff(median_log_bf10) > 0) && median_log_bf10[3] > 20,
              sprintf("median log BF10 at n = 200, 1000, 5000: %s",
                      paste(sprintf("%.1f", median_log_bf10), collapse = " ")))
+
+
+## #####################################################################
+##  PART C. THE UNIFORM-CORRELATIONS PRIOR
+## #####################################################################
+## The same questions for R-squared ~ Beta(k/2, 1) with a uniform direction.
+## As a g-mixture its scale is g ~ Inverse-Gamma(1, n/2) for every k, so the
+## Bayes factor is one integral over g (R/bayes_factor.R).
+log_bf_uniform <- log_bayes_factor_uniform_correlations_vs_intercept_only
+
+## CA1. The grid against integrate(), same sweep as A1. Criterion: within 0.001.
+log_bf_uniform_by_integration <- function(r_squared, n, k) {
+  log_integrand <- function(log_g) log(n / 2) - log_g - n / (2 * exp(log_g)) +
+    (n - 1 - k) / 2 * log1p(exp(log_g)) - (n - 1) / 2 * log1p(exp(log_g) * (1 - r_squared))
+  peak <- optimize(log_integrand, c(-20, 40), maximum = TRUE)$maximum
+  height <- log_integrand(peak)
+  break_points <- c(-40, peak - 3, peak + 3, 60)
+  height + log(sum(vapply(1:3, function(i)
+    integrate(function(x) exp(log_integrand(x) - height), break_points[i], break_points[i + 1],
+              rel.tol = 1e-10, subdivisions = 1000L)$value, numeric(1))))
+}
+uniform_sweep <- subset(expand.grid(r_squared = c(0.01, 0.1, 0.3, 0.6, 0.9, 0.99),
+                                    n = c(10, 30, 100, 1000, 10000), k = c(1, 2, 3, 5, 10, 30)),
+                        n > k + 1)
+uniform_errors <- mapply(function(r_squared, n, k)
+  abs(log_bf_uniform(r_squared, n, k) - log_bf_uniform_by_integration(r_squared, n, k)),
+  uniform_sweep$r_squared, uniform_sweep$n, uniform_sweep$k)
+record_check(sprintf("CA1. uniform correlations: grid vs integrate() (%d settings)", nrow(uniform_sweep)),
+             max(uniform_errors) < 1e-3, sprintf("largest error %.1e", max(uniform_errors)))
+
+## CA2. Invariance to units and recoding. Criterion: identical up to 1e-8.
+uniform_original <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, example_data,
+                                                 prior = "uniform_correlations")$BF10
+uniform_rescaled <- bayes_factor_flat_r_per_term(y ~ x1 + x2 + x3, transform(rescaled_data, y = 1000 * y - 3),
+                                                 prior = "uniform_correlations")$BF10
+uniform_full_original <- bayes_factor_flat_r(lm(y ~ x1 + x2 + x3, example_data), lm(y ~ 1, example_data),
+                                             prior = "uniform_correlations")
+uniform_full_recoded  <- bayes_factor_flat_r(lm(y ~ sum_12 + difference_12 + x3, recoded_data),
+                                             lm(y ~ 1, recoded_data), prior = "uniform_correlations")
+record_check("CA2. uniform correlations: rescaling and recoding",
+             max(abs(uniform_rescaled / uniform_original - 1)) < 1e-8 &&
+               abs(uniform_full_recoded / uniform_full_original - 1) < 1e-8,
+             sprintf("largest relative difference %.1e",
+                     max(abs(uniform_rescaled / uniform_original - 1),
+                         abs(uniform_full_recoded / uniform_full_original - 1))))
+
+## CA3. Closed form vs brute force (flat-R draws, weighted to the
+##     uniform-correlations prior on R). Criterion: within 0.05 on the log scale.
+set.seed(2)
+for (case in brute_force_cases) {
+  closed_form <- log_bf_uniform(sample_r_squared(case$predictors, case$outcome),
+                                length(case$outcome), ncol(case$predictors))
+  brute_force <- log_bayes_factor_flat_r_by_sampling(case$predictors, case$outcome,
+                                                      number_of_draws = 400000,
+                                                      prior = "uniform_correlations")
+  record_check(paste("CA3. uniform correlations: brute force,", case$label),
+               abs(closed_form - brute_force) < 0.05,
+               sprintf("closed %.3f, brute force %.3f", closed_form, brute_force))
+}
+
+## CB1. Predictive matching. Criterion: within 0.001 of 1.
+uniform_matching <- sapply(1:6, function(k) exp(log_bf_uniform(1 - 1e-12, k + 1, k)))
+record_check("CB1. uniform correlations: predictive matching (k = 1-6)",
+             all(abs(uniform_matching - 1) < 1e-3),
+             paste(sprintf("%.4f", uniform_matching), collapse = " "))
+
+## CB2. Information consistency, exactly from n = k + 3 on: the hyperprior on
+##     g/n is Inverse-Gamma(1, 1/2), with the same t^(-2) tail as flat-R's.
+uniform_boundary <- sapply(1:3, function(k) {
+  at <- function(n) sapply(c(1 - 1e-6, 1 - 1e-8), log_bf_uniform, sample_size = n, number_of_predictors = k)
+  c(bounded_at_k_plus_2 = diff(at(k + 2)) < 0.01, growing_at_k_plus_3 = diff(at(k + 3)) > 0.2)
+})
+record_check("CB2. uniform correlations: information consistency starts at n = k + 3 (k = 1-3)",
+             all(uniform_boundary), "bounded at n = k + 2, growing at n = k + 3")
+
+## CB3. The null rate. With q extra null predictors the median log BF01 grows
+##     like q/2 log n, whether the smaller model contains an effect or is the
+##     intercept-only model: the usual penalty per extra dimension (flat-R
+##     gives 1/2 log n in the second case, B3b). Criterion: slopes within 20%
+##     of q/2 for every q and both smaller models.
+set.seed(7)
+uniform_medians <- parallel_map(seq_len(nrow(nested_design)), function(row) {
+  q <- nested_design$extra_nulls[row]
+  has_effect <- nested_design$smaller_model[row] == "x1"
+  k_small <- as.integer(has_effect)
+  sapply(sample_sizes, function(n) median(replicate(200, {
+    x <- matrix(rnorm(n * (k_small + q)), n)
+    y <- (if (has_effect) 0.5 * x[, 1] else 0) + rnorm(n)
+    log_bf_small <- if (has_effect) log_bf_uniform(sample_r_squared(x[, 1, drop = FALSE], y), n, 1) else 0
+    log_bf_small - log_bf_uniform(sample_r_squared(x, y), n, k_small + q)
+  })))
+})
+uniform_slopes <- sapply(uniform_medians, function(m) coef(lm(m ~ log(sample_sizes)))[[2]])
+record_check("CB3. uniform correlations: null rate q/2 log n, both smaller models (q = 1, 3, 6)",
+             all(abs(uniform_slopes / (nested_design$extra_nulls / 2) - 1) < 0.2),
+             sprintf("slopes (smaller x1 | intercept only) %s | %s",
+                     paste(sprintf("%.2f", uniform_slopes[from_x1]), collapse = " "),
+                     paste(sprintf("%.2f", uniform_slopes[from_null]), collapse = " ")))
+
+## CB4. Consistency under the alternative (as B4). Criterion: increasing, > 20 at n = 5000.
+set.seed(5)
+uniform_log_bf10 <- sapply(c(200, 1000, 5000), function(n) median(replicate(100, {
+  x <- matrix(rnorm(n * 3), n)
+  y <- drop(x %*% c(0.15, 0.2, 0)) + rnorm(n)
+  log_bf_uniform(sample_r_squared(x, y), n, 3) - log_bf_uniform(sample_r_squared(x[, 2:3], y), n, 2)
+})))
+record_check("CB4. uniform correlations: consistency under the alternative",
+             all(diff(uniform_log_bf10) > 0) && uniform_log_bf10[3] > 20,
+             sprintf("median log BF10 at n = 200, 1000, 5000: %s",
+                     paste(sprintf("%.1f", uniform_log_bf10), collapse = " ")))
 
 
 ## =====================================================================

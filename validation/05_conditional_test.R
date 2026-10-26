@@ -21,6 +21,9 @@
 ##    C5. the conditional flat-R grid against stats::integrate() over
 ##        n = 50 to 1e6, k = 1 to 30 and t-values 0 to 6.
 ##    C6. the same for the uniform-correlations conditional test.
+##    C7. why eta = 1: under LKJ(eta) the partial correlation of y with one
+##        predictor, given all the others, is Beta(eta, eta) on (-1, 1) for any
+##        k. It is flat (Jeffreys) for every k only at eta = 1.
 ##
 ##  Run from the project folder: Rscript validation/05_conditional_test.R
 ##  Under a minute.
@@ -134,7 +137,7 @@ record_check("C5. conditional flat-R grid = stats::integrate (n 50 to 1e6, k 1 t
              sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c5_differences),
                      worst$n, worst$k, worst$t_value))
 
-## C6. The uniform-correlations conditional test (validation/comparison_methods.R)
+## C6. The uniform-correlations conditional test (R/conditional.R)
 ##     against adaptive integration, on the same cases with k > 1.
 c6_cases <- subset(c5_cases, k > 1)
 c6_differences <- unlist(parallel_map(seq_len(nrow(c6_cases)), function(row) {
@@ -148,5 +151,30 @@ record_check("C6. uniform-correlations conditional grid = stats::integrate (same
              max(c6_differences) < 2e-4,
              sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c6_differences),
                      worst$n, worst$k, worst$t_value))
+
+## C7. Why eta = 1. Draw correlation matrices of (y, x1 ... xk) from LKJ(eta)
+##     and compute the partial correlation of y with x1 given all the others
+##     (from the inverse matrix). It should be Beta(eta, eta) on (-1, 1) for
+##     every k, so flat for every k only when eta = 1.
+##     Criterion: KS distance to Beta(eta, eta) below 0.03 (4,000 matrices), and
+##     to the flat distribution above 0.05 when eta = 2.
+set.seed(8)
+c7_design <- expand.grid(k = c(1, 3, 8), eta = c(1, 2))
+c7_partials <- parallel_map(seq_len(nrow(c7_design)), function(row) {
+  replicate(4000, {
+    precision <- solve(draw_lkj_correlation_matrix(c7_design$k[row] + 1, c7_design$eta[row]))
+    -precision[1, 2] / sqrt(precision[1, 1] * precision[2, 2])
+  })
+})
+c7_design$to_beta <- mapply(function(partial, eta)
+  suppressWarnings(unname(ks.test((partial + 1) / 2, "pbeta", eta, eta)$statistic)),
+  c7_partials, c7_design$eta)
+c7_design$to_flat <- sapply(c7_partials, function(partial)
+  suppressWarnings(unname(ks.test(partial, "punif", -1, 1)$statistic)))
+record_check("C7. LKJ(eta): one partial correlation ~ Beta(eta, eta) for k = 1, 3, 8; flat only at eta = 1",
+             all(c7_design$to_beta < 0.03) && all(c7_design$to_flat[c7_design$eta == 2] > 0.05),
+             sprintf("KS to Beta(eta, eta): %s; to flat at eta = 2: %s",
+                     paste(sprintf("%.3f", c7_design$to_beta), collapse = " "),
+                     paste(sprintf("%.3f", c7_design$to_flat[c7_design$eta == 2]), collapse = " ")))
 
 report_checks()

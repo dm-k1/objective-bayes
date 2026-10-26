@@ -110,26 +110,11 @@ record_check("V3. g-mixture with a = k/2 implies R-squared ~ Beta(k/2, 1) (k = 2
 ## V4. "uniform correlations": draw whole correlation matrices of (y, x1 ... xk) uniformly
 ## (LKJ with eta = 1, C-vine sampler of Lewandowski, Kurowicka & Joe, 2009) and compute
 ## the population R-squared of y on the x's; it should be Beta(k/2, 1)
-draw_uniform_correlation_matrix <- function(dimension) {
-  partial <- matrix(0, dimension, dimension); correlation <- diag(dimension)
-  beta_parameter <- 1 + (dimension - 1) / 2
-  for (level in seq_len(dimension - 1)) {
-    beta_parameter <- beta_parameter - 0.5
-    for (i in (level + 1):dimension) {
-      partial[level, i] <- 2 * rbeta(1, beta_parameter, beta_parameter) - 1
-      value <- partial[level, i]
-      if (level > 1) for (l in (level - 1):1)
-        value <- value * sqrt((1 - partial[l, i]^2) * (1 - partial[l, level]^2)) +
-                 partial[l, i] * partial[l, level]
-      correlation[level, i] <- correlation[i, level] <- value
-    }
-  }
-  correlation
-}
+## (draw_lkj_correlation_matrix() is in comparison_methods.R)
 set.seed(3)
 v4_distances <- sapply(c(1, 2, 5), function(k) {
   r_squared <- replicate(4000, {
-    correlation <- draw_uniform_correlation_matrix(k + 1)   # variable 1 is the outcome
+    correlation <- draw_lkj_correlation_matrix(k + 1, eta = 1)   # variable 1 is the outcome
     rho <- correlation[1, -1]
     drop(rho %*% solve(correlation[-1, -1, drop = FALSE], rho))
   })

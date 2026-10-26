@@ -1,5 +1,5 @@
 ## =====================================================================
-##  Testing one coefficient: the conditional flat-R test
+##  Testing one coefficient: the conditional test, for both priors
 ## =====================================================================
 ## In one sentence: test one coefficient's partial correlation, with the prior
 ## that the joint flat-R prior implies for one coefficient, so the evidence
@@ -54,8 +54,7 @@ prior_cdf_of_f <- function(f_values, number_of_predictors, points_share) {
 }
 
 ## Log Bayes factor for one coefficient, for any prior on |f| given by its
-## CDF (a function of a vector of f values). Used by the conditional flat-R
-## test, and in validation/comparison_methods.R by the uniform-correlations one.
+## CDF (a function of a vector of f values). Used by both conditional tests.
 log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_of_predictors,
                                                  prior_cdf, points_f = 600) {
   m <- sample_size - number_of_predictors - 1
@@ -108,4 +107,25 @@ log_bayes_factor_flat_r_conditional <- function(partial_r, sample_size, number_o
   log_bayes_factor_from_prior_cdf_of_f(
     partial_r, sample_size, number_of_predictors,
     function(f_values) prior_cdf_of_f(f_values, number_of_predictors, points_share), points_f)
+}
+
+#' Log Bayes factor for one coefficient (conditional test, uniform correlations)
+#'
+#' Under uniform correlations (every correlation matrix of the outcome and the
+#' predictors equally likely) one coefficient's partial correlation is flat on
+#' (-1, 1) whatever the number of predictors: Jeffreys' flat correlation for
+#' every coefficient (validation/05, checks C4 and C7). So this is the
+#' conditional test with the prior P(|f| < f) = f / sqrt(1 + f^2), for any k.
+#' The other coefficients get flat priors, as in the flat-R version.
+#' @inheritParams log_bayes_factor_flat_r_conditional
+#' @return The log Bayes factor for an effect against no effect.
+#' @examples
+#' log_bayes_factor_uniform_correlations_conditional(0.2, sample_size = 100, number_of_predictors = 3)
+#' @export
+log_bayes_factor_uniform_correlations_conditional <- function(partial_r, sample_size,
+                                                              number_of_predictors, points_f = 600) {
+  if (sample_size < number_of_predictors + 2)
+    stop("Need at least two more observations than predictors.")
+  log_bayes_factor_from_prior_cdf_of_f(partial_r, sample_size, number_of_predictors,
+                                       function(f_values) f_values / sqrt(1 + f_values^2), points_f)
 }

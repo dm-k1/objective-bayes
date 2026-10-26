@@ -4,7 +4,12 @@
 \alias{bayes_factor_flat_r_per_term}
 \title{Bayes factor for every term of a model}
 \usage{
-bayes_factor_flat_r_per_term(formula, data, test = c("conditional", "joint"))
+bayes_factor_flat_r_per_term(
+  formula,
+  data,
+  test = c("conditional", "joint"),
+  prior = c("flat_r", "uniform_correlations")
+)
 }
 \arguments{
 \item{formula}{A model formula.}
@@ -13,19 +18,25 @@ bayes_factor_flat_r_per_term(formula, data, test = c("conditional", "joint"))
 
 \item{test}{\code{"conditional"} (default) or \code{"joint"} (compare the
 models with and without each term, for every term).}
+
+\item{prior}{\code{"flat_r"} or \code{"uniform_correlations"}; see
+\code{bayes_factor_flat_r()}.}
 }
 \value{
 A data frame with BF10 (evidence for an effect), BF01, and the test used.
 }
 \description{
 With against without each term. By default, a term that is one column (a
-continuous predictor, a two-level factor) gets the conditional flat-R test
-(\code{log_bayes_factor_flat_r_conditional()}): its evidence depends only on
-its own contribution, which avoids the conditional Lindley paradox. Terms
+continuous predictor, a two-level factor) gets the conditional test
+(\code{log_bayes_factor_flat_r_conditional()} or
+\code{log_bayes_factor_uniform_correlations_conditional()}): its evidence
+depends only on its own contribution, which avoids the conditional Lindley
+paradox. Terms
 with several columns (factors with more levels, multi-column interactions)
 are tested as a block by comparing the models with and without them (the
 joint test); a block version of the conditional test is not available yet.
 }
 \examples{
 bayes_factor_flat_r_per_term(mpg ~ wt + hp + qsec, mtcars)
+bayes_factor_flat_r_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "uniform_correlations")
 }

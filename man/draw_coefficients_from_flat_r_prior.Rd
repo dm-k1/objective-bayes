@@ -2,14 +2,20 @@
 % Please edit documentation in R/prior_draws.R
 \name{draw_coefficients_from_flat_r_prior}
 \alias{draw_coefficients_from_flat_r_prior}
-\title{Draw coefficient sets from the flat-R prior}
+\title{Draw coefficient sets from the flat-R or the uniform-correlations prior}
 \usage{
-draw_coefficients_from_flat_r_prior(number_of_draws, predictor_covariance)
+draw_coefficients_from_flat_r_prior(
+  number_of_draws,
+  predictor_covariance,
+  prior = c("flat_r", "uniform_correlations")
+)
 }
 \arguments{
 \item{number_of_draws}{Number of coefficient sets.}
 
 \item{predictor_covariance}{Covariance matrix of the predictors.}
+
+\item{prior}{\code{"flat_r"} or \code{"uniform_correlations"}.}
 }
 \value{
 A matrix with one coefficient set per row.
@@ -17,7 +23,9 @@ A matrix with one coefficient set per row.
 \description{
 The prior as a recipe, in units of the noise (sigma = 1):
 \enumerate{
-\item P(total): draw the overall correlation R flat; Cohen's f^2 = R^2 / (1 - R^2).
+\item P(total): draw the overall correlation R; Cohen's f^2 = R^2 / (1 - R^2).
+flat-R: R flat, so R^2 ~ Beta(1/2, 1). Uniform correlations:
+R^2 ~ Beta(k/2, 1), i.e. R = U^(1/k) with U flat.
 \item P(combination | total): draw a direction with no preference in explained
 variance (normal draws with covariance solve(Sigma)).
 \item Scale each direction so its f^2 is exactly the drawn amount.

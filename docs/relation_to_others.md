@@ -67,8 +67,9 @@ ways to extend that to $k$ predictors, and they differ in one claim:
   Goodrich, rstanarm vignette). So flat-R and `stan_lm` share everything except
   the prior on $R^2$. But `stan_lm` has no default η: the user states where
   $R^2$ is expected, and η follows; the rstanarm documentation does not
-  recommend η = 1. Fixing η = 1, because it is the one value that gives Jeffreys'
-  flat correlation at $k = 1$, and using it for Bayes factors, is not found there.
+  recommend η = 1. Why η = 1 in particular: the subsection "Why η = 1" below.
+  Using it for Bayes factors is not found there. In this package:
+  `prior = "uniform_correlations"` in every function.
 - **The same growth is forced by consistency between model sizes.** As a
   g-mixture (section 8 of [`2_how_it_calculates.md`](2_how_it_calculates.md)) it
   has $B \equiv 1$: a fixed hyperprior $g/n \sim$ Inverse-Gamma(1, ½), so the
@@ -137,6 +138,46 @@ This is the $R^2$ prior of the **uniform correlations** extension. The flat-R
 share per predictor, Beta(½, (k−1)/2), is a different result found the same way:
 [`1_from_behaviour.md`](1_from_behaviour.md), step 4.
 
+### Why η = 1
+
+**In one sentence:** η = 1 is the only shape for which **every coefficient's
+partial correlation is Jeffreys' flat correlation, whatever the number of other
+predictors**.
+
+| | What it says | Unique to η = 1? | Shown by |
+|---|---|---|---|
+| 1 | Under LKJ(η), the partial correlation of $y$ with one predictor given all the others is Beta(η, η) on (−1, 1), **for every $k$**. Flat only at η = 1 | yes | `validation/05`, C7 |
+| 2 | At $k = 1$ the prior is Jeffreys' flat correlation | yes (LKJ(η) at $k = 1$ is Beta(η, η) on $r$) | the same, $k = 1$ |
+| 3 | As a g-mixture, one hyperprior for every $k$: $g/n \sim$ Inverse-Gamma(1, ½), so models of every size share one scale | no (every η gives a fixed hyperprior) | doc 2, section 8 |
+| 4 | "Every single correlation flat" (Barnard et al., 2000) leads to the same $R^2 \sim$ Beta($k/2$, 1) | — | simulation above |
+
+Point 1 is why it matters for testing one coefficient: the test of a coefficient
+is Jeffreys' correlation test on its partial correlation, with or without
+covariates, and it follows from one prior on the whole model, not from a
+separate rule per test. It holds for correlated predictors too, because the
+partial correlation already takes the other predictors out.
+
+Why point 1 holds: the LKJ sampler builds the matrix from independent partial
+correlations, level by level, and the partials at the last level (two variables,
+given all the others) are Beta(η, η) on (−1, 1), whatever the number of
+variables. LKJ gives every ordering of the variables the same distribution, so
+put $y$ and the tested predictor last: their partial correlation given all the
+others is that last-level Beta(η, η).
+
+Simulated (4,000 matrices per cell, KS distance):
+
+| | $k = 1$ | $k = 3$ | $k = 8$ |
+|---|---|---|---|
+| η = 1, to flat | 0.017 | 0.010 | 0.011 |
+| η = 2, to flat | 0.107 | 0.099 | 0.110 |
+| η = 2, to Beta(2, 2) | 0.014 | 0.012 | 0.027 |
+
+**What is not new.** A flat prior on each partial correlation is close to the
+default partial-correlation test (Wetzels & Wagenmakers, 2012; Kucharský et al.,
+2026, with a flat prior). What uniform correlations adds is that this test
+follows from one prior on the whole model, and that the same prior gives Bayes
+factors between whole models and estimates (`stan_lm` with η = 1).
+
 **In variable selection** (`validation/README.md`, 09) neither dominates:
 flat-R separates real from null predictors better in small samples with
 uncorrelated predictors, uniform correlations does better when predictors are
@@ -151,10 +192,11 @@ flat-R predicts 0.25 at any size.
 ## The conditional Lindley paradox
 
 Priors with one scale shared by all coefficients (Zellner–Siow, hyper-g, and the
-joint flat-R prior) let large coefficients drive the test of a small one toward
-"no effect" (Som, Hans & MacEachern, 2016). Their remedy, block hyper-g priors,
-gives groups of coefficients their own scale. The conditional flat-R test does
-the same for one coefficient: its own share of the flat total
+joint tests of both flat-R and uniform correlations) let large coefficients drive
+the test of a small one toward "no effect" (Som, Hans & MacEachern, 2016). Their
+remedy, block hyper-g priors, gives groups of coefficients their own scale. The
+conditional tests do the same for one coefficient: under flat-R its own share of
+the flat total, under uniform correlations its own flat partial correlation
 ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 10).
 
 ## Is this just R2-D2?

@@ -13,4 +13,7 @@ test_that("fit_flat_r_model() runs and works with print, loo and pp_check", {
   expect_s3_class(loo(fit), "loo")
   expect_s3_class(pp_check(fit), "ggplot")
   expect_error(fit_flat_r_model(y ~ 0 + x1, data), "intercept")
+  uniform <- fit_flat_r_model(y ~ x1 + x2, data, chains = 2, iter_warmup = 500,
+                              iter_sampling = 500, seed = 1, prior = "uniform_correlations")
+  expect_output(print(uniform), "uniform-correlations prior")
 })

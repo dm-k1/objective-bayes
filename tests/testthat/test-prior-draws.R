@@ -18,3 +18,23 @@ test_that("with one predictor the correlation is flat from -1 to 1", {
   correlation <- effect / sqrt(1 + effect^2)
   expect_lt(suppressWarnings(ks.test(correlation, "punif", -1, 1)$statistic), 0.01)
 })
+
+test_that("uniform correlations: implied R-squared is Beta(k/2, 1), correlated or not", {
+  set.seed(3)
+  correlated <- matrix(0.5, 3, 3); diag(correlated) <- 1
+  for (covariance in list(matrix(1), correlated, diag(10))) {
+    draws <- draw_coefficients_from_flat_r_prior(50000, covariance, prior = "uniform_correlations")
+    f_squared <- rowSums((draws %*% covariance) * draws)
+    distance <- suppressWarnings(ks.test(f_squared / (1 + f_squared), "pbeta",
+                                         ncol(covariance) / 2, 1)$statistic)
+    expect_lt(distance, 0.01)
+  }
+})
+
+test_that("uniform correlations: every coefficient's partial correlation is flat, for any k", {
+  set.seed(4)
+  correlated <- matrix(0.5, 5, 5); diag(correlated) <- 1
+  draws <- draw_coefficients_from_flat_r_prior(50000, correlated, prior = "uniform_correlations")
+  partial_f <- draws[, 1] * sqrt(1 / solve(correlated)[1, 1])   # effect / spread left after the others
+  expect_lt(suppressWarnings(ks.test(partial_f / sqrt(1 + partial_f^2), "punif", -1, 1)$statistic), 0.01)
+})

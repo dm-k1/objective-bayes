@@ -191,6 +191,11 @@ with a standard normal $z$, which lets $\lVert z\rVert$ come near 0, where the
 direction is undefined; with 2 predictors that gave 1–3 divergent transitions
 per 4,000 draws, and none with the length kept near 1.
 
+**The other prior, the same model.** With `prior = "uniform_correlations"`
+the only change is factor 1: $R^2 \sim$ Beta($k/2$, 1), which on $R$ is the
+density $k R^{k-1}$, one line in the Stan model (`target += (K - 1) * log(R)`).
+Factors 2 and 3 are the same.
+
 In these coordinates there is no peak. `validation/01_prior_and_posterior.R`
 checks that the prior comes out right for $k$ = 1, 3 and 8, and that the
 posterior is calibrated (simulation-based calibration, $k = 8$).
@@ -464,6 +469,13 @@ than JZS. With many predictors it is cautious: it rarely calls a small effect
 null, but also rarely confirms a null, because the prior expects each
 coefficient to be small (on average $1/(3k)$ of the variance), so "no effect"
 and "a tiny effect" predict nearly the same data.
+
+**Under uniform correlations** the implied prior for one coefficient is simpler:
+its partial correlation is flat on (−1, 1) for every $k$
+([`relation_to_others.md`](relation_to_others.md), "Why η = 1"), so the same
+formula with $P(|f| < f) = f/\sqrt{1+f^2}$, Jeffreys' one-predictor prior, whatever
+$k$ is. In the code: `log_bayes_factor_uniform_correlations_conditional()`, used
+by `bayes_factor_flat_r_per_term(..., prior = "uniform_correlations")`.
 
 **In the code:** `log_bayes_factor_flat_r_conditional()`, used by
 `bayes_factor_flat_r_per_term()` for every one-column term. Terms with several
