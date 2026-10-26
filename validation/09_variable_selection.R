@@ -192,7 +192,8 @@ analyse_dataset <- function(n, correlation, seed) {
                  posterior_of_true     = posterior[which(apply(all_models, 1, function(m) all(m == true_model)))],
                  inclusion_true_mean   = mean(inclusion[true_model]),
                  inclusion_null_mean   = mean(inclusion[!true_model]),
-                 inclusion_x4          = inclusion[4])   # the smallest real effect, 0.1
+                 inclusion_x4          = inclusion[4],   # the smallest real effect, 0.1
+                 inclusion             = I(list(unname(inclusion))))   # all 12, for the curves below
     }))
   }))
 }
@@ -201,7 +202,7 @@ runs <- run_simulation_grid(
   design,
   results_file = file.path(results_folder, "sim_variable_selection.rds"),
   settings = list(replications_per_cell = replications_per_cell, true_slopes = true_slopes,
-                  methods = methods, version = 3),
+                  methods = methods, version = 4),
   simulate_cell = function(cell)
     do.call(rbind, lapply(seq_len(replications_per_cell), function(replication)
       cbind(as.data.frame(cell), replication = replication,
@@ -257,5 +258,66 @@ save_figure(
     labs(x = "sample size (log scale)", y = "mean inclusion probability", colour = NULL, linetype = NULL,
          title = "Inclusion probabilities: real predictors should go up, null ones down"),
   "09_inclusion", width = 10, height = 7)
+
+## ---- Equal or worse? Whole trade-off curves, not one point ----------------------
+## The 0.5 cutoff gives each method one point (misses vs false inclusions). Sliding
+## the cutoff traces a curve. If two methods' curves coincide, the prior only chose
+## where on the curve you sit; if one lies below, that method separates real from
+## null predictors better. Summary: AUC of "real vs null" over all predictors in a
+## cell (the cutoff is shared across datasets, as in practice), with a bootstrap
+## over datasets for the difference from flat-R (the same datasets for every method).
+auc_real_vs_null <- function(inclusion_matrix) {   # rows: datasets, columns: 12 predictors
+  real <- as.vector(inclusion_matrix[, true_model]); null <- as.vector(inclusion_matrix[, !true_model])
+  ranks <- rank(c(real, null))
+  (sum(ranks[seq_along(real)]) - length(real) * (length(real) + 1) / 2) / (length(real) * length(null))
+}
+inclusion_matrix_of <- function(rows) do.call(rbind, rows$inclusion[order(rows$replication)])
+
+set.seed(4)
+curve_cells <- split(runs, list(runs$predictor_correlation, runs$sample_size, runs$model_prior), drop = TRUE)
+auc_table <- do.call(rbind, lapply(curve_cells, function(cell) {
+  per_method <- lapply(split(cell, cell$method), inclusion_matrix_of)
+  reference <- per_method[["flat-R"]]
+  boot_index <- replicate(1000, sample.int(nrow(reference), replace = TRUE))
+  do.call(rbind, lapply(names(per_method), function(method) {
+    m <- per_method[[method]]
+    differences <- apply(boot_index, 2, function(i) auc_real_vs_null(m[i, ]) - auc_real_vs_null(reference[i, ]))
+    data.frame(predictor_correlation = cell$predictor_correlation[1], sample_size = cell$sample_size[1],
+               model_prior = cell$model_prior[1], method = method, auc = auc_real_vs_null(m),
+               difference_from_flat_r = auc_real_vs_null(m) - auc_real_vs_null(reference),
+               lower = quantile(differences, 0.025), upper = quantile(differences, 0.975))
+  }))
+}))
+rownames(auc_table) <- NULL
+cat("\nAUC of inclusion probabilities, real vs null predictors (difference from flat-R, 95% bootstrap):\n")
+print(auc_table |> mutate(across(c(auc, difference_from_flat_r, lower, upper), \(v) round(v, 3))) |>
+        arrange(model_prior, predictor_correlation, sample_size, method), row.names = FALSE)
+saveRDS(auc_table, file.path(results_folder, "variable_selection_auc.rds"))
+
+## the curves themselves: mean misses (of 4) against mean false inclusions (of 8) per cutoff
+cutoffs <- c(seq(0.01, 0.99, by = 0.01))
+curves <- do.call(rbind, lapply(curve_cells, function(cell)
+  do.call(rbind, lapply(split(cell, cell$method), function(rows) {
+    m <- inclusion_matrix_of(rows)
+    data.frame(predictor_correlation = rows$predictor_correlation[1], sample_size = rows$sample_size[1],
+               model_prior = rows$model_prior[1], method = rows$method[1], cutoff = cutoffs,
+               false_inclusions = sapply(cutoffs, function(c) mean(rowSums(m[, !true_model] > c))),
+               missed           = sapply(cutoffs, function(c) mean(rowSums(m[, true_model] <= c))))
+  }))))
+at_half <- curves |> filter(abs(cutoff - 0.5) < 1e-9)
+save_figure(
+  ggplot(curves |> filter(model_prior == "beta-binomial"),
+         aes(false_inclusions, missed, colour = method)) +
+    geom_path(linewidth = 0.7) +
+    geom_point(data = at_half |> filter(model_prior == "beta-binomial"), size = 2) +
+    scale_colour_manual(values = method_colours) +
+    facet_grid(predictor_correlation ~ sample_size,
+               labeller = labeller(predictor_correlation = function(v) paste("correlation =", v),
+                                   sample_size = function(v) paste("n =", v))) +
+    theme(legend.position = "bottom") +
+    labs(x = "false inclusions (of 8 null predictors)", y = "missed (of 4 real predictors)", colour = NULL,
+         title = "Trade-off curves: every cutoff on the inclusion probability (beta-binomial model prior)",
+         subtitle = "dots: the usual 0.5 cutoff; a curve lower and further left is better"),
+  "09_trade_off_curves", width = 12, height = 7)
 
 report_checks()
