@@ -77,7 +77,10 @@ if (file.exists(results_file)) {
                               analyse = analyse_dataset, summarise = summarise_cell,
                               parallel = number_of_cores > 1, ncores = number_of_cores,
                               packages = c("flatcor", "BayesFactor"), store_results = TRUE,
-                              control = list(include_replication_index = TRUE), progress = FALSE)
+                              control = list(include_replication_index = TRUE), progress = FALSE,
+                              ## its own resume file, so concurrent studies never collide
+                              save_details = list(out_rootdir = study_folder,
+                                                  tmpfilename = "resume_simulation.qs2"))
   saveRDS(simulation, results_file)
 }
 
