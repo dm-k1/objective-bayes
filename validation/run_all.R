@@ -7,24 +7,28 @@
 ##  here.
 ##
 ##  Run from the project folder:
-##    Rscript validation/run_all.R            all studies, 01 to 10 (hours: 07)
-##    Rscript validation/run_all.R quick      the correctness checks 01, 02, 05
+##    Rscript validation/run_all.R            all studies, 00 to 11 (hours: 07)
+##    Rscript validation/run_all.R quick      the first result 00 and the
+##                                            correctness checks 01, 02, 05
 ##    Rscript validation/run_all.R 03 04 09   a selection
 ##  Cores: all but one by default; set VALIDATION_CORES to choose
 ##  (e.g. VALIDATION_CORES=32 on a cloud machine).
 ##
 ##  Writes to validation/results/:
 ##    logs/<study>.log    the full output of each study
-##    run_summary.md      the setup, one row per study, and every failed check
+##    run_summary.md      the setup, the first result (study 00), one row per
+##                        study, and every failed check
 ##    session_info.txt    R and package versions of this run
 ##  A study that fails does not stop the others (except 04, which needs 03).
 ##  The exit status is 1 if any study failed.
 ## =====================================================================
 
-all_studies <- c("01_prior_and_posterior", "02_bayes_factor", "03_simulations",
+all_studies <- c("00_initial_simulation", "01_prior_and_posterior", "02_bayes_factor", "03_simulations",
                  "04_matched_comparison", "05_conditional_test", "06_broad_simulation",
-                 "07_estimation", "08_growing_k", "09_variable_selection", "10_calibration")
-quick_studies <- c("01_prior_and_posterior", "02_bayes_factor", "05_conditional_test")
+                 "07_estimation", "08_growing_k", "09_variable_selection", "10_calibration",
+                 "11_factor_terms")
+quick_studies <- c("00_initial_simulation", "01_prior_and_posterior", "02_bayes_factor",
+                   "05_conditional_test")
 
 ## ---- Which studies -------------------------------------------------------------
 requested <- commandArgs(trailingOnly = TRUE)
@@ -34,7 +38,7 @@ studies <- if (length(requested) == 0) all_studies else
     unknown <- setdiff(requested, substr(all_studies, 1, 2))
     if (length(unknown) > 0)
       stop("Unknown study number(s): ", paste(unknown, collapse = ", "),
-           ". Use 01 to 10, or 'quick'.")
+           ". Use 00 to 11, or 'quick'.")
     chosen
   }
 
@@ -105,6 +109,10 @@ summary_lines <- c(
   "|---|---|---|---|---|",
   vapply(outcomes, function(o) sprintf("| %s | %s | %.1f | %d | %d |", o$study, study_status(o),
                                        o$minutes, o$passed, length(o$failed)), character(1)),
+  ## the first result, the one that started the comparison (written by study 00)
+  if ("00_initial_simulation" %in% names(outcomes) &&
+      file.exists(file.path(results_folder, "00_first_result.md")))
+    c("", readLines(file.path(results_folder, "00_first_result.md"))),
   "",
   "Studies 03, 04, 06, 07 and 09 are comparisons (results in their logs and",
   "figures); they have few or no PASS/FAIL checks. Full output: `logs/`.")

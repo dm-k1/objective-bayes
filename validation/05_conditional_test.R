@@ -3,24 +3,28 @@
 ##
 ##  The conditional test looks only at one coefficient's sample partial
 ##  correlation, with the prior that the joint prior implies for one
-##  coefficient (R/conditional.R; docs/2_how_it_calculates.md, section 10):
-##    flat-R                f_j^2 = share * R^2 / (1 - R^2), R flat,
-##                          share ~ Beta(1/2, (k - 1)/2)
-##    uniform correlations  f_j^2 = W chi^2_1, W ~ Inverse-Gamma(1, 1/2):
-##                          a flat partial correlation, whatever k is
+##  coefficient (R/conditional.R; docs/2_how_it_calculates.md, section 10).
+##  Under R^2 ~ Beta(a, 1) with a uniform direction:
+##    f_j^2 = share * R^2 / (1 - R^2),  share ~ Beta(1/2, (k - 1)/2)
+##    flat_r          a = 1/2
+##    flat_r_squared  a = 1
+##    flat_partial_r  a = k/2, which is exactly f_j^2 = W chi^2_1,
+##                    W ~ Inverse-Gamma(1, 1/2): a flat partial correlation,
+##                    whatever k is
 ##  How the tests compare with the other methods is in studies 03, 04 and 06,
 ##  which use the common method set of validation/comparison_methods.R.
 ##
-##    C1. k = 1: the conditional flat-R test equals the joint flat-R test.
-##    C2. the implied flat-R prior for one coefficient does not depend on how
-##        the predictors correlate: correlated joint draws against the formula.
+##    C1. k = 1: the conditional test equals the joint test, every prior.
+##    C2. the implied prior for one coefficient does not depend on how the
+##        predictors correlate: correlated joint draws against the share
+##        formula (flat_r and flat_r_squared).
 ##    C3. the exact flat-partial-correlation test against the approximate one
 ##        that plugs in the estimated noise (close, not equal).
-##    C4. under uniform correlations the implied prior for one coefficient's
-##        partial correlation is flat, for any k and correlated predictors.
-##    C5. the conditional flat-R grid against stats::integrate() over
-##        n = 50 to 1e6, k = 1 to 30 and t-values 0 to 6.
-##    C6. the same for the uniform-correlations conditional test.
+##    C4. under flat_partial_r the implied prior for one coefficient's
+##        partial correlation is flat, for any k and correlated predictors; and
+##        the share mixture with a = k/2 is that flat partial correlation.
+##    C5. the conditional grid against stats::integrate() over n = 50 to 1e6,
+##        k = 1 to 30 and t-values 0 to 6, every prior.
 ##    C7. why eta = 1: under LKJ(eta) the partial correlation of y with one
 ##        predictor, given all the others, is Beta(eta, eta) on (-1, 1) for any
 ##        k. It is flat (Jeffreys) for every k only at eta = 1.
@@ -28,54 +32,62 @@
 ##        (2026) with a flat prior: not equal (theirs treats the predictors as
 ##        random), and equal once the predictor's residual SD is unknown.
 ##    C9. a block of q columns (a factor with q + 1 levels): the implied prior.
-##        Uniform correlations: its partial R^2 is Beta(q/2, 1) for any k (LKJ
-##        draws and g-prior draws); flat-R: its share is Beta(q/2, (k-q)/2).
-##    C10. the block test (both priors) against stats::integrate().
+##        flat_partial_r: its partial R^2 is Beta(q/2, 1) for any k (LKJ
+##        draws and g-prior draws); flat_r and flat_r_squared: its share is
+##        Beta(q/2, (k-q)/2).
+##    C10. the block test (every prior) against stats::integrate().
 ##    C11. the block likelihood ratio against integration over sigma and the
 ##        effect's direction from simulated data.
 ##
 ##  Run from the project folder: Rscript validation/05_conditional_test.R
-##  Under a minute.
+##  A few minutes.
 ## =====================================================================
 source("validation/settings.R")   # record_check()
 pkgload::load_all(".", quiet = TRUE)
 source("validation/comparison_methods.R")
 
 
-## C1. With one predictor the test is the joint flat-R test (both are flat on r).
-c1_differences <- sapply(list(c(0.3, 30), c(0.1, 100), c(0.5, 50), c(0.05, 500)), function(s)
-  abs(log_bayes_factor_flat_r_conditional(s[1], s[2], 1) -
-      log_bayes_factor_flat_r_vs_intercept_only(s[1]^2, s[2], 1)))
-record_check("C1. k = 1: equals the joint flat-R Bayes factor", max(c1_differences) < 1e-3,
+## C1. With one predictor the conditional test is the joint test, for every prior.
+c1_differences <- unlist(lapply(c("flat_r", "flat_partial_r", "flat_r_squared"), function(prior)
+  sapply(list(c(0.3, 30), c(0.1, 100), c(0.5, 50), c(0.05, 500)), function(s)
+    abs(log_bayes_factor_conditional(s[1], s[2], 1, prior) -
+        log_bayes_factor_vs_intercept_only(s[1]^2, s[2], 1, prior)))))
+record_check("C1. k = 1: equals the joint Bayes factor (every prior)", max(c1_differences) < 1e-3,
              sprintf("largest difference %.1e", max(c1_differences)))
 
 ## C2. The implied prior for one coefficient's partial correlation does not
-##     depend on how the predictors correlate.
+##     depend on how the predictors correlate: joint draws with correlated
+##     predictors against the share formula, R^2 ~ Beta(a, 1).
 set.seed(1)
 correlated <- matrix(0.6, 4, 4); diag(correlated) <- 1
-joint_draws <- draw_coefficients_from_prior(200000, correlated, prior = "flat_r")
 spread_left <- sqrt(1 / diag(solve(correlated)))[2]
-from_joint <- joint_draws[, 2] * spread_left / sqrt(1 + (joint_draws[, 2] * spread_left)^2)
-f_formula  <- sqrt(rbeta(200000, 0.5, 1.5) * (function(R) R^2 / (1 - R^2))(runif(200000)))
-from_formula <- sample(c(-1, 1), 200000, replace = TRUE) * f_formula / sqrt(1 + f_formula^2)
-c2_distance <- suppressWarnings(unname(ks.test(from_joint, from_formula)$statistic))
-record_check("C2. flat-R implied prior: correlated joint draws = share formula (k = 4)", c2_distance < 0.01,
-             sprintf("KS distance %.4f", c2_distance))
+c2_distances <- sapply(c(flat_r = 1 / 2, flat_r_squared = 1), function(a) {
+  joint_draws <- draw_coefficients_from_prior(200000, correlated,
+                                              prior = if (a == 1) "flat_r_squared" else "flat_r")
+  from_joint <- joint_draws[, 2] * spread_left / sqrt(1 + (joint_draws[, 2] * spread_left)^2)
+  r_squared  <- rbeta(200000, a, 1)
+  f_formula  <- sqrt(rbeta(200000, 0.5, 1.5) * r_squared / (1 - r_squared))
+  from_formula <- sample(c(-1, 1), 200000, replace = TRUE) * f_formula / sqrt(1 + f_formula^2)
+  suppressWarnings(unname(ks.test(from_joint, from_formula)$statistic))
+})
+record_check("C2. implied prior: correlated joint draws = share formula (k = 4; flat_r, flat_r_squared)",
+             max(c2_distances) < 0.01,
+             sprintf("KS distances %s", paste(sprintf("%.4f", c2_distances), collapse = " ")))
 
-## C3. Exact flat partial correlation (the uniform-correlations conditional test)
+## C3. Exact flat partial correlation (the flat_partial_r conditional test)
 ##     against the approximate version. Criterion: within 0.05 on the log scale.
 set.seed(3)
 c3_differences <- sapply(c(60, 100, 200, 400), function(n) {
   X <- matrix(rnorm(n * 3), n) %*% chol(0.5 + 0.5 * diag(3))
   y <- drop(X %*% c(0.15, 0.3, 0)) + rnorm(n)
   fit <- lm(y ~ X)
-  abs(log_bayes_factor_uniform_correlations_conditional(partial_correlation_of(fit, 2), n, 3) -
+  abs(log_bayes_factor_conditional(partial_correlation_of(fit, 2), n, 3, "flat_partial_r") -
       log(bayes_factor_flat_partial_correlation(fit, 1, X)))
 })
 record_check("C3. exact vs approximate flat partial correlation", max(c3_differences) < 0.05,
              sprintf("largest difference %.3f", max(c3_differences)))
 
-## C4. Uniform correlations is the g-prior b ~ N(0, W Sigma^-1) (noise SD 1),
+## C4. flat_partial_r is the g-prior b ~ N(0, W Sigma^-1) (noise SD 1),
 ##     W ~ Inverse-Gamma(1, 1/2). One coefficient's partial correlation,
 ##     f_j / sqrt(1 + f_j^2) with f_j = b_j / sqrt((Sigma^-1)_jj), should be flat
 ##     on (-1, 1) for any k, with correlated predictors.
@@ -88,15 +100,29 @@ c4_distances <- sapply(c(2, 5, 12), function(k) {
   f <- b[, 1] / sqrt(precision[1, 1])
   suppressWarnings(unname(ks.test(f / sqrt(1 + f^2), "punif", -1, 1)$statistic))
 })
-record_check("C4. uniform correlations: one partial correlation is flat (k = 2, 5, 12)",
+record_check("C4a. flat_partial_r: one partial correlation is flat (k = 2, 5, 12)",
              max(c4_distances) < 0.01,
              sprintf("KS distances %s", paste(sprintf("%.4f", c4_distances), collapse = " ")))
 
-## C5. The conditional flat-R test against adaptive integration (stats::integrate),
+##     The same through the share mixture: R^2 ~ Beta(k/2, 1) mixed over the
+##     share Beta(1/2, (k-1)/2) (prior_cdf_of_f() with a = k/2) is the flat
+##     partial correlation, P(|f| < f) = f / sqrt(1 + f^2), for every k; and for
+##     a block of q columns, partial R^2 ~ Beta(q/2, 1). Criterion: within 1e-4.
+f_values <- c(0.003, 0.03, 0.1, 0.3, 1, 3, 10)
+c4b_differences <- c(
+  unlist(lapply(c(2, 3, 5, 12, 30), function(k)
+    abs(prior_cdf_of_f(f_values, k, 500, 1, shape = k / 2) - f_values / sqrt(1 + f_values^2)))),
+  unlist(lapply(list(c(5, 2), c(8, 3)), function(kq)
+    abs(prior_cdf_of_f(f_values, kq[1], 500, kq[2], shape = kq[1] / 2) -
+          (f_values^2 / (1 + f_values^2))^(kq[2] / 2)))))
+record_check("C4b. share mixture with a = k/2 = flat partial correlation (k = 2-30; blocks)",
+             max(c4b_differences) < 1e-4, sprintf("largest difference %.1e", max(c4b_differences)))
+
+## C5. The conditional test, every prior, against adaptive integration (stats::integrate),
 ##     which shares no code with the package: BF = integral of L(f) p(f) df, with
 ##       L(f) = exp(-n f^2/2) (I(b) + I(-b)) / (2 I(0)),  b = sqrt(n) r f,
-##       p(f) = integral over the share s ~ Beta(1/2, (k-1)/2) of s (s + f^2)^(-3/2)
-##     (the density of |f| = sqrt(s) R / sqrt(1 - R^2) given s, R flat).
+##       p(f) = integral over the share s ~ Beta(1/2, (k-1)/2) of p(f | s)
+##     (the density of |f| = sqrt(s) R / sqrt(1 - R^2) given s; see below).
 ##     The likelihood ratio peaks with width about 1/sqrt(n), so large n tests
 ##     whether the grid follows the peak. Criterion: within 2e-4 on the log scale.
 log_I_by_integration <- function(b, m) {        # log of integral v^m exp(-v^2/2 + b v)
@@ -105,11 +131,15 @@ log_I_by_integration <- function(b, m) {        # log of integral v^m exp(-v^2/2
   log_peak + log(integrate(function(v) exp(m * log(v) - v^2 / 2 + b * v - log_peak),
                            max(0, peak - 40), peak + 40, rel.tol = 1e-10)$value)
 }
-##     The uniform-correlations prior for |f| is the flat-R one with k = 1
-##     (share 1), whatever k is; only m = n - k - 1 changes with k.
-log_bayes_factor_conditional_by_integration <- function(partial_r, n, k,
-                                                        prior = c("flat-R", "uniform correlations")) {
-  prior <- match.arg(prior)
+##     The density of |f| given the share s, with R^2 ~ Beta(a, 1):
+##       P(|f| < f | s) = (f^2 / (s + f^2))^a, so
+##       p(f | s) = a (f^2 / (s + f^2))^(a - 1) 2 f s / (s + f^2)^2
+##     (a = 1/2: s (s + f^2)^(-3/2)). flat_partial_r is the flat partial
+##     correlation, (1 + f^2)^(-3/2), whatever k is; only m = n - k - 1 changes
+##     with k.
+prior_density_given_share <- function(f, s, a)
+  a * (f^2 / (s + f^2))^(a - 1) * 2 * f * s / (s + f^2)^2
+log_bayes_factor_conditional_by_integration <- function(partial_r, n, k, prior) {
   m <- n - k - 1
   likelihood_ratio <- function(f) {
     b <- sqrt(n) * partial_r * f
@@ -117,9 +147,11 @@ log_bayes_factor_conditional_by_integration <- function(partial_r, n, k,
       c(log_I_by_integration(b, m), log_I_by_integration(-b, m))
     mean(exp(log_ratio_by_sign))
   }
+  a <- prior_shape(prior, k)
   prior_density <- function(f) {
-    if (k == 1 || prior == "uniform correlations") return((1 + f^2)^(-3 / 2))
-    given_share <- function(s) stats::dbeta(s, 0.5, (k - 1) / 2) * s * (s + f^2)^(-3 / 2)
+    if (prior == "flat_partial_r") return((1 + f^2)^(-3 / 2))
+    if (k == 1) return(prior_density_given_share(f, 1, a))
+    given_share <- function(s) stats::dbeta(s, 0.5, (k - 1) / 2) * prior_density_given_share(f, s, a)
     ## shares below 1/2 on the log scale (the density changes near s = f^2),
     ## above 1/2 as they are (the Beta density is infinite at 1 when k = 2)
     integrate(function(u) given_share(exp(u)) * exp(u), log(f^2) - 50, log(0.5),
@@ -133,33 +165,24 @@ log_bayes_factor_conditional_by_integration <- function(partial_r, n, k,
     integrate(integrand, breaks[i], breaks[i + 1], rel.tol = 1e-8)$value)))
 }
 c5_cases <- expand.grid(t_value = c(0, 1, 2, 4, 6), k = c(1, 2, 3, 5, 10, 30),
-                        n = c(50, 200, 1e4, 1e6))
-c5_differences <- unlist(parallel_map(seq_len(nrow(c5_cases)), function(row) {
-  n <- c5_cases$n[row]; k <- c5_cases$k[row]; t_value <- c5_cases$t_value[row]
-  partial_r <- t_value / sqrt(t_value^2 + n - k - 1)
-  abs(log_bayes_factor_flat_r_conditional(partial_r, n, k) -
-      log_bayes_factor_conditional_by_integration(partial_r, n, k))
+                        n = c(50, 200, 1e4, 1e6),
+                        prior = c("flat_r", "flat_partial_r", "flat_r_squared"), stringsAsFactors = FALSE)
+c5_cases <- subset(c5_cases, k > 1 | prior != "flat_partial_r")   # k = 1: the same as flat_r
+c5_cases$difference <- unlist(parallel_map(seq_len(nrow(c5_cases)), function(row) {
+  case <- c5_cases[row, ]
+  partial_r <- case$t_value / sqrt(case$t_value^2 + case$n - case$k - 1)
+  abs(log_bayes_factor_conditional(partial_r, case$n, case$k, case$prior) -
+      log_bayes_factor_conditional_by_integration(partial_r, case$n, case$k, case$prior))
 }))
-worst <- c5_cases[which.max(c5_differences), ]
-record_check("C5. conditional flat-R grid = stats::integrate (n 50 to 1e6, k 1 to 30, t 0 to 6)",
-             max(c5_differences) < 2e-4,
-             sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c5_differences),
-                     worst$n, worst$k, worst$t_value))
-
-## C6. The uniform-correlations conditional test (R/conditional.R)
-##     against adaptive integration, on the same cases with k > 1.
-c6_cases <- subset(c5_cases, k > 1)
-c6_differences <- unlist(parallel_map(seq_len(nrow(c6_cases)), function(row) {
-  n <- c6_cases$n[row]; k <- c6_cases$k[row]; t_value <- c6_cases$t_value[row]
-  partial_r <- t_value / sqrt(t_value^2 + n - k - 1)
-  abs(log_bayes_factor_uniform_correlations_conditional(partial_r, n, k) -
-      log_bayes_factor_conditional_by_integration(partial_r, n, k, "uniform correlations"))
-}))
-worst <- c6_cases[which.max(c6_differences), ]
-record_check("C6. uniform-correlations conditional grid = stats::integrate (same cases, k > 1)",
-             max(c6_differences) < 2e-4,
-             sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(c6_differences),
-                     worst$n, worst$k, worst$t_value))
+for (tested_prior in unique(c5_cases$prior)) {
+  of_prior <- c5_cases[c5_cases$prior == tested_prior, ]
+  worst <- of_prior[which.max(of_prior$difference), ]
+  record_check(sprintf("C5. %s: conditional grid = stats::integrate (n 50 to 1e6, k 1 to 30, t 0 to 6)",
+                       tested_prior),
+               max(of_prior$difference) < 2e-4,
+               sprintf("largest difference %.1e (n = %g, k = %d, t = %g)", max(of_prior$difference),
+                       worst$n, worst$k, worst$t_value))
+}
 
 ## C7. Why eta = 1. Draw correlation matrices of (y, x1 ... xk) from LKJ(eta)
 ##     and compute the partial correlation of y with x1 given all the others
@@ -234,7 +257,7 @@ c8_cases <- expand.grid(partial_r = c(0, 0.1, 0.3, 0.5), n = c(20, 50, 200, 1000
 c8_results <- do.call(rbind, parallel_map(seq_len(nrow(c8_cases)), function(row) {
   partial_r <- c8_cases$partial_r[row]; n <- c8_cases$n[row]; k <- c8_cases$k[row]
   theirs <- log_bayes_factor_kucharsky_partial_correlation(partial_r, n, k - 1)
-  c(ours_minus_theirs = log_bayes_factor_uniform_correlations_conditional(partial_r, n, k) - theirs,
+  c(ours_minus_theirs = log_bayes_factor_conditional(partial_r, n, k, "flat_partial_r") - theirs,
     random_predictor_minus_theirs = log_bayes_factor_from_prior_cdf_of_f(partial_r, n, k,
       function(f_values) prior_cdf_of_f_random_predictor(f_values, n, k), points_f = 2000) - theirs)
 }))
@@ -255,15 +278,15 @@ print(round(xtabs(ours_minus_theirs ~ k_and_n + partial_r, c8_cases), 4))
 
 ## C9. The implied prior for a block of q columns (a term such as a factor with
 ##     q + 1 levels), given the other k - q predictors:
-##     (a) uniform correlations, from LKJ(1) correlation matrices of
+##     (a) flat_partial_r, from LKJ(1) correlation matrices of
 ##         (y, x1 ... xk): the block's population partial R^2,
 ##         1 - (P_others)_yy / P_yy with P the inverse correlation matrix (and
 ##         P_others that of y and the others), is Beta(q/2, 1) for every k;
-##     (b) uniform correlations, from g-prior coefficient draws with correlated
+##     (b) flat_partial_r, from g-prior coefficient draws with correlated
 ##         predictors: the block's f^2 = b' Sigma_(block | others) b gives
 ##         f^2 / (1 + f^2) ~ Beta(q/2, 1);
-##     (c) flat-R, from the same draws: the block's share of the total f^2 is
-##         Beta(q/2, (k - q)/2).
+##     (c) flat_r and flat_r_squared, from their draws: the block's share of
+##         the total f^2 is Beta(q/2, (k - q)/2), whatever the total's prior.
 ##     Criterion: KS distance below 0.03 for (a) (4,000 matrices, as C7) and below
 ##     0.01 for (b) and (c) (100,000 draws).
 set.seed(9)
@@ -286,33 +309,34 @@ c9_draws <- cbind(c9_draws, do.call(rbind, lapply(seq_len(nrow(c9_draws)), funct
     solve(covariance[-block, -block], covariance[-block, block, drop = FALSE])
   block_f_squared <- function(b) rowSums((b[, block, drop = FALSE] %*% block_given_others) *
                                            b[, block, drop = FALSE])
-  uniform <- draw_coefficients_from_prior(100000, covariance, "uniform_correlations")
-  flat    <- draw_coefficients_from_prior(100000, covariance, "flat_r")
-  c(uniform_correlations = suppressWarnings(unname(ks.test(
-      block_f_squared(uniform) / (1 + block_f_squared(uniform)), "pbeta", q / 2, 1)$statistic)),
-    flat_r_share = suppressWarnings(unname(ks.test(
-      block_f_squared(flat) / rowSums((flat %*% covariance) * flat), "pbeta", q / 2, (k - q) / 2)$statistic)))
+  partial <- draw_coefficients_from_prior(100000, covariance, "flat_partial_r")
+  share_distance <- function(draws) suppressWarnings(unname(ks.test(
+    block_f_squared(draws) / rowSums((draws %*% covariance) * draws), "pbeta", q / 2, (k - q) / 2)$statistic))
+  c(flat_partial_r = suppressWarnings(unname(ks.test(
+      block_f_squared(partial) / (1 + block_f_squared(partial)), "pbeta", q / 2, 1)$statistic)),
+    flat_r_share = share_distance(draw_coefficients_from_prior(100000, covariance, "flat_r")),
+    flat_r_squared_share = share_distance(draw_coefficients_from_prior(100000, covariance, "flat_r_squared")))
 })))
-record_check(paste("C9. block of q columns: uniform correlations gives partial R^2 ~ Beta(q/2, 1)",
-                   "(LKJ and g-prior draws); flat-R gives share ~ Beta(q/2, (k-q)/2)"),
-             all(c9_lkj$distance < 0.03) && all(c9_draws$uniform_correlations < 0.01) &&
-               all(c9_draws$flat_r_share < 0.01),
-             sprintf("largest KS distance: LKJ %.3f, g-prior draws %.4f, flat-R share %.4f",
-                     max(c9_lkj$distance), max(c9_draws$uniform_correlations),
-                     max(c9_draws$flat_r_share)))
+record_check(paste("C9. block of q columns: flat_partial_r gives partial R^2 ~ Beta(q/2, 1)",
+                   "(LKJ and g-prior draws); flat_r and flat_r_squared give share ~ Beta(q/2, (k-q)/2)"),
+             all(c9_lkj$distance < 0.03) && all(c9_draws$flat_partial_r < 0.01) &&
+               all(c9_draws$flat_r_share < 0.01) && all(c9_draws$flat_r_squared_share < 0.01),
+             sprintf("largest KS distance: LKJ %.3f, g-prior draws %.4f, shares %.4f, %.4f",
+                     max(c9_lkj$distance), max(c9_draws$flat_partial_r),
+                     max(c9_draws$flat_r_share), max(c9_draws$flat_r_squared_share)))
 
 ## C10. The block test against adaptive integration, sharing no code with the
 ##      package (no Bessel function, no series): BF = integral of L(f) p(f) df,
 ##        L(f) = exp(-n f^2/2) E_theta[I(b cos theta)] / I(0),  b = sqrt(n R2) f,
 ##      theta the angle between the effect and the data's direction (density
 ##      proportional to sin^(q-2) theta on (0, pi)), m = n - k + q - 2, and
-##        uniform correlations  p(f) = q f^(q-1) (1 + f^2)^(-q/2 - 1)
-##        flat-R                p(f) = integral over s ~ Beta(q/2, (k-q)/2) of s (s + f^2)^(-3/2)
+##        flat_partial_r   p(f) = q f^(q-1) (1 + f^2)^(-q/2 - 1)
+##        flat_r, flat_r_squared
+##                         p(f) = integral over s ~ Beta(q/2, (k-q)/2) of p(f | s),
+##                         p(f | s) as in C5 (prior_density_given_share())
 ##      Criterion: within 2e-4 on the log scale.
 ##      (log_I_by_integration() is the one from C5.)
-log_bayes_factor_block_by_integration <- function(partial_r_squared, n, k, q,
-                                                  prior = c("flat-R", "uniform correlations")) {
-  prior <- match.arg(prior)
+log_bayes_factor_block_by_integration <- function(partial_r_squared, n, k, q, prior) {
   m <- n - k + q - 2
   log_I_0 <- log_I_by_integration(0, m)
   likelihood_ratio <- function(f) {
@@ -329,10 +353,11 @@ log_bayes_factor_block_by_integration <- function(partial_r_squared, n, k, q,
         pieces[i], pieces[i + 1], rel.tol = 1e-10)$value))
     exp(-n * f^2 / 2 + log_scale - log_I_0) * average
   }
+  a <- prior_shape(prior, k)
   prior_density <- function(f) {
-    if (prior == "uniform correlations") return(q * f^(q - 1) * (1 + f^2)^(-q / 2 - 1))
-    if (q == k) return((1 + f^2)^(-3 / 2))
-    given_share <- function(s) stats::dbeta(s, q / 2, (k - q) / 2) * s * (s + f^2)^(-3 / 2)
+    if (prior == "flat_partial_r") return(q * f^(q - 1) * (1 + f^2)^(-q / 2 - 1))
+    if (q == k) return(prior_density_given_share(f, 1, a))
+    given_share <- function(s) stats::dbeta(s, q / 2, (k - q) / 2) * prior_density_given_share(f, s, a)
     integrate(function(u) given_share(exp(u)) * exp(u), log(f^2) - 50, log(0.5),
               rel.tol = 1e-10)$value + integrate(given_share, 0.5, 1, rel.tol = 1e-10)$value
   }
@@ -345,23 +370,20 @@ log_bayes_factor_block_by_integration <- function(partial_r_squared, n, k, q,
     integrate(integrand, breaks[i], breaks[i + 1], rel.tol = 1e-8)$value)))
 }
 c10_cases <- expand.grid(f_value = c(0, 1, 3, 6), q = c(2, 3, 5), k = c(5, 12),
-                         n = c(50, 1e4, 1e6), prior = c("flat-R", "uniform correlations"),
+                         n = c(50, 1e4, 1e6), prior = c("flat_r", "flat_partial_r", "flat_r_squared"),
                          stringsAsFactors = FALSE)
-c10_cases <- subset(c10_cases, !(q == 5 & k == 5) | prior == "flat-R")
+c10_cases <- subset(c10_cases, !(q == 5 & k == 5) | prior != "flat_partial_r")
 c10_differences <- unlist(parallel_map(seq_len(nrow(c10_cases)), function(row) {
   case <- c10_cases[row, ]
   ## F statistic F_value for the block: partial R^2 = q F / (q F + n - k - 1)
   partial_r_squared <- case$q * case$f_value / (case$q * case$f_value + case$n - case$k - 1)
-  ours <- switch(case$prior,
-    `flat-R` = log_bayes_factor_flat_r_conditional(sqrt(partial_r_squared), case$n, case$k,
-                                                   number_of_columns = case$q),
-    log_bayes_factor_uniform_correlations_conditional(sqrt(partial_r_squared), case$n, case$k,
-                                                      number_of_columns = case$q))
+  ours <- log_bayes_factor_conditional(sqrt(partial_r_squared), case$n, case$k, case$prior,
+                                       number_of_columns = case$q)
   abs(ours - log_bayes_factor_block_by_integration(partial_r_squared, case$n, case$k, case$q,
                                                    case$prior))
 }))
 worst <- c10_cases[which.max(c10_differences), ]
-record_check("C10. block conditional test (both priors) = stats::integrate (q 2 to 5, n 50 to 1e6, F 0 to 6)",
+record_check("C10. block conditional test (every prior) = stats::integrate (q 2 to 5, n 50 to 1e6, F 0 to 6)",
              max(c10_differences) < 2e-4,
              sprintf("largest difference %.1e (%s, n = %g, k = %d, q = %d, F = %g)",
                      max(c10_differences), worst$prior, worst$n, worst$k, worst$q, worst$f_value))

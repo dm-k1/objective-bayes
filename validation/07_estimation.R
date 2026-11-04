@@ -7,13 +7,16 @@
 ##  interval covers the truth; per dataset: the excess prediction error for a
 ##  new observation, (b_hat - b)' Sigma (b_hat - b). Methods (the estimation
 ##  versions of the common set in validation/comparison_methods.R):
-##    - flat-R                fit_regression(), posterior mean and 95% interval
-##    - uniform correlations  fit_regression(prior = "uniform_correlations"):
-##                            R-squared ~ Beta(k/2, 1), the same Stan model
+##    the three contenders, fit_regression() with the same Stan model,
+##    posterior mean and 95% interval:
+##    - flat partial r        prior = "flat_partial_r": R-squared ~ Beta(k/2, 1)
 ##                            (the prior of rstanarm stan_lm with eta = 1)
+##    - flat R                prior = "flat_r": R-squared ~ Beta(1/2, 1)
+##    - flat R-squared        prior = "flat_r_squared": R-squared ~ Beta(1, 1)
+##    two references:
 ##    - JZS default           BayesFactor posterior (Cauchy, scale 0.354)
 ##    - Zellner-Siow          BayesFactor posterior (Cauchy, scale 1)
-##    - ordinary              lm(): estimate and 95% confidence interval
+##    and ordinary lm(): estimate and 95% confidence interval
 ##  (The conditional tests have no estimation version: they are tests.)
 ##
 ##  Design (noise SD 1, effects in noise units):
@@ -22,22 +25,26 @@
 ##    correlation       0, 0.5 (all pairs equal)
 ##    true coefficients sparse: 0.4, 0.2, and the rest 0
 ##                      dense:  all 0.15
-##  100 datasets per cell: 2,400 fits per prior.
+##  100 datasets per cell: 2,400 Stan fits per contender.
 ##  Needs cmdstanr (or rstan) and BayesFactor.
 ##
 ##  Run from the project folder, in a terminal, and leave it running:
 ##    Rscript validation/07_estimation.R
-##  Roughly 2.5-4 hours. Each design cell is saved when it finishes
-##  (validation/results/estimation_v3/), so an interrupted run resumes where
-##  it stopped.
+##  Roughly 1.5 hours on 8 cores (the last two-prior run took 56 minutes).
+##  Each design cell is saved when it finishes
+##  (validation/results/estimation_three_priors/), so an interrupted run
+##  resumes where it stopped; a saved cell is reused only if it holds exactly
+##  the current method set.
 ## =====================================================================
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 source("validation/settings.R")   # results folder, save_figure()
 pkgload::load_all(".", quiet = TRUE)
+source("validation/comparison_methods.R")   # contenders, method_colours
 
-cell_folder <- file.path(results_folder, "estimation_v3")
+cell_folder <- file.path(results_folder, "estimation_three_priors")
+estimation_methods <- c(names(contenders), "JZS default", "Zellner-Siow", "ordinary (lm)")
 dir.create(cell_folder, recursive = TRUE, showWarnings = FALSE)
 
 design <- expand_grid(number_of_predictors  = c(3, 8),
@@ -60,16 +67,10 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
   data <- data.frame(predictors, y = drop(predictors %*% true_slopes) + rnorm(n))
   formula <- reformulate(colnames(predictors), response = "y")
 
-  ## flat-R
-  flat_r_fit <- suppressWarnings(fit_regression(formula, data, chains = 4, iter_warmup = 1000,
-                                                iter_sampling = 1000, seed = seed, prior = "flat_r"))
-  flat_r_draws <- as.data.frame(flat_r_fit$draws)[, colnames(predictors), drop = FALSE]
-
-  ## uniform correlations: the same Stan model, R-squared ~ Beta(k/2, 1)
-  uniform_fit <- suppressWarnings(fit_regression(formula, data, chains = 4, iter_warmup = 1000,
-                                                 iter_sampling = 1000, seed = seed,
-                                                 prior = "uniform_correlations"))
-  uniform_draws <- as.data.frame(uniform_fit$draws)[, colnames(predictors), drop = FALSE]
+  ## the three contenders: the same Stan model, R-squared ~ Beta(a, 1)
+  stan_fits <- lapply(contenders, function(prior)
+    suppressWarnings(fit_regression(formula, data, prior = prior, chains = 4, iter_warmup = 1000,
+                                    iter_sampling = 1000, seed = seed)))
 
   ## JZS default and Zellner-Siow (posterior samples from BayesFactor)
   bayesfactor_draws <- function(scale)
@@ -87,8 +88,11 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
     estimate = colMeans(draws),
     lower = apply(draws, 2, quantile, probs = 0.025),
     upper = apply(draws, 2, quantile, probs = 0.975))
-  rbind(summarise_draws(flat_r_draws, "flat-R"),
-        summarise_draws(uniform_draws, "uniform correlations"),
+  stan_summaries <- do.call(rbind, lapply(names(stan_fits), function(method)
+    cbind(summarise_draws(as.data.frame(stan_fits[[method]]$draws)[, colnames(predictors), drop = FALSE],
+                          method),
+          divergent_transitions = stan_fits[[method]]$divergent)))
+  rbind(stan_summaries[setdiff(names(stan_summaries), "divergent_transitions")],
         summarise_draws(jzs_draws, "JZS default"),
         summarise_draws(zs_draws, "Zellner-Siow"),
         data.frame(method = "ordinary (lm)", coefficient = colnames(predictors),
@@ -99,8 +103,8 @@ estimate_one_dataset <- function(k, n, correlation, pattern, seed) {
     mutate(excess_prediction_error = drop(t(estimate - true_value) %*% covariance %*%
                                             (estimate - true_value))) |>
     ungroup() |>
-    mutate(divergent_transitions = ifelse(method == "flat-R", flat_r_fit$divergent,
-                                          ifelse(method == "uniform correlations", uniform_fit$divergent, NA)))
+    mutate(divergent_transitions = stan_summaries$divergent_transitions[
+      match(method, stan_summaries$method)])
 }
 
 
@@ -109,7 +113,7 @@ started <- Sys.time()
 for (row in seq_len(nrow(design))) {
   cell <- design[row, ]
   cell_file <- file.path(cell_folder, sprintf("cell_%02d.rds", row))
-  if (file.exists(cell_file)) next
+  if (file.exists(cell_file) && setequal(unique(readRDS(cell_file)$method), estimation_methods)) next
   message(sprintf("[%s] cell %d of %d: k = %d, n = %d, correlation = %.1f, %s",
                   format(Sys.time(), "%H:%M"), row, nrow(design), cell$number_of_predictors,
                   cell$sample_size, cell$predictor_correlation, cell$true_coefficients))
@@ -122,8 +126,8 @@ for (row in seq_len(nrow(design))) {
 }
 message("Done in ", format(round(Sys.time() - started, 1)))
 
-results <- do.call(rbind, lapply(sort(list.files(cell_folder, pattern = "^cell_.*\\.rds$",
-                                                 full.names = TRUE)), readRDS))
+results <- do.call(rbind, lapply(file.path(cell_folder, sprintf("cell_%02d.rds", seq_len(nrow(design)))),
+                                 readRDS))
 
 
 ## ---- Summaries -----------------------------------------------------------------
@@ -133,7 +137,7 @@ results <- results |>
          interval_width = upper - lower,
          kind = ifelse(true_value == 0, "true zero", "true effect"))
 
-for (stan_method in c("flat-R", "uniform correlations")) {
+for (stan_method in names(contenders)) {
   divergences_per_fit <- results |>
     filter(method == stan_method) |>
     distinct(number_of_predictors, sample_size, predictor_correlation, true_coefficients,
@@ -193,9 +197,7 @@ print(as.data.frame(per_cell |>
 
 
 ## ---- Figures ---------------------------------------------------------------------
-source("validation/comparison_methods.R")   # method_colours
-method_colours <- method_colours[c("flat-R", "uniform correlations", "JZS default", "Zellner-Siow",
-                                   "ordinary (lm)")]
+method_colours <- method_colours[estimation_methods]
 cells_facet <- facet_grid(
   number_of_predictors + predictor_correlation ~ true_coefficients,
   labeller = labeller(number_of_predictors  = function(v) paste("k =", v),

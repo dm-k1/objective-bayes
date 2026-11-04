@@ -4,7 +4,9 @@
 ##  Study 03 counts how often BF01 > 3. That mixes two things: how well a
 ##  method separates nulls from small effects (discrimination), and where its
 ##  Bayes factors happen to sit relative to 3 (calibration). This script
-##  separates them, for every method of the common set.
+##  separates them, for every method of the common set: the three contenders
+##  (flat partial r, flat R, flat R-squared), joint and conditional, and the
+##  references JZS default and Zellner-Siow.
 ##
 ##    M1. discrimination: the AUC, P(BF01 is larger for a null dataset than for
 ##        a dataset with a small effect), for x1 = 0 against x1 = 0.1 and 0.2,

@@ -1,47 +1,57 @@
 ## =====================================================================
 ##  The methods compared in the validation studies (03 on): one set, used
-##  everywhere. The flat-R method itself lives in R/bayes_factor.R and
+##  everywhere. The three priors themselves live in R/bayes_factor.R and
 ##  R/conditional.R.
 ##
-##  Four priors. Two follow from flat on the correlation with one predictor:
-##    flat-R                 R-squared ~ Beta(1/2, 1) for every k (this package)
-##    uniform correlations   R-squared ~ Beta(k/2, 1): every correlation matrix of
-##                           (y, x1 ... xk) equally likely; rstanarm stan_lm's
-##                           R-squared prior with eta = 1
-##  Two are the standard defaults (BayesFactor / JASP; Liang et al., 2008):
-##    JZS default            Cauchy prior, scale sqrt(2)/4 ("medium")
-##    Zellner-Siow           Cauchy prior, scale 1 (R-squared ~ Beta(k/2, 1/2))
+##  The three contenders, all R-squared ~ Beta(a, 1) with a uniform direction
+##  (R/priors.R; study 00 is where they come from):
+##    flat partial r   a = k/2: every correlation matrix of (y, x1 ... xk)
+##                     equally likely; rstanarm stan_lm's prior with eta = 1
+##    flat R           a = 1/2: R flat for every k
+##    flat R-squared   a = 1:   R-squared flat for every k
+##  Two references, the standard defaults (BayesFactor / JASP; Liang et al., 2008):
+##    JZS default      Cauchy prior, scale sqrt(2)/4 ("medium")
+##    Zellner-Siow     Cauchy prior, scale 1 (R-squared ~ Beta(k/2, 1/2))
 ##
 ##  Testing one coefficient, two ways:
-##    joint        the model with against without it (all four priors)
-##    conditional  only the coefficient's partial correlation, with the prior the
-##                 joint prior implies for one coefficient (flat-R and uniform
-##                 correlations). For uniform correlations that implied prior is
-##                 a flat partial correlation, for any k (check C4 in study 05).
-##  Comparing whole models (studies 08, 09): the four priors.
+##    joint        the model with against without it (every prior)
+##    conditional  only the coefficient's partial correlation, with the prior
+##                 the joint prior implies for one coefficient (the three
+##                 contenders). For flat partial r that implied prior is a flat
+##                 partial correlation, for any k (check C4 in study 05).
+##  Comparing whole models (studies 08, 09): the three contenders and the two
+##  references.
 ##
-##  Also here, for the archive and check C3: the approximate per-coefficient
-##  flat partial correlation and the R2-D2 Bayes factor.
+##  Also here, for check C3 of study 05: the approximate per-coefficient flat
+##  partial correlation.
 ## =====================================================================
 
 ## ---- Method names and colours (the same in every study) --------------------
-one_coefficient_methods <- c("JZS default", "Zellner-Siow", "flat-R joint", "flat-R conditional",
-                             "uniform correlations joint", "uniform correlations conditional")
-model_methods <- c("JZS default", "Zellner-Siow", "flat-R", "uniform correlations")
-method_colours <- c(`JZS default` = "grey40", `Zellner-Siow` = "#7570b3",
-                    `flat-R` = "#d95f02", `flat-R joint` = "#d95f02",
-                    `flat-R conditional` = "#e7298a",
-                    `uniform correlations` = "#a6761d", `uniform correlations joint` = "#a6761d",
-                    `uniform correlations conditional` = "#1b9e77",
-                    BIC = "#66a61e", `ordinary (lm)` = "black")
+## The contenders keep the colours of study 00 (darker: conditional, lighter:
+## joint); the references are grey.
+contenders <- c(`flat partial r` = "flat_partial_r", `flat R` = "flat_r",
+                `flat R-squared` = "flat_r_squared")
+model_methods <- c(names(contenders), "JZS default", "Zellner-Siow")
+one_coefficient_methods <- c(paste(names(contenders), "conditional"),
+                             paste(names(contenders), "joint"), "JZS default", "Zellner-Siow")
+method_colours <- c(`flat partial r` = "#0072B2", `flat partial r conditional` = "#0072B2",
+                    `flat partial r joint` = "#56B4E9",
+                    `flat R` = "#D55E00", `flat R conditional` = "#D55E00",
+                    `flat R joint` = "#E69F00",
+                    `flat R-squared` = "#009E73", `flat R-squared conditional` = "#009E73",
+                    `flat R-squared joint` = "#7FCDBB",
+                    `JZS default` = "grey25", `Zellner-Siow` = "grey60",
+                    BIC = "#CC79A7", `ordinary (lm)` = "black")
 
 
-## ---- R-squared ~ Beta(a, 1) with a uniform direction ------------------------
+## ---- R-squared ~ Beta(a, 1) as a mixture of g-priors (a check) ---------------
 ## The g-prior mixture g/n = B * W, B ~ Beta(a, k/2 - a), W ~ Inverse-Gamma(1, 1/2),
-## for a <= k/2 (a = 1/2: flat-R; a = k/2: uniform correlations, B = 1).
-## Log Bayes factor against the intercept-only model: an average over B of a
-## 1-D integral over W, both on grids (checks U1 and U2 in study 03).
-log_bayes_factor_beta_r_squared <- function(r_squared, n, k, a, points_B = 100, points_w = 2000) {
+## for a <= k/2 (a = 1/2: flat R; a = 1: flat R-squared, k >= 3; a = k/2: flat
+## partial r, B = 1). Log Bayes factor against the intercept-only model: an
+## average over B of a 1-D integral over W, both on grids. An independent route
+## to the package's Bayes factors (checks A4 and B1 in study 02). B is placed at
+## its quantiles, so the grid needs many points when a is close to k/2 - a.
+log_bayes_factor_beta_r_squared <- function(r_squared, n, k, a, points_B = 2000, points_w = 2000) {
   if (k == 0) return(0)
   log_w <- seq(log(1e-9), log(1e9), length.out = points_w); w <- exp(log_w)
   log_w_weight <- log(0.5) - log_w - 1 / (2 * w) + log(log_w[2] - log_w[1])   # IG(1, 1/2) x w
@@ -59,7 +69,7 @@ log_bayes_factor_beta_r_squared <- function(r_squared, n, k, a, points_B = 100, 
 ## eta = 1 is uniform. C-vine sampler of Lewandowski, Kurowicka & Joe (2009):
 ## draw partial correlations (independent Betas on (-1, 1) whose parameters
 ## step down by 1/2 per level, ending at Beta(eta, eta)), then convert them
-## into ordinary correlations. Used by 05 (C7) and 09 (V4).
+## into ordinary correlations. Used by 00, 05 (C7) and 09 (V4).
 draw_lkj_correlation_matrix <- function(dimension, eta = 1) {
   partial <- matrix(0, dimension, dimension); correlation <- diag(dimension)
   beta_parameter <- eta + (dimension - 1) / 2
@@ -82,9 +92,9 @@ draw_lkj_correlation_matrix <- function(dimension, eta = 1) {
 ## simple = FALSE returns the log Bayes factor (simple = TRUE overflows to Inf)
 log_bayes_factor_model <- function(method, r_squared, n, k) {
   if (k == 0) return(0)
+  if (method %in% names(contenders))
+    return(log_bayes_factor_vs_intercept_only(r_squared, n, k, prior = contenders[[method]]))
   switch(method,
-    `flat-R`               = log_bayes_factor_flat_r_vs_intercept_only(r_squared, n, k),
-    `uniform correlations` = log_bayes_factor_uniform_correlations_vs_intercept_only(r_squared, n, k),
     `JZS default`  = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = sqrt(2) / 4, simple = FALSE)$bf,
     `Zellner-Siow` = BayesFactor::linearReg.R2stat(n, k, r_squared, rscale = 1, simple = FALSE)$bf,
     BIC            = -(n * log(1 - r_squared) + k * log(n)) / 2,
@@ -99,7 +109,7 @@ partial_correlation_of <- function(lm_fit, coefficient_row) {
   t_value / sqrt(t_value^2 + lm_fit$df.residual)
 }
 
-## Both conditional tests are in the package (R/conditional.R).
+## The conditional tests are in the package (R/conditional.R).
 
 ## Log Bayes factor for one coefficient (effect against none), every method.
 ## Needs the R-squared of the model with and without it, its partial
@@ -109,14 +119,11 @@ log_bayes_factor_one_coefficient <- function(method, r_squared_full, r_squared_w
   joint <- function(model_method)
     log_bayes_factor_model(model_method, r_squared_full, n, k) -
     log_bayes_factor_model(model_method, r_squared_without, n, k - 1)
-  switch(method,
-    `JZS default`                = joint("JZS default"),
-    `Zellner-Siow`               = joint("Zellner-Siow"),
-    `flat-R joint`               = joint("flat-R"),
-    `uniform correlations joint` = joint("uniform correlations"),
-    `flat-R conditional` = log_bayes_factor_flat_r_conditional(partial_r, n, k),
-    `uniform correlations conditional` = log_bayes_factor_uniform_correlations_conditional(partial_r, n, k),
-    stop("Unknown method: ", method))
+  prior_name <- sub(" (joint|conditional)$", "", method)
+  if (method %in% c("JZS default", "Zellner-Siow")) return(joint(method))
+  if (!prior_name %in% names(contenders)) stop("Unknown method: ", method)
+  if (endsWith(method, "joint")) return(joint(prior_name))
+  log_bayes_factor_conditional(partial_r, n, k, prior = contenders[[prior_name]])
 }
 
 ## All one-coefficient methods for one tested coefficient of a fitted model
@@ -138,7 +145,7 @@ log_bayes_factors_one_coefficient <- function(full_fit, tested_column, outcome, 
 ## ---- Approximate per-coefficient flat partial correlation ------------------
 ## Flat prior on one partial correlation, likelihood evaluated on the slope with
 ## the estimated noise plugged in (not exact). Used by check C3 in study 05,
-## which compares it with the exact version above, and by the archive.
+## which compares it with the exact conditional test.
 partial_correlation_grid <- seq(-1, 1, length.out = 8003)[-c(1, 8003)]
 partial_correlation_step <- partial_correlation_grid[2] - partial_correlation_grid[1]
 
@@ -162,49 +169,4 @@ bayes_factor_flat_partial_correlation <- function(lm_fit, predictor_index, predi
   grid <- likelihood_over_partial_correlation_grid(lm_fit, predictor_index, predictors)
   evidence_effect <- sum(grid$likelihood * 0.5) * partial_correlation_step   # flat: density 1/2
   evidence_effect / grid$likelihood_at_zero
-}
-
-
-## ---- R2-D2 with the same R-squared prior (archive) --------------------------
-## coefficient_j | sigma ~ N(0, sigma^2 * omega * share_j / var(x_j)),
-## omega = R2 / (1 - R2), R2 ~ Beta(1/2, 1), shares ~ Dirichlet(1/2).
-## Bayes factor by Monte Carlo over shared prior draws. Used by
-## archive/03_simulations_with_r2d2.R.
-draw_from_r2d2_prior <- function(number_of_predictors, number_of_draws = 1000,
-                                 r2_shape_1 = 0.5, r2_shape_2 = 1, dirichlet_concentration = 0.5) {
-  explained_share <- rbeta(number_of_draws, r2_shape_1, r2_shape_2)
-  shares <- matrix(rgamma(number_of_draws * number_of_predictors, dirichlet_concentration),
-                   number_of_draws, number_of_predictors)
-  list(signal_to_noise = explained_share / (1 - explained_share),
-       shares = shares / rowSums(shares))
-}
-
-log_bayes_factor_r2d2_vs_intercept_only <- function(centered_predictors, centered_outcome,
-                                                    prior_draws) {
-  number_of_predictors <- ncol(centered_predictors)
-  sample_size          <- length(centered_outcome)
-  outcome_sum_of_squares <- sum(centered_outcome^2)
-  cross_products   <- crossprod(centered_predictors)
-  predictor_outcome <- drop(crossprod(centered_predictors, centered_outcome))
-  predictor_variances <- colSums(centered_predictors^2) / sample_size
-
-  log_evidence_per_draw <- vapply(seq_along(prior_draws$signal_to_noise), function(m) {
-    prior_sd <- sqrt(prior_draws$signal_to_noise[m] * prior_draws$shares[m, ] / predictor_variances)
-    root <- chol(diag(number_of_predictors) + (prior_sd %o% prior_sd) * cross_products)
-    projected <- backsolve(root, prior_sd * predictor_outcome, transpose = TRUE)
-    -sum(log(diag(root))) - (sample_size - 1) / 2 * log1p(-sum(projected^2) / outcome_sum_of_squares)
-  }, numeric(1))
-  log_sum_exp(log_evidence_per_draw) - log(length(log_evidence_per_draw))
-}
-
-## JZS for one coefficient as a plain Bayes factor (archive)
-bayes_factor_jzs_one_coefficient <- function(explained_share_full, explained_share_without,
-                                             sample_size, number_of_predictors,
-                                             rscale = sqrt(2) / 4) {
-  log_with <- BayesFactor::linearReg.R2stat(sample_size, number_of_predictors, explained_share_full,
-                                            rscale = rscale, simple = FALSE)$bf
-  log_without <- if (number_of_predictors == 1) 0 else
-    BayesFactor::linearReg.R2stat(sample_size, number_of_predictors - 1, explained_share_without,
-                                  rscale = rscale, simple = FALSE)$bf
-  exp(log_with - log_without)
 }

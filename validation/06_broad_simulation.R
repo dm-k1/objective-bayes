@@ -10,17 +10,17 @@
 ##    tested coefficient x1   0 (null), 0.1, 0.2
 ##  200 datasets per cell, noise SD 1 (effects in noise units).
 ##
-##  Methods: the common set of validation/comparison_methods.R, all testing x1:
-##    JZS default, Zellner-Siow, flat-R joint, uniform correlations joint
-##    (model with vs without x1), flat-R conditional and uniform correlations
-##    conditional (x1's partial correlation only; the latter is a flat prior on
-##    the partial correlation).
+##  Methods: the common set of validation/comparison_methods.R, all testing x1.
+##  The three contenders, flat partial r, flat R and flat R-squared, each two
+##  ways: joint (model with vs without x1) and conditional (x1's partial
+##  correlation only; for flat partial r a flat prior on it). The references,
+##  JZS default and Zellner-Siow, model with vs without x1.
 ##
 ##  Per cell: discrimination (AUC null vs 0.1 and vs 0.2, threshold-free) and
 ##  calibration at 3 (nulls found, false effects, 0.1 called null, 0.2 found).
 ##
 ##  Run from the project folder: Rscript validation/06_broad_simulation.R
-##  About 20-30 minutes on 7 cores; cached.
+##  About 30-40 minutes on 7 cores (eight methods); cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)

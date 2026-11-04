@@ -14,15 +14,14 @@
 ##  100 datasets per cell.
 ##
 ##  Bayes factors per model (each depends only on R-squared, n and k): the
-##  whole-model set of validation/comparison_methods.R,
-##    flat-R                 R-squared ~ Beta(1/2, 1) for every k
-##    uniform correlations   R-squared ~ Beta(k/2, 1): every valid correlation
-##                           matrix of (y, x1 ... xk) equally likely (LKJ, eta = 1;
-##                           check V4); rstanarm stan_lm's prior with eta = 1
-##    JZS default (scale 0.354) and Zellner-Siow (scale 1)
+##  whole-model set of validation/comparison_methods.R. The three contenders:
+##    flat partial r   R-squared ~ Beta(k/2, 1): every valid correlation matrix
+##                     of (y, x1 ... xk) equally likely (LKJ, eta = 1; check V4);
+##                     rstanarm stan_lm's prior with eta = 1
+##    flat R           R-squared ~ Beta(1/2, 1) for every k
+##    flat R-squared   R-squared ~ Beta(1, 1) for every k
+##  the two references, the JZS default (scale 0.354) and Zellner-Siow (scale 1),
 ##  and BIC (exp(-BIC/2) relative to the null) as a non-Bayesian reference.
-##  (An earlier experiment, R-squared ~ Beta(k/(k+1), 1), barely differed from
-##  flat-R and was dropped; validation/README.md, 09.)
 ##  Priors over models:
 ##    uniform      every subset equally likely (favours models with ~6 predictors)
 ##    beta-binomial every model SIZE equally likely (Scott & Berger, 2010)
@@ -36,7 +35,7 @@
 ##  reported against direct computation).
 ##
 ##  Run from the project folder: Rscript validation/09_variable_selection.R
-##  About 3-5 minutes; cached.
+##  About 10-20 minutes on 8 cores; cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)
@@ -62,21 +61,25 @@ model_sizes <- rowSums(all_models)
 log_bf_direct <- function(method, r_squared, n, k) log_bayes_factor_model(method, r_squared, n, k)
 ## grid in log-odds of R-squared, where log BF is smooth
 log_odds_grid <- seq(-14, 9, length.out = 300)
-build_tables <- function(n) lapply(setNames(methods, methods), function(method)
-  lapply(0:number_of_candidates, function(k) {
-    if (k == 0 || method == "BIC") return(NULL)
-    r2 <- plogis(log_odds_grid)
-    splinefun(log_odds_grid, sapply(r2, log_bf_direct, method = method, n = n, k = k))
-  }))
+## one task per (n, method, k), spread over the cores; BIC needs no table
+table_tasks <- expand.grid(n = unique(design$sample_size), method = setdiff(methods, "BIC"),
+                           k = seq_len(number_of_candidates), stringsAsFactors = FALSE)
 log_bf_table <- function(tables, method, r_squared, n, k) {
   if (k == 0) return(0)
   if (method == "BIC") return(log_bf_direct("BIC", r_squared, n, k))
   tables[[method]][[k + 1]](pmin(pmax(qlogis(r_squared), min(log_odds_grid)), max(log_odds_grid)))
 }
 
-message("Tabulating Bayes factors for each n ...")
-tables_per_n <- parallel_map(design$sample_size[!duplicated(design$sample_size)], build_tables)
-names(tables_per_n) <- unique(design$sample_size)
+message("Tabulating Bayes factors for each n, method and k (", nrow(table_tasks), " tables) ...")
+table_values <- parallel_map(seq_len(nrow(table_tasks)), function(row)
+  suppressWarnings(sapply(plogis(log_odds_grid), log_bf_direct, method = table_tasks$method[row],
+                          n = table_tasks$n[row], k = table_tasks$k[row])))
+tables_per_n <- lapply(setNames(nm = as.character(unique(design$sample_size))), function(n)
+  lapply(setNames(nm = setdiff(methods, "BIC")), function(method)
+    c(list(NULL), lapply(seq_len(number_of_candidates), function(k)
+      splinefun(log_odds_grid, table_values[[which(table_tasks$n == as.numeric(n) &
+                                                     table_tasks$method == method &
+                                                     table_tasks$k == k)]])))))
 
 ## V1. interpolation error against direct computation, random R-squared values
 set.seed(1)
@@ -84,17 +87,19 @@ interpolation_errors <- sapply(1:200, function(i) {
   sizes <- unique(design$sample_size)
   n <- sizes[sample.int(length(sizes), 1)]; k <- sample.int(number_of_candidates, 1)
   method <- sample(setdiff(methods, "BIC"), 1); r2 <- runif(1, 0.001, 0.9)
-  abs(log_bf_table(tables_per_n[[as.character(n)]], method, r2, n, k) - log_bf_direct(method, r2, n, k))
+  abs(log_bf_table(tables_per_n[[as.character(n)]], method, r2, n, k) -
+      suppressWarnings(log_bf_direct(method, r2, n, k)))
 })
 record_check("V1. tabulated log BF vs direct (200 random cases)", max(interpolation_errors) < 1e-3,
              sprintf("largest error %.1e", max(interpolation_errors)))
 
-## V2. the Beta(a, 1) Bayes factor (comparison_methods.R) with a = 1/2 is the
-##     flat-R closed form: the same code then gives uniform correlations at a = k/2
+## V2. the Beta(a, 1) g-mixture Bayes factor (comparison_methods.R) with a = 1/2
+##     is the flat R closed form: one family, a = 1 is flat R-squared and
+##     a = k/2 flat partial r
 v2_errors <- sapply(list(c(0.19, 60, 3), c(0.05, 100, 5), c(0.3, 200, 10), c(0.4, 50, 1)), function(s)
   abs(log_bayes_factor_beta_r_squared(s[1], s[2], s[3], 0.5) -
       log_bayes_factor_flat_r_vs_intercept_only(s[1], s[2], s[3])))
-record_check("V2. Beta(a, 1) version with a = 1/2 equals flat-R", max(v2_errors) < 1e-3,
+record_check("V2. Beta(a, 1) version with a = 1/2 equals flat R", max(v2_errors) < 1e-3,
              sprintf("largest difference %.1e", max(v2_errors)))
 
 ## V3. the mixture with a = k/2 (B = 1, g/n ~ Inverse-Gamma(1, 1/2)) implies
@@ -107,7 +112,7 @@ v3_distances <- sapply(c(2, 5, 12), function(k) {
 record_check("V3. g-mixture with a = k/2 implies R-squared ~ Beta(k/2, 1) (k = 2, 5, 12)", max(v3_distances) < 0.01,
              sprintf("KS distances %s", paste(sprintf("%.4f", v3_distances), collapse = " ")))
 
-## V4. "uniform correlations": draw whole correlation matrices of (y, x1 ... xk) uniformly
+## V4. flat partial r: draw whole correlation matrices of (y, x1 ... xk) uniformly
 ## (LKJ with eta = 1, C-vine sampler of Lewandowski, Kurowicka & Joe, 2009) and compute
 ## the population R-squared of y on the x's; it should be Beta(k/2, 1)
 ## (draw_lkj_correlation_matrix() is in comparison_methods.R)
@@ -120,12 +125,12 @@ v4_distances <- sapply(c(1, 2, 5), function(k) {
   })
   suppressWarnings(unname(ks.test(r_squared, "pbeta", k / 2, 1)$statistic))
 })
-record_check("V4. uniform correlation matrices imply R-squared ~ Beta(k/2, 1) (k = 1, 2, 5)", max(v4_distances) < 0.03,
+record_check("V4. uniformly drawn correlation matrices imply R-squared ~ Beta(k/2, 1) (k = 1, 2, 5)", max(v4_distances) < 0.03,
              sprintf("KS distances %s", paste(sprintf("%.4f", v4_distances), collapse = " ")))
 
-## V5. constant in k does not single out flat-R: with the same B but
+## V5. constant in k does not single out flat R: with the same B but
 ##     W ~ Inverse-Gamma(b, 1/2), the mixture implies R-squared ~ Beta(1/2, b) for
-##     every k (docs/2_how_it_calculates.md, section 8). b = 1 is flat-R; only
+##     every k (docs/2_how_it_calculates.md, section 8). b = 1 is flat R; only
 ##     b = 1 is Jeffreys' flat correlation at k = 1.
 set.seed(4)
 v5_settings <- expand.grid(k = c(1, 5, 20), b = c(0.5, 2))
@@ -179,7 +184,7 @@ runs <- run_simulation_grid(
   design,
   results_file = file.path(results_folder, "sim_variable_selection.rds"),
   settings = list(replications_per_cell = replications_per_cell, true_slopes = true_slopes,
-                  methods = methods, version = 5),
+                  methods = methods, version = 6),
   simulate_cell = function(cell)
     do.call(rbind, lapply(seq_len(replications_per_cell), function(replication)
       cbind(as.data.frame(cell), replication = replication,
@@ -241,7 +246,7 @@ save_figure(
 ## where on the curve you sit; if one lies below, that method separates real from
 ## null predictors better. Summary: AUC of "real vs null" over all predictors in a
 ## cell (the cutoff is shared across datasets, as in practice), with a bootstrap
-## over datasets for the difference from flat-R (the same datasets for every method).
+## over datasets for the difference from flat R (the same datasets for every method).
 auc_real_vs_null <- function(inclusion_matrix) {   # rows: datasets, columns: 12 predictors
   real <- as.vector(inclusion_matrix[, true_model]); null <- as.vector(inclusion_matrix[, !true_model])
   ranks <- rank(c(real, null))
@@ -253,7 +258,7 @@ set.seed(4)
 curve_cells <- split(runs, list(runs$predictor_correlation, runs$sample_size, runs$model_prior), drop = TRUE)
 auc_table <- do.call(rbind, lapply(curve_cells, function(cell) {
   per_method <- lapply(split(cell, cell$method), inclusion_matrix_of)
-  reference <- per_method[["flat-R"]]
+  reference <- per_method[["flat R"]]
   boot_index <- replicate(1000, sample.int(nrow(reference), replace = TRUE))
   do.call(rbind, lapply(names(per_method), function(method) {
     m <- per_method[[method]]
@@ -265,7 +270,7 @@ auc_table <- do.call(rbind, lapply(curve_cells, function(cell) {
   }))
 }))
 rownames(auc_table) <- NULL
-cat("\nAUC of inclusion probabilities, real vs null predictors (difference from flat-R, 95% bootstrap):\n")
+cat("\nAUC of inclusion probabilities, real vs null predictors (difference from flat R, 95% bootstrap):\n")
 print(auc_table |> mutate(across(c(auc, difference_from_flat_r, lower, upper), \(v) round(v, 3))) |>
         arrange(model_prior, predictor_correlation, sample_size, method), row.names = FALSE)
 saveRDS(auc_table, file.path(results_folder, "variable_selection_auc.rds"))

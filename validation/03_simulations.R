@@ -5,16 +5,15 @@
 ##  Tested: x1 (effect varies) and x3 (always null). 200 replications per cell.
 ##
 ##  Methods: the common set of validation/comparison_methods.R, all testing one
-##  coefficient (effect against none):
-##    JZS default, Zellner-Siow                   model with vs without it
-##    flat-R joint, uniform correlations joint    model with vs without it
-##    flat-R conditional,                         the coefficient's partial
-##    uniform correlations conditional            correlation only
-##  (The earlier version, with R2-D2 and an approximate flat partial
-##  correlation, is archive/03_simulations_with_r2d2.R.)
+##  coefficient (effect against none). The three contenders, each two ways:
+##    flat partial r, flat R, flat R-squared   joint: model with vs without it
+##                                             conditional: the coefficient's
+##                                             partial correlation only
+##  and two references (model with vs without it): JZS default, Zellner-Siow.
 ##
-##  Checks first: U1 the four flat-on-r methods agree with one predictor;
-##  U2 the uniform-correlations Bayes factor against a Monte Carlo average.
+##  Checks first: U1 the flat-on-r methods (flat partial r and flat R, joint
+##  and conditional) agree with one predictor; U2 the flat partial r and flat
+##  R-squared Bayes factors against a Monte Carlo average over their g-priors.
 ##
 ##  Run from the project folder: Rscript validation/03_simulations.R
 ##  About 5-10 minutes; cached (reruns only when its settings change).
@@ -43,29 +42,42 @@ replications_per_cell  <- 200
 
 
 ## ---- Checks --------------------------------------------------------------
-## U1. With one predictor, flat-R and uniform correlations are the same prior
-##     (flat on r), and the conditional tests equal the joint ones.
+## U1. With one predictor, flat partial r and flat R are the same prior (flat
+##     on r), and the conditional tests equal the joint ones. (Flat R-squared
+##     is left out: with one predictor it is not flat on r but on r^2, so it is
+##     a different prior; its conditional = joint check is C1 in study 05.)
 u1_differences <- sapply(list(c(0.2, 60), c(0.05, 100), c(0.5, 30)), function(s) {
-  values <- c(log_bayes_factor_model("flat-R", s[1], s[2], 1),
-              log_bayes_factor_model("uniform correlations", s[1], s[2], 1),
-              log_bayes_factor_flat_r_conditional(sqrt(s[1]), s[2], 1),
-              log_bayes_factor_uniform_correlations_conditional(sqrt(s[1]), s[2], 1))
+  values <- c(log_bayes_factor_model("flat R", s[1], s[2], 1),
+              log_bayes_factor_model("flat partial r", s[1], s[2], 1),
+              log_bayes_factor_conditional(sqrt(s[1]), s[2], 1, "flat_r"),
+              log_bayes_factor_conditional(sqrt(s[1]), s[2], 1, "flat_partial_r"))
   diff(range(values))
 })
-record_check("U1. k = 1: flat-R and uniform correlations, joint and conditional, agree",
+record_check("U1. k = 1: flat partial r and flat R, joint and conditional, agree",
              max(u1_differences) < 1e-3, sprintf("largest spread %.1e", max(u1_differences)))
 
-## U2. Uniform correlations is the g-prior with g/n ~ Inverse-Gamma(1, 1/2):
-##     the grid against a Monte Carlo average over 2,000,000 draws of g.
+## U2. Flat partial r is the g-prior with g/n ~ Inverse-Gamma(1, 1/2), and flat
+##     R-squared (k >= 3) the g-prior with g/n = B W, B ~ Beta(1, k/2 - 1),
+##     W ~ Inverse-Gamma(1, 1/2): the package against a Monte Carlo average
+##     over 2,000,000 draws of g. (Extended from flat partial r alone to the
+##     second contender that has a g-prior form for these k; flat R's g-prior
+##     form is checked in study 02, A4.)
 set.seed(1)
-u2_differences <- sapply(list(c(0.15, 100, 4), c(0.3, 50, 8), c(0.02, 500, 3)), function(s) {
-  g <- s[2] / (2 * rexp(2e6))
+monte_carlo_log_bf <- function(g, s) {
   log_integrand <- (s[2] - 1 - s[3]) / 2 * log1p(g) - (s[2] - 1) / 2 * log1p(g * (1 - s[1]))
-  monte_carlo <- max(log_integrand) + log(mean(exp(log_integrand - max(log_integrand))))
-  abs(log_bayes_factor_model("uniform correlations", s[1], s[2], s[3]) - monte_carlo)
+  max(log_integrand) + log(mean(exp(log_integrand - max(log_integrand))))
+}
+u2_cases <- list(c(0.15, 100, 4), c(0.3, 50, 8), c(0.02, 500, 3))
+u2_differences <- sapply(u2_cases, function(s) {
+  w <- 1 / (2 * rexp(2e6))
+  c(partial = abs(log_bayes_factor_model("flat partial r", s[1], s[2], s[3]) -
+                    monte_carlo_log_bf(s[2] * w, s)),
+    squared = abs(log_bayes_factor_model("flat R-squared", s[1], s[2], s[3]) -
+                    monte_carlo_log_bf(s[2] * rbeta(2e6, 1, s[3] / 2 - 1) * w, s)))
 })
-record_check("U2. uniform correlations: grid vs Monte Carlo", max(u2_differences) < 0.01,
-             sprintf("largest difference %.4f", max(u2_differences)))
+record_check("U2. flat partial r and flat R-squared: package vs Monte Carlo", max(u2_differences) < 0.01,
+             sprintf("largest difference %.4f (flat partial r), %.4f (flat R-squared)",
+                     max(u2_differences["partial", ]), max(u2_differences["squared", ])))
 
 
 ## ---- One dataset ---------------------------------------------------------

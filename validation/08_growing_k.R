@@ -14,9 +14,11 @@
 ##    G2. A small model is true (3 predictors, 0.3 each, noise SD 1); the
 ##        other k - 3 predictors do nothing. Compare the true model with the
 ##        full k-predictor model: log BF(true vs full) should grow without limit.
-##  Methods: the whole-model set of validation/comparison_methods.R: flat-R,
-##  uniform correlations (R-squared ~ Beta(k/2, 1)), Zellner-Siow (scale 1)
-##  and the JZS default (scale 0.354).
+##  Methods: the whole-model set of validation/comparison_methods.R: the three
+##  contenders, flat partial r (R-squared ~ Beta(k/2, 1)), flat R
+##  (Beta(1/2, 1)) and flat R-squared (Beta(1, 1)), each with a check; and the
+##  two references, the JZS default (scale 0.354) and Zellner-Siow (scale 1),
+##  reported for comparison.
 ##
 ##  Run from the project folder: Rscript validation/08_growing_k.R
 ##  About 10-20 minutes (the n = 2000, k = 500 regressions in G2 dominate).
@@ -81,11 +83,13 @@ for (growth in names(growth_rates)) for (method in methods) {
   g1 <- null_results$median_log_bf01[null_results$growth == growth & null_results$method == method]
   g2 <- alternative_results$median_log_bf_true_vs_full[alternative_results$growth == growth &
                                                          alternative_results$method == method]
-  if (method == "flat-R") {
-    record_check(sprintf("G1. %s, null true: evidence for the null grows", growth), check_growth(g1),
+  if (method %in% names(contenders)) {
+    record_check(sprintf("G1. %s, %s, null true: evidence for the null grows", method, growth),
+                 check_growth(g1),
                  sprintf("median log BF01 at n = 50 ... 2000: %s; slope %.2f",
                          paste(sprintf("%.1f", g1), collapse = " "), growth_slope(g1)))
-    record_check(sprintf("G2. %s, small model true: evidence for it grows", growth), check_growth(g2),
+    record_check(sprintf("G2. %s, %s, small model true: evidence for it grows", method, growth),
+                 check_growth(g2),
                  sprintf("median log BF at n = 50 ... 2000: %s; slope %.2f",
                          paste(sprintf("%.1f", g2), collapse = " "), growth_slope(g2)))
   } else {
