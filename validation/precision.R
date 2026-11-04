@@ -31,4 +31,8 @@ precision_targets <- list(
 ## of datasets and a corner of its design, to show the code works before the
 ## full run. Results in smoke mode are not results.
 smoke_mode <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
+if (smoke_mode) {   # smoke-test figures stay out of the tracked results
+  figures_folder <- file.path(cache_folder, "smoke_figures")
+  dir.create(figures_folder, recursive = TRUE, showWarnings = FALSE)
+}
 n_sim_of <- function(target) if (smoke_mode) 10L else precision_targets[[target]]$n_sim

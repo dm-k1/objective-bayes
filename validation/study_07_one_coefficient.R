@@ -210,7 +210,7 @@ save_figure(
          title = "What each conditional test (and JZS) says about x1, as k grows",
          subtitle = sprintf("%d datasets per cell, pooled over n, correlation and pattern; correct: says null in the top row",
                             n_sim)),
-  if (smoke_mode) "study_07_outcomes_smoke" else "study_07_outcomes", width = 11, height = 8)
+  "study_07_outcomes", width = 11, height = 8)
 
 saveRDS(list(shares_per_cell = shares_per_cell, shares_per_k = shares_per_k, auc = auc),
         file.path(study_folder, "summaries.rds"))
