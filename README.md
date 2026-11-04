@@ -8,24 +8,45 @@ priors, their comparison, and the argument for its default.
 
 When a default Bayes factor tests one regression coefficient, the answer can
 depend on how many other predictors are in the model. Whether it does depends
-on what the default prior keeps flat as predictors are added. If each partial
-correlation is kept flat (**flat partial r**), the test confirms true nulls at
-the same rate for any number of predictors. If the total is kept flat (**flat
-R**, **flat R²**), the test drifts with the number of predictors without
-becoming more accurate. At 20 predictors all three rank datasets identically, yet flat R
-leaves 92% of true nulls undecided while flat partial r confirms 88%. Only
-flat partial r's conditional test is also the Bayes factor of one joint model (the full model against its restriction by conditioning, as the Savage–Dickey ratio assumes).
+on what the default prior keeps flat as predictors are added.
 
-![What each test says about one coefficient as predictors are added](results/figures/06_outcomes.png)
+With one predictor the answer is easy: a flat prior on the correlation. With
+more, draw correlation matrices with every valid matrix equally likely and
+watch what the number of predictors $k$ does. One quantity stays flat by
+itself, the **partial correlation** of the outcome with each predictor;
+the marginal correlation narrows, and the explained variance $R^2$ grows
+([`docs/1_why_a_choice.md`](docs/1_why_a_choice.md)):
 
-These numbers come from the earlier validation (eleven studies, run of
-4 November 2026, in which 137 of 138 checks passed); its findings, comparison
-and report are kept in [`docs/working/old_run/`](docs/working/old_run/). The
-validation has since been redesigned: ten studies, each with the number of
-datasets set by a target Monte Carlo error
+![What adding predictors does to random correlation matrices](docs/figures/motivation_what_k_does.png)
+
+That leaves three candidate default priors, each flat on one quantity for
+every $k$: **flat partial r** (what random matrices give; $R^2 \sim$
+Beta($k/2$, 1)), **flat R** and **flat R²** (the total held fixed, so each
+partial correlation narrows as $k$ grows). This repository builds all three
+in [flatcor](https://github.com/dm-k1/flatcor) and validates them side by
+side, with the JZS default and Zellner–Siow as references.
+
+### What the earlier validation found
+
+In the earlier validation (eleven studies, run of 4 November 2026, in which
+137 of 138 checks passed), flat partial r's test of one coefficient confirmed
+true nulls at the same rate for any number of predictors, while under flat R
+and flat R² the test drifted with the number of predictors without becoming
+more accurate. At 20 predictors all three ranked datasets identically, yet
+flat R left 92% of true nulls undecided while flat partial r confirmed 88%.
+Only flat partial r's conditional test was also the Bayes factor of one joint
+model (the full model against its restriction by conditioning, as the
+Savage–Dickey ratio assumes).
+
+![What each test says about one coefficient as predictors are added (earlier validation)](results/figures/06_outcomes.png)
+
+Its findings, comparison and report are kept in
+[`docs/working/old_run/`](docs/working/old_run/). The validation has since
+been redesigned: ten studies, each with the number of datasets set by a
+target Monte Carlo error
 ([`docs/appendix/C_study_design.md`](docs/appendix/C_study_design.md)). Its
 results, presented in [`validation.ipynb`](validation.ipynb), will replace
-the numbers above.
+these numbers.
 
 ## Reading order
 
@@ -45,13 +66,7 @@ earlier validation ([`docs/working/old_run/`](docs/working/old_run/)).
 
 ## The three priors
 
-The project starts from a simulation of valid correlation matrices of
-$(y, x_1 \ldots x_k)$ ([`docs/1_why_a_choice.md`](docs/1_why_a_choice.md)).
-With one predictor the correlation, the partial correlation, $R$ and $R^2$ are
-one quantity; as predictors are added they come apart, and a flat prior can
-stay flat for only one of them. Keeping each partial correlation flat makes
-$R^2$ grow with $k$; keeping $R$ or $R^2$ flat makes each partial correlation
-narrow towards zero as $k$ grows. That leaves three options:
+In brief:
 
 | | What is flat | Implied $R^2$ | One coefficient's prior |
 |---|---|---|---|

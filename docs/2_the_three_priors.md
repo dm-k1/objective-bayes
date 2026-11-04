@@ -4,10 +4,9 @@ The fork of [`1_why_a_choice.md`](1_why_a_choice.md) leaves three priors, and
 they form one family: **$R^2 \sim \mathrm{Beta}(a, 1)$ with a uniform
 direction**, where the **direction** (= how the total is split over the
 predictors, in explained variance) is equally likely to be any split. They
-differ only in the shape $a$. This document describes the family (what each
-prior keeps flat, what it expects), describes how the total is divided over the
-predictors, and lists what the package computes with
-them. How the priors become a density and a Bayes factor is derived in
+differ only in the shape $a$. This document describes the family and what each
+prior expects, how the total is divided over the predictors, and what the
+package computes with them. How the priors become a density and a Bayes factor is derived in
 [appendix A](appendix/A_derivations.md); how they relate to other default
 priors is in [appendix B](appendix/B_relation_to_other_priors.md).
 
@@ -15,26 +14,14 @@ priors is in [appendix B](appendix/B_relation_to_other_priors.md).
 
 ## What each prior keeps flat
 
-All three priors start from the same principle: the prior weight follows
-what is possible (valid correlation matrices), with no scale chosen by
-convention. They differ in which quantity they keep flat as predictors are
-added.
-
-| | Flat partial r | Flat R | Flat R-squared |
-|---|---|---|---|
-| `prior =` | `"flat_partial_r"` | `"flat_r"` | `"flat_r_squared"` |
-| $R^2$ prior | Beta($k/2$, 1) | Beta(½, 1) | Beta(1, 1) |
-| What stays flat as $k$ grows | each partial correlation | the total $R$ | the total $R^2$ |
-| What moves as $k$ grows | the total grows (median .25, .63, .87 at $k$ = 1, 3, 10) | each partial correlation narrows | each partial correlation narrows, less than under flat R |
-| At $k = 1$ | Jeffreys' flat correlation | Jeffreys' flat correlation | flat on $r^2$: little weight near $r = 0$ |
-| Motivating simulation: P(\|partial r\| > .30) at $k$ = 1 / 10 | .70 / .70 | .70 / .22 | .91 / .36 |
-| Motivating simulation: P($R^2$ > .50) at $k$ = 1 / 10 | .29 / .97 | .29 / .29 | .50 / .50 |
-
-A prior that spreads its weight evenly always does so on some scale. The one
-premise is the scale for one predictor, the correlation
-([`1_why_a_choice.md`](1_why_a_choice.md), section 1); section 3 there shows
-which of the three keeps what random correlation matrices do as predictors
-are added.
+The three candidates, what each keeps flat and how each lines up with what
+random correlation matrices do, are compared in
+[`1_why_a_choice.md`](1_why_a_choice.md), section 3. In short: flat partial
+r keeps each partial correlation flat and lets the total grow with $k$; flat
+R and flat R-squared keep the total fixed and let each partial correlation
+narrow. All three spread the weight evenly over what is possible (valid
+correlation matrices), with no scale chosen by convention; they differ in
+which quantity stays flat as predictors are added.
 
 ---
 

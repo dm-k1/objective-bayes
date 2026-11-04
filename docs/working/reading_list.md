@@ -48,7 +48,7 @@ describe them correctly.
 
 | # | Reference | What to check | Status |
 |---|---|---|---|
-| 13 | Mulder, J., Berger, J. O., Peña, V., & Bayarri, M. J. (2021). On the prevalence of information inconsistency in normal linear models. *TEST*, *30*(1), 103–132. | That the information-consistency statements in doc 2 agree with it. | not read |
+| 13 | Mulder, J., Berger, J. O., Peña, V., & Bayarri, M. J. (2021). On the prevalence of information inconsistency in normal linear models. *TEST*, *30*(1), 103–132. | That the information-consistency statements in appendix A agree with it. | not read |
 | 14 | Datta, S., & Johnson, V. E. (2026). Bayes factor functions for testing partial correlation coefficients. *Journal of Mathematical Psychology*. arXiv:2503.10787. | The non-local alternative for partial correlations; how it compares with the flat partial r test. | not read |
 | 15 | Li, Y., & Clyde, M. A. (2018). Mixtures of *g*-priors in generalized linear models. *Journal of the American Statistical Association*, *113*(524), 1828–1845. https://doi.org/10.1080/01621459.2018.1469992 | The tCCH family: whether flat R's hyperprior (a ₁F₁ in −*n*/(2*g*)) is or is not a member. The docs only say it was not found to be one. | not read |
 | 16 | Zhang, Y. D., Naughton, B. P., Bondell, H. D., & Reich, B. J. (2022). Bayesian regression using a prior on the model fit: The R2-D2 shrinkage prior. *Journal of the American Statistical Association*, *117*(538), 862–874. https://doi.org/10.1080/01621459.2020.1825449 | The comparison with R2-D2 in `relation_to_others.md`. | not read |

@@ -574,7 +574,7 @@ partial correlation, .2 ($n = 100$, $k = 3$). When the other predictors explain
 0.70, with the same evidence about *x*₁. This is the **conditional Lindley
 paradox** of Som, Hans and MacEachern (2016). Every prior with one scale shared
 by all coefficients has it, including the JZS default, where it is weaker
-(the old study 04, now study 7). The shared scale is its
+(study 7). The shared scale is its
 cause.
 
 The conditional test gives the tested coefficient its own scale, its share of
@@ -697,7 +697,7 @@ conditional Bayes factor differs from `bayes_factor_models(full, without it)`
 everything. Under a joint model, the Bayes factor for a zero partial
 correlation of *x*₁ is the **Savage–Dickey ratio** (= the prior density of
 that partial correlation at 0 divided by its posterior density at 0),
-estimated here from `fit_regression()` draws (study 6, which replaces part 2 of the old study 10;
+estimated here from `fit_regression()` draws (study 6;
 validation run of 4 November 2026, commit 21d42dc). The comparison uses 20
 datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
 
@@ -715,10 +715,8 @@ datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
   absolute difference 0.30 at $n$ = 50 and 0.37 at $n$ = 200) but not at
   $k$ = 8 (mean −0.48 at $n$ = 50 and −0.34 at $n$ = 200; largest 0.87 on the
   log scale, a factor 2.4; 19 of 20 datasets estimable, mean absolute
-  difference 0.28). This was check P4 of the old study 10, the one failure of that run, because
-  it tested flat R-squared for coherence too. It is now check 6.3, which
-  predicts the difference: at $k = 8$, flat R-squared's mean absolute
-  difference from Savage–Dickey exceeds flat partial r's.
+  difference 0.28). Check 6.3 predicts this difference: at $k = 8$, flat R-squared's mean
+  absolute difference from Savage–Dickey exceeds flat partial r's.
   It is a property of the prior; the code is correct. Savage–Dickey equals the conditional test only when the null's
   prior for the other parameters is the joint prior given a zero partial
   correlation. Under flat partial r (the LKJ vine) the partial correlations
@@ -729,8 +727,7 @@ datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
 - Under flat R the restricted model is not a proper alternative. The implied
   prior for one partial correlation has an infinite density at 0 for
   $k \ge 2$, and conditioning the joint prior on that partial correlation
-  being near 0 drags the other coefficients to 0 as well (check 6.6; old study 10, part 3,
-  check P7). With |ρ₁| below .1, .02 and .005, the density of ρ₁ near 0 grows
+  being near 0 drags the other coefficients to 0 as well (check 6.6). With |ρ₁| below .1, .02 and .005, the density of ρ₁ near 0 grows
   from 1.51 to 2.30 to 2.99 at $k$ = 3, and from 2.23 to 3.83 to 5.20 at
   $k$ = 8, while the median $R^2$ of the other predictors falls from .024 to
   .005 to .001 at $k$ = 3, and from .054 to .012 to .003 at $k$ = 8. The
@@ -738,7 +735,7 @@ datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
   joint model corresponds to testing one coefficient, and the Savage–Dickey
   ratio cannot be formed. Under flat
   partial r and flat R-squared the same conditioning is a proper restriction
-  (check 6.5; old study 10, check P6): the density near 0 settles (flat partial r 0.50, 0.50
+  (check 6.5): the density near 0 settles (flat partial r 0.50, 0.50
   and 0.49 at $k$ = 3; flat R-squared 0.74, 0.77 and 0.78), and the other
   predictors keep their $R^2$ (flat partial r .37 at $k$ = 3 and .73 at
   $k$ = 8; flat R-squared .16–.22).
@@ -746,13 +743,13 @@ datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
 Each prior is also calibrated on itself. With data drawn from the joint prior
 (half with *x*₁ = 0), the share of nulls among datasets with Bayes factor BF₁₀
 is 1/(1 + BF₁₀) within Monte Carlo error, at $k$ = 3 and 8 and $n$ = 50 and
-200, for all three priors (check 4.1; old study 10, P1). This justifies calling a slope of 0.1
-null in about half of the datasets under flat partial r (study 7; old study 06). Under a
+200, for all three priors (check 4.1). This justifies calling a slope of 0.1
+null in about half of the datasets under flat partial r (study 7). Under a
 flat partial correlation an effect of 0.1 is rare, and at these sample sizes
 it predicts data much like no effect, so among datasets with BF₀₁ > 3, 83–89%
 are true nulls (78–86% for flat R-squared, 78% for flat R). Calibration is
 relative to the prior: with data from the JZS prior, which expects many tiny
-effects, the same Bayes factors are miscalibrated (check 4.2; old P2).
+effects, the same Bayes factors are miscalibrated (check 4.2).
 
 Use the conditional test to ask whether there is evidence for one
 coefficient, and the joint Bayes factors to compare or average over whole

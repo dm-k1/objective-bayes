@@ -106,7 +106,7 @@ correlation matrices allow three ways to extend it to $k$ predictors (study
   this up to keep the total fixed.
 - **Zellner–Siow is the η = ½ member.** With scale 1,
   $f^2 = \chi^2_k/\chi^2_1$, so $R^2 \sim$ Beta($k/2$, ½) exactly; the medians
-  of .50, .84, .95 and .98 in the table in section 8 of doc 2 are those of
+  of .50, .84, .95 and .98 in the table in section 8 of appendix A are those of
   Beta($k/2$, ½).
 - **Keeping every single correlation flat leads to the same $R^2$ prior.**
   Under LKJ(1), single correlations narrow as $k$ grows (the median $|\rho|$ of
@@ -160,7 +160,7 @@ with the Beta distribution that a short argument predicts.
    whose parameters increase by ½ at each step. A product of such Betas
    collapses into a single Beta, which predicts $R^2 \sim$ Beta($k/2$, η). For
    η = 1 the simulated $R^2$ matches that Beta to within simulation noise at
-   $k$ = 1, 2 and 5 (KS = .010–.013; check V4 of the old study 09, now check 10.4). Other values of η
+   $k$ = 1, 2 and 5 (KS = .010–.013; check 10.4). Other values of η
    are not checked for $R^2$.
 
 Each half needs the other: the simulation without the formula gives only
@@ -183,7 +183,7 @@ Jeffreys' flat correlation, whatever the number of other predictors.
 |---|---|---|---|
 | 1 | Under LKJ(η), the partial correlation of $y$ with one predictor given all the others is Beta(η, η) on (−1, 1), **for every $k$**. Flat only at η = 1 | yes | study 2, check 2.13 |
 | 2 | At $k = 1$ the prior is Jeffreys' flat correlation | yes (LKJ(η) at $k = 1$ is Beta(η, η) on $r$) | the same, $k = 1$ |
-| 3 | As a g-mixture, one hyperprior for every $k$: $g/n \sim$ Inverse-Gamma(1, ½), so models of every size share one scale | no (every η gives a fixed hyperprior) | doc 2, section 8 |
+| 3 | As a g-mixture, one hyperprior for every $k$: $g/n \sim$ Inverse-Gamma(1, ½), so models of every size share one scale | no (every η gives a fixed hyperprior) | appendix A, section 8 |
 | 4 | "Every single correlation flat" (Barnard et al., 2000) leads to the same $R^2 \sim$ Beta($k/2$, 1) | — | simulation (`R/docs/make_figures.R`); no source found for the $R^2$ part |
 
 Point 1 is what matters for testing one coefficient. Under η = 1 the test of
@@ -227,7 +227,7 @@ the fact that this test agrees with one prior on the whole model, and the use
 of the same prior for Bayes factors between whole models and for estimation
 (`stan_lm` with η = 1).
 
-**Variable selection** ([the earlier validation report](../working/old_run/validation_report.md), old study 09, now study 10)
+**Variable selection** (study 10; numbers from [the earlier validation report](../working/old_run/validation_report.md))
 compares the three priors with JZS, Zellner–Siow and BIC. They rank real
 above null predictors almost equally: flat partial r and flat R-squared are
 within .025 of flat R in AUC in every cell, and +.003 and −.002 on average.
@@ -325,7 +325,7 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
 
 ## How fast evidence for a true null grows
 
-Study 5 (checks 5.5 and 5.6; old study 02, B3b) measures the rate at which the evidence for a true null grows
+Study 5 (checks 5.5 and 5.6) measures the rate at which the evidence for a true null grows
 with the sample size: against the intercept-only model, log BF₀₁ grows like
 $a \log n$, so BF₀₁ grows like $n^{a}$. That is the polynomial rate of every
 *local* prior (= a prior on the effect whose density is positive at zero), and
@@ -342,7 +342,7 @@ scale. A model with $k$ predictors under a standard local prior such as a
 fixed *g*-prior reaches the rate $n^{k/2}$; flat partial r matches it
 ($a = k/2$), while flat R ($a = ½$) and flat R-squared ($a = 1$) stay at the
 rate of a single parameter whatever $k$ is. This is the same behaviour that
-the old study 06 showed for one coefficient: with many predictors, flat R and flat
+the earlier validation showed for one coefficient (study 7): with many predictors, flat R and flat
 R-squared rarely confirm a true null. Flat partial r is as fast as a local
 prior can be without choosing an effect size; a non-local prior would be
 faster, at the cost of that choice.
@@ -383,9 +383,9 @@ The following points were not found in the literature searched:
   Savage–Dickey). Here the flat partial r conditional test agrees numerically
   with the Bayes factor of the joint LKJ(1) model (within a factor 1.10 of
   Savage–Dickey on the 16 of 20 datasets where it is estimable;
-  old study 10, now study 6). This does not hold for flat R-squared (a factor 2.40 at
+  study 6). This does not hold for flat R-squared (a factor 2.40 at
   $k = 8$), and under flat R the restricted model is not a proper alternative:
-  it collapses to the intercept-only model (old study 10, P7; now check 6.6). In the terms of
+  it collapses to the intercept-only model (check 6.6). In the terms of
   the literature on **compatible priors** (= priors for nested models derived
   from one prior on the full model; Dawid & Lauritzen, 2001; Consonni &
   Veronese, 2008), this is compatibility by *conditioning*, the notion that
@@ -406,7 +406,7 @@ The following points were not found in the literature searched:
   conditional test of one coefficient changes as other predictors are added
   while the ranking of datasets stays identical (AUC = .701 for all three at
   $k = 20$) and only the share left undecided changes (92% of true nulls under
-  flat R; old study 06, now study 7). The joint tests of flat R and flat R-squared do
+  flat R; study 7). The joint tests of flat R and flat R-squared do
   separate worse than JZS when predictors are correlated (AUC −.064 at
   $k = 2$, correlation .70). In the parts of Kucharský et al., Som et al. and
   Liang et al. read so far we found no simulations of this kind.
@@ -417,7 +417,7 @@ The following points were not found in the literature searched:
   on $k - 1$ predictors, not the flat partial r prior Beta($(k-1)/2$, 1)
   (prior draws with |partial correlation| < .01: KS distance .006 at $k = 3$
   and .008 at $k = 8$ to Beta($(k-1)/2$, 3/2), against .15 and .19 to
-  Beta($(k-1)/2$, 1); the medians .37 and .73 are those of the old study 10, P6, now check 6.5).
+  Beta($(k-1)/2$, 1); the medians .37 and .73 are those of check 6.5).
   This is why flat partial r's joint test, which uses the flat partial r prior
   for the smaller model, differs from its conditional test: the two tests use
   different priors for the model without the tested predictor. It follows

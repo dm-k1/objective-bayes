@@ -56,6 +56,31 @@ matrix equally likely** (the LKJ distribution with η = 1; Lewandowski,
 Kurowicka & Joe, 2009). At $k = 1$ this is exactly the flat correlation of
 section 1.
 
+This is the project's one premise for $k > 1$, and it is chosen for three
+reasons:
+
+- **It is a statement about what is possible, and nothing else.** The valid
+  correlation matrices are exactly the correlation structures that data can
+  have; giving each the same weight adds no preference for any of them.
+- **It treats every variable alike.** The distribution does not change when
+  the variables are relabelled or reordered, so it singles out neither the
+  outcome nor any predictor, and it does not depend on how a variable is
+  scaled or which sign it is given.
+- **It is the only member of its family that keeps section 1.** At $k = 1$,
+  LKJ(η) gives the correlation a Beta(η, η) distribution on (−1, 1), which is
+  flat only at η = 1; for every $k$, the same holds for the partial
+  correlation of $y$ with one predictor given the others ([appendix B](appendix/B_relation_to_other_priors.md), "Why η = 1").
+
+Other extensions exist. The best known puts a flat prior on every single
+correlation (Barnard, McCulloch & Meng, 2000, through an inverse-Wishart
+distribution with $k + 2$ degrees of freedom). It leads to the same prior on
+the total, $R^2 \sim$ Beta($k/2$, 1), by simulation ([appendix
+B](appendix/B_relation_to_other_priors.md)), so the conclusion about the total
+below does not depend on the choice between these two. What the premise rules
+out is choosing the correlations of $y$ with the predictors one at a time:
+they would then not form a valid matrix with the correlations among the
+predictors, and their total could exceed 1.
+
 The motivating simulation draws such matrices, 200,000 per $k$, for
 $k = 1 \ldots 10$, 15, 20, 30, 40 and 50, and records four quantities in
 each: the **marginal correlation** of $y$ with $x_1$; the **partial
