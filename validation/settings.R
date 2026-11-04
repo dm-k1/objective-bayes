@@ -23,13 +23,28 @@ options(mc.cores = number_of_cores)
 forking_allowed <- .Platform$OS.type != "windows" &&
   !inherits(try(parallel::mclapply(1:2, identity, mc.cores = 2), silent = TRUE), "try-error")
 
-## Each item gets its own seed, drawn from the caller's random stream (so a
-## set.seed() before the call fixes them all), whatever the number of cores:
-## the same script gives the same numbers on any machine.
+## Each item gets its own independent random stream (L'Ecuyer-CMRG, as in
+## parallel::nextRNGStream), started from the caller's stream: a set.seed()
+## before the call fixes them all, whatever the number of cores, so the same
+## script gives the same numbers on any machine. (Seeding each item with
+## set.seed(base + i) instead is not safe: consecutive seeds can give draws
+## that are not quite uniform across items.)
 parallel_map <- function(items, work) {
-  base_seed <- sample.int(.Machine$integer.max - length(items), 1)
+  start <- sample.int(.Machine$integer.max, 1)
+  caller_kind <- RNGkind()[1]
+  caller_seed <- get(".Random.seed", envir = globalenv())
+  RNGkind("L'Ecuyer-CMRG")
+  set.seed(start)
+  streams <- vector("list", length(items))
+  stream <- get(".Random.seed", envir = globalenv())
+  for (index in seq_along(items)) {
+    streams[[index]] <- stream
+    stream <- parallel::nextRNGStream(stream)
+  }
+  RNGkind(caller_kind)
+  assign(".Random.seed", caller_seed, envir = globalenv())
   seeded_work <- function(index) {
-    set.seed(base_seed + index)
+    assign(".Random.seed", streams[[index]], envir = globalenv())
     work(items[[index]])
   }
   if (forking_allowed)
