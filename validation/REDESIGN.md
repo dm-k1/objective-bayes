@@ -86,29 +86,70 @@ but it was built study by study:
 
 ## Steps
 
-1. Install the frameworks and record them in `renv.lock`. *Done on `main`
-   (commit 30641ed).*
-2. Write one ADEMP description per new study (aims, data-generating
-   mechanism, estimands, methods, performance measures), with the target Monte
-   Carlo standard error and the number of datasets that follows from it.
-   **For review before any code changes.**
-3. Build the shared data-generating mechanisms and port study 7 as a worked
-   sample with `SimDesign` and `rsimsum`; test it with a small run.
-4. Port the other studies in the new order.
-5. Make it cluster-ready: a smoke mode that runs every study end to end in
-   minutes, a SLURM array script per study, and a note on running the Docker
-   image with Apptainer. Tests for the seeding (same results on any number of
-   cores) and for resuming interrupted runs.
+1. Install the frameworks and record them in `renv.lock`. *Done (30641ed).*
+2. Write the ADEMP description per study, with the target Monte Carlo SE and
+   the *n*<sub>sim</sub> that follows (`ADEMP.md`). *Done; approved as drafted.*
+3. Shared data sets and study 7 as the worked sample (`precision.R`,
+   `data_sets.R`, `07_one_coefficient.R`). *Done.*
+4. Port the other studies in the new order. *In progress, see Status.*
+5. Restructure and present (see "Layout to build" below), and make it
+   cluster-ready: SLURM array scripts, a note on Apptainer, tests for seeding
+   and for resuming.
 6. Run the full validation on the cluster, then rewrite the docs and the
    report from the new results.
 
-## Open questions
+## Status (handoff, end of the session of 4 November 2026)
 
-- Whether the explaining docs (docs 0–4, `findings.md`) are still needed
-  next to the report, or can be folded into it.
+Every study file is written to the conventions of the sample (ADEMP header,
+SimDesign for repeated simulation, `n_sim_of()` targets, Monte Carlo SE on
+every estimate, checks relative to it, per-dataset streams from
+`with_stream_of()`, cache in `cache/study_NN/`, own SimDesign resume file).
+Smoke mode: `VALIDATION_SMOKE=1 Rscript validation/NN_*.R` (a corner of the
+design, 10 datasets; checks are shown but do not stop the run).
 
-- The target Monte Carlo standard error per quantity (step 2).
-- Whether `BAS` offers the robust and intrinsic priors for linear models.
+| Study | File | Smoke run | 1 core = 4 cores | Notes |
+|---|---|---|---|---|
+| 1 | `01_prior_sampling.R` | passes | yes | full run done: all 10 checks pass (66 s) |
+| 2 | `02_bayes_factors.R` | runs | not needed (deterministic) | bridge-sampling check 2.6 fails in smoke only (stops early); run it in full once |
+| 3 | `03_posterior_calibration.R` | passes | to confirm | SBC package, `future` multisession; the ECDF figure is one panel per prior |
+| 4 | `04_bayes_factor_calibration.R` | runs | yes | checks fail in smoke (expected with few datasets) |
+| 5 | `05_default_prior_criteria.R` | runs | yes | checks fail in smoke (expected); the earlier 1-core/4-core mismatch is gone |
+| 6 | `06_coherence.R` | passes | to confirm | Stan inside SimDesign, one worker per 4 cores |
+| 7 | `07_one_coefficient.R` | passes | yes | |
+| 8 | `08_factors.R` | passes | yes | |
+| 9 | `09_estimation.R` | passes | yes | about 6 h on 7 cores; a cluster job |
+| 10 | `10_variable_selection.R` | passes | yes | |
+
+Shared files: `settings.R`, `comparison_methods.R`, `precision.R`,
+`data_sets.R` (A), `data_set_A_factors.R`, `data_set_B.R`, `data_set_C.R`,
+`data_set_D.R`; `run_all.R` lists the ten new studies. The old scripts are in
+`validation/old_studies/` for reference only; remove the folder once every
+port is confirmed.
+
+Known pitfalls, already handled in the ports: SimDesign masks a function named
+`summarise` and reserves all-capital names; give every `runSimulation()` its
+own resume file (`save_details`); `SimExtract()` needs a `summarise`
+function; `rsimsum` needs an `se` column for coverage.
+
+## Layout to build (decided)
+
+```
+validation/
+  R/                all code: settings, precision, methods, data sets, studies 01-10
+  results/          one .rds per study: its tables, its checks, the run's setup (tracked)
+  figures/          every figure as .png (tracked)
+  validation.ipynb  the notebook (R kernel): per study, its question, checks and
+                    tables (gt) and figures; a setting at the top chooses
+                    "results" (read the .rds only), "cached" (rerun, reuse
+                    cache/) or "fresh" (clear the cache and rerun)
+  run_all.R         the same without the notebook (for the cluster)
+cache/              raw per-dataset results (gitignored)
+```
+
+Each study script then separates computing from presenting: it ends by saving
+its tables and checks to `validation/results/study_NN.rds`; the notebook only
+presents. Needs `gt` and `IRkernel` (CRAN; IRkernel to register the `ir`
+Jupyter kernel for R 4.6; Positron's own R kernel also runs the notebook).
 
 ## References
 

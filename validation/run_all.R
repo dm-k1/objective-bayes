@@ -7,8 +7,8 @@
 ##  here.
 ##
 ##  Run from the project folder:
-##    Rscript validation/run_all.R            all studies, 01 to 11 (hours: 07)
-##    Rscript validation/run_all.R quick      the correctness checks 01, 02, 05
+##    Rscript validation/run_all.R            all studies, 01 to 10 (hours: 07, 09)
+##    Rscript validation/run_all.R quick      the correctness checks 01 and 02
 ##  (The motivating simulation is docs/motivating_simulation.R; it is not part
 ##  of the validation.)
 ##    Rscript validation/run_all.R 03 04 09   a selection
@@ -19,16 +19,17 @@
 ##  (gitignored), and to validation/results/:
 ##    run_summary.md      the setup, one row per study, and every failed check
 ##    session_info.txt    R and package versions of this run
-##  A study that fails does not stop the others (except 04, which needs 03).
+##  A study that fails does not stop the others. VALIDATION_SMOKE=1 runs every
+##  study on a corner of its design and 10 datasets, to test the code.
 ##  The exit status is 1 if any study failed.
 ## =====================================================================
 
-all_studies <- c("01_prior_and_posterior", "02_bayes_factor", "03_simulations",
-                 "04_matched_comparison", "05_conditional_test", "06_broad_simulation",
-                 "07_estimation", "08_growing_k", "09_variable_selection", "10_calibration",
-                 "11_factor_terms")
-quick_studies <- c("01_prior_and_posterior", "02_bayes_factor",
-                   "05_conditional_test")
+## In the order of validation/ADEMP.md: correctness (01-04), formal
+## properties (05-06), behaviour (07-10)
+all_studies <- c("01_prior_sampling", "02_bayes_factors", "03_posterior_calibration",
+                 "04_bayes_factor_calibration", "05_default_prior_criteria", "06_coherence",
+                 "07_one_coefficient", "08_factors", "09_estimation", "10_variable_selection")
+quick_studies <- c("01_prior_sampling", "02_bayes_factors")
 
 ## ---- Which studies -------------------------------------------------------------
 requested <- commandArgs(trailingOnly = TRUE)
@@ -38,7 +39,7 @@ studies <- if (length(requested) == 0) all_studies else
     unknown <- setdiff(requested, substr(all_studies, 1, 2))
     if (length(unknown) > 0)
       stop("Unknown study number(s): ", paste(unknown, collapse = ", "),
-           ". Use 01 to 11, or 'quick'.")
+           ". Use 01 to 10, or 'quick'.")
     chosen
   }
 
@@ -110,8 +111,8 @@ summary_lines <- c(
   vapply(outcomes, function(o) sprintf("| %s | %s | %.1f | %d | %d |", o$study, study_status(o),
                                        o$minutes, o$passed, length(o$failed)), character(1)),
   "",
-  "Studies 03, 04, 06, 07 and 09 are comparisons (results in their logs and",
-  "figures); they have few or no PASS/FAIL checks. Full output: `cache/logs/`.")
+  "Every check is judged relative to its Monte Carlo error (validation/ADEMP.md).",
+  "Full output: `cache/logs/`.")
 all_failed <- unlist(lapply(outcomes, function(o) if (length(o$failed)) paste0(o$study, ": ", o$failed)))
 if (length(all_failed) > 0)
   summary_lines <- c(summary_lines, "", "## Failed", "", paste0("- ", all_failed))
