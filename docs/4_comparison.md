@@ -165,10 +165,52 @@ another prior, as it should be)?
 
 ## 8. Recommendation
 
-> **Left to the author.** This document reports the results; it does not pick
-> a prior. Which one to use depends on which of the trade-offs above matters
-> for the intended use (testing one coefficient, comparing whole models,
-> estimation), and that judgement is the author's.
+> **Recommendation (the author's judgement, from the results above):**
+> **flat partial r.** It is the only one of the three whose answers mean the
+> same thing at every number of predictors. The tables in sections 2–6 are the
+> evidence; this section is the conclusion drawn from them.
 
-The package has no default on purpose: every function asks for `prior =`, so
-whichever is chosen is stated in every analysis.
+**Why flat partial r**
+
+- **Its test of one coefficient does not depend on $k$.** True nulls found
+  0.86 at $k = 2$ and 0.88 at $k = 20$; a 0.1 effect called null 0.52 and
+  0.60 (06). Under flat R (0.55 → 0.06) and flat R-squared (0.86 → 0.26),
+  adding predictors changes the answer about $x_1$ while $x_1$'s data stay the
+  same.
+- **It is coherent.** Its conditional test is the Bayes factor of the joint
+  model (within a factor 1.10 of Savage–Dickey, 10). Flat R-squared fails this
+  check at $k = 8$ (a factor 2.40), and for flat R it is not defined.
+- **Its joint test barely depends on what the other predictors explain**
+  (−0.5 per unit $R^2$, against −5.2 and −5.1; 04).
+- **Evidence for a true null keeps growing with large models** (log BF₀₁
+  407.7 with 500 null predictors at $n = 2000$, against 1.9 and 3.7; 08).
+- **Its estimates are close to honest**: −8% bias, 95% interval coverage
+  0.916 or above, better than OLS in every cell (07). Flat R: −29%, down to
+  0.760.
+- **The other two are not more accurate.** All three conditional tests rank
+  the datasets identically (AUC 0.701 at $k = 20$). Flat R's low rate of
+  calling small effects null comes from rarely deciding (92% of true nulls
+  undecided at $k = 20$), not from seeing effects better (section 4).
+
+**What it costs (state these when using it)**
+
+- **It leans to the null for small effects with little data.** At $k = 20$
+  it calls 60% of 0.1 effects and 31% of 0.2 effects null (06). This follows
+  from the prior, which keeps real weight near zero at every $k$, so a weak
+  signal reads as "probably nothing". A BF₀₁ > 3 from it does not rule out a
+  small effect: report it with the support curve (`R/support_curve.R`), which
+  shows which effect sizes the data cannot tell apart from zero.
+- **It shrinks less, so it predicts somewhat worse** with many predictors and
+  small $n$ (prediction error 0.71–0.81 of OLS at $k = 8$, $n = 30$, against
+  0.37–0.77 for flat R; 07). For prediction alone, flat R does better.
+- **In variable selection it is conservative**: few null predictors included,
+  more real ones missed (0.84 of 4 missed at $n = 500$ with the beta-binomial
+  model prior, against 0.45 for flat R; 09), much like Zellner–Siow.
+- **Against the intercept-only model its null rate grows with $k$**
+  ($\tfrac k2 \log n$): with many predictors it rejects "nothing matters"
+  quickly, by design (section 3).
+
+**What stays the same.** The package keeps no default: every function asks
+for `prior =`, so the choice is stated in every analysis, and flat R and flat
+R-squared remain available for uses where their trade-off fits (prediction
+with many predictors and little data).

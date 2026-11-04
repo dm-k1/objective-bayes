@@ -118,7 +118,7 @@ Two ways to test one coefficient, and why the package uses the second:
 | [`2_how_it_calculates.md`](2_how_it_calculates.md) | *How* it computes: the density, the Stan model, the Bayes factor, the conditional test, the default-prior criteria |
 | [`3_consistency.md`](3_consistency.md) | The proofs and sketches behind the consistency criteria, for the whole family |
 | [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors |
-| [`4_comparison.md`](4_comparison.md) | The three compared per criterion, from the validation results; the recommendation |
+| [`4_comparison.md`](4_comparison.md) | The three compared per criterion, from the validation results; the recommendation (flat partial r) |
 | [`5_validation.md`](5_validation.md) | Every check and simulation study, with its numbers |
 | [`../vignette.R`](../vignette.R) | Use it on one dataset, start to finish |
 
@@ -213,11 +213,6 @@ finding about flat R-squared (validation 10, P4; see
 
 ## Open
 
-- **The reruns for three priors** (studies 01, 03–10), and from them
-  [`4_comparison.md`](4_comparison.md) and its recommendation.
-- **The block conditional test in simulation studies.** It is built and checked
-  for correctness (validation 05, C9–C11; doc 2, section 10), but not yet
-  compared with JZS and the joint test on factors in a study like 04 or 06.
 - **Model-selection consistency, in full:** the dominated-convergence steps of
   the sketch, non-nested models, and a proof for $k$ growing with $n$ (doc 3).
 - **The empirical question between the branches:** how explained variance
