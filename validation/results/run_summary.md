@@ -43,7 +43,7 @@ and R-squared grows with k; keep R or R-squared flat and each partial r shrinks 
 | 10 | 0.70 | 0.97 | 0.22 | 0.29 | 0.36 | 0.50 |
 
 Studies 03, 04, 06, 07 and 09 are comparisons (results in their logs and
-figures); they have few or no PASS/FAIL checks. Full output: `logs/`.
+figures); they have few or no PASS/FAIL checks. Full output: `cache/logs/`.
 
 ## Failed
 

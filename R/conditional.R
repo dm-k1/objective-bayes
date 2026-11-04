@@ -131,8 +131,8 @@ log_likelihood_ratio_block <- function(f_values, partial_r_squared, sample_size,
 }
 
 ## Log Bayes factor for one coefficient or a block of q columns, for any prior
-## on |f| given by its CDF (a function of a vector of f values). Used by both
-## conditional tests. partial_r: the sample partial correlation, or for a block
+## on |f| given by its CDF (a function of a vector of f values). Used by
+## log_bayes_factor_conditional() for all three priors. partial_r: the sample partial correlation, or for a block
 ## the square root of its sample partial R^2.
 log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_of_predictors,
                                                  prior_cdf, points_f = 600, number_of_columns = 1) {

@@ -27,26 +27,16 @@
 ## =====================================================================
 
 ## ---- Method names and colours (the same in every study) --------------------
-## The contenders keep the colours of study 00 (darker: conditional, lighter:
-## joint); the references are grey.
 contenders <- c(`flat partial r` = "flat_partial_r", `flat R` = "flat_r",
                 `flat R-squared` = "flat_r_squared")
 model_methods <- c(names(contenders), "JZS default", "Zellner-Siow")
 one_coefficient_methods <- c(paste(names(contenders), "conditional"),
                              paste(names(contenders), "joint"), "JZS default", "Zellner-Siow")
-method_colours <- c(`flat partial r` = "#0072B2", `flat partial r conditional` = "#0072B2",
-                    `flat partial r joint` = "#56B4E9",
-                    `flat R` = "#D55E00", `flat R conditional` = "#D55E00",
-                    `flat R joint` = "#E69F00",
-                    `flat R-squared` = "#009E73", `flat R-squared conditional` = "#009E73",
-                    `flat R-squared joint` = "#7FCDBB",
-                    `JZS default` = "grey25", `Zellner-Siow` = "grey60",
-                    BIC = "#CC79A7", `ordinary (lm)` = "black")
 
-## Colour and line type for the figures: one colour per prior (its conditional
-## and joint tests share it: conditional solid, joint dashed); the references
-## in grey, dashed too where they sit next to conditional tests (they test
-## jointly). The legend lists each prior's tests together, then the references.
+## Colour and line type for the figures: one colour per prior, as in study 00
+## (its conditional and joint tests share it: conditional solid, joint
+## dashed); the references in grey, dashed too where they sit next to
+## conditional tests (they test jointly). The legend lists each prior's tests together, then the references.
 ## Names may carry a suffix ("flat R conditional (block)", "JZS (lmBF)").
 method_colour_of <- function(method)
   if (startsWith(method, "flat partial r")) "#0072B2" else

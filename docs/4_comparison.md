@@ -81,7 +81,6 @@ Conditional tests unless stated; JZS and Zellner–Siow test jointly.
 | False effects for a true null (BF₁₀ > 3), largest | 0.010 | 0.017 | 0.018 | 0.029 | 0.033 | 06 |
 | Joint test: dependence on what the other predictors explain (M4; log BF per unit $R^2$ of the others) | −0.51 (conditional 0.002) | −5.19 (conditional −0.011) | −5.10 (conditional −0.001) | −1.93 | −0.52 | 04 |
 
-
 What the rows above leave out is the third answer, "undecided". At $k = 20$
 (conditional tests, share of datasets; full table in
 [`5_validation.md`](5_validation.md), study 06):
@@ -143,8 +142,10 @@ another prior, as it should be)?
   answer does not depend on $k$ (true null found 0.86–0.88; a 0.1 effect
   called null 0.52–0.60). Flat R and flat R-squared confirm nulls less often as
   $k$ grows (0.55 → 0.06 and 0.86 → 0.26 from $k = 2$ to 20) and call a 0.1
-  effect null less often too (0.19 → 0.005 and 0.52 → 0.04). False effects stay below 0.02 for all three. Their joint tests depend
-  strongly on what the other predictors explain (M4: −5.2 and −5.1 per unit
+  effect null less often too (0.19 → 0.005 and 0.52 → 0.04), because they
+  stay undecided more often, not because they see effects better. False
+  effects stay below 0.02 for all three. Their joint tests depend strongly on
+  what the other predictors explain (M4: −5.2 and −5.1 per unit
   $R^2$, against −0.5 for flat partial r).
 - **Calibration (10):** each is calibrated on its own prior. Coherence with
   the joint model holds for flat partial r (within a factor 1.10 of

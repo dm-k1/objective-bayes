@@ -21,7 +21,7 @@
 ##  reported for comparison.
 ##
 ##  Run from the project folder: Rscript validation/08_growing_k.R
-##  About 10-20 minutes (the n = 2000, k = 500 regressions in G2 dominate).
+##  A few minutes on 7 cores (the n = 2000, k = 500 regressions in G2 dominate).
 ## =====================================================================
 library(dplyr)
 library(ggplot2)

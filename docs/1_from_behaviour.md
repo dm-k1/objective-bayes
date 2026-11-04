@@ -42,14 +42,14 @@ the other predictors, $R$, and $R^2$.
    | $k$ | 1 | 2 | 3 | 5 | 10 |
    |---|---|---|---|---|---|
    | A: P(\|partial r\| > 0.3) | 0.70 | 0.70 | 0.70 | 0.70 | 0.70 |
-   | A: P($R^2$ > 0.5) | 0.29 | 0.50 | 0.64 | 0.82 | 0.97 |
+   | A: P($R^2$ > 0.5) | 0.29 | 0.50 | 0.65 | 0.82 | 0.97 |
    | B: P(\|partial r\| > 0.3) | 0.70 | 0.50 | 0.41 | 0.32 | 0.22 |
    | C: P(\|partial r\| > 0.3) | 0.91 | 0.70 | 0.60 | 0.49 | 0.36 |
 
    (B keeps P($R^2$ > 0.5) at 0.29 and C at 0.50, for every $k$.)
 3. **Check.** Each version is flat where it should be: A's partial correlation,
    B's $R$ and C's $R^2$, against the flat distribution for every $k$ (checks
-   F1–F3, KS distance below 0.003).
+   F1–F3, KS distance 0.002–0.003).
 
 The figure is `validation/results/figures/00_partial_r_R_R2_by_k.png` (made
 by running the study). At $k = 1$, A and B are the same prior: Jeffreys' flat
@@ -70,7 +70,7 @@ On the effect-size scale (the effect in noise units, Cohen's $f$ with a sign,
 $f = r/\sqrt{1-r^2}$) the flat correlation becomes a heavy-tailed curve,
 $\tfrac12(1+f^2)^{-3/2}$. It resembles the JZS default's Cauchy, but its width
 was not chosen: it follows from the bounds of $r$. The JZS default puts more
-weight on small effects (orange): that is its built-in expectation.
+weight on small effects (grey): that is its built-in expectation.
 
 ![](figures/1_one_predictor.png)
 
@@ -216,4 +216,5 @@ than left for a reader to find:
   ([`3_consistency.md`](3_consistency.md)): $P(R^2 < 1/n) \approx n^{-a}$.
 
 No branch gets every property for free; the trade-offs are measured in
-[`4_comparison.md`](4_comparison.md).
+[`4_comparison.md`](4_comparison.md), which ends with the recommendation (flat
+partial r) and what it costs.

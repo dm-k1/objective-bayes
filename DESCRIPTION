@@ -12,7 +12,8 @@ Description: Bayes factors and estimation for linear regression with
     correlation matrix of the outcome and predictors equally likely, as
     rstanarm stan_lm with eta = 1, so each coefficient's partial correlation
     is flat for any number of predictors), flat R (a = 1/2) and flat
-    R-squared (a = 1). There is no default prior. All give Bayes factors that
+    R-squared (a = 1). There is no default prior; the validation
+    recommends flat partial r. All give Bayes factors that
     need only R-squared, n and k, and a conditional test per coefficient;
     estimation samples the prior in its own coordinates (R and a direction)
     with Stan.
@@ -30,12 +31,13 @@ Imports:
 Suggests:
     cmdstanr,
     rstan,
-    rstanarm,
     BayesFactor,
     ggplot2,
     dplyr,
     purrr,
     tidyr,
+    patchwork,
+    logspline,
     pkgload,
     testthat (>= 3.0.0)
 Additional_repositories: https://stan-dev.r-universe.dev

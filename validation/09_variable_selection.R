@@ -35,7 +35,7 @@
 ##  reported against direct computation).
 ##
 ##  Run from the project folder: Rscript validation/09_variable_selection.R
-##  About 10-20 minutes on 8 cores; cached.
+##  A few minutes on 7 cores; cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)

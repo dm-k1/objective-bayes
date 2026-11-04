@@ -33,7 +33,7 @@
 ##  on them.
 ##
 ##  Run from the project folder: Rscript validation/01_prior_and_posterior.R
-##  About 8 minutes on 4 cores.
+##  About 8 minutes on 7 cores.
 ## =====================================================================
 pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
 source("validation/settings.R")   # parallel cores, record_check()

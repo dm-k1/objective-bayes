@@ -260,7 +260,7 @@ partial r and Zellner–Siow expect $R^2$ near 1 when $k$ is large, which the
 data easily rule out. Flat R-squared's alternative stays at "$R^2$ flat", and
 it sits between the two, much nearer flat R: 3.7 at $n = 2000$, $k = n/4$
 ($\mathrm{BF}_{01} \approx 40$). With a small true model (G2) flat R and flat
-R-squared give nearly the same evidence for it (175.1 and 175.1 at
+R-squared give the same evidence for it (log BF 175.1 for both at
 $n = 2000$), flat partial r more (443.6).
 
 ---

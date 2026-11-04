@@ -42,8 +42,8 @@
 ##                     ratio is not defined.
 ##
 ##  Run from the project folder: Rscript validation/10_calibration.R
-##  Part 1 about 20 minutes on 7 cores (cached); part 2 about 20-40 minutes
-##  (each fit cached in cache/coherence_three_priors/). Needs
+##  About 70 minutes on 7 cores (68 in the run of 4 November 2026); part 1 is
+##  cached, and each fit of part 2 (in cache/coherence_three_priors/). Needs
 ##  cmdstanr (or rstan) and logspline.
 ## =====================================================================
 library(dplyr)

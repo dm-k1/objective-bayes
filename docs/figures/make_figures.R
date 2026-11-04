@@ -142,11 +142,14 @@ factor_curves <- do.call(rbind, lapply(1:3, function(k) rbind(
 factor_curves$factor <- factor(factor_curves$factor, levels = unique(factor_curves$factor))
 
 save_doc_figure(
-  ggplot(factor_curves, aes(f, value, colour = k)) +
+  ggplot(factor_curves, aes(f, value, colour = k, linetype = k)) +
     geom_line(linewidth = 1) +
+    ## k in greys, so the colours stay reserved for the three priors
+    scale_colour_manual(values = c(`k = 1` = "grey65", `k = 2` = "grey35", `k = 3` = "black")) +
+    scale_linetype_manual(values = c(`k = 1` = "solid", `k = 2` = "dashed", `k = 3` = "solid")) +
     facet_wrap(~ factor, scales = "free_y") +
     coord_cartesian(ylim = c(0, 2.5)) +
-    labs(x = "f (length of the coefficients in noise units)", y = NULL, colour = NULL,
+    labs(x = "f (length of the coefficients in noise units)", y = NULL, colour = NULL, linetype = NULL,
          title = "The prior as a product: P(total) x P(combination | total), flat R",
          subtitle = "factor 1 is the same for every k; factor 2 makes the peak at zero for k >= 2") +
     theme(legend.position = "bottom"),
@@ -177,7 +180,7 @@ save_doc_figure(
     geom_point(size = 2.5) +
     labs(x = "density from the formula (3 factors)", y = "density from counting draws",
          title = "The formula and the recipe describe the same prior",
-         subtitle = "flat R, k = 2, correlated predictors with unequal spreads; 20 points, 4 million draws"),
+         subtitle = "flat R, k = 2, correlated predictors, unequal spreads;\n20 points, 4 million draws"),
   "5_formula_vs_draws", width = 6, height = 5)
 
 
@@ -221,7 +224,7 @@ save_doc_figure(
     scale_colour_manual(values = c(`Zellner-Siow (scale 1)` = "grey50",
                                    `hyper-g/n (a = 3)` = "#e7298a",
                                    `robust (Bayarri et al.)` = "#7570b3",
-                                   `intrinsic` = "#66A61E", prior_colours)) +
+                                   `intrinsic` = "#A6761D", prior_colours)) +
     labs(x = "number of predictors (k)", y = "median implied R-squared, before any data",
          colour = NULL,
          title = "Mixtures of g-priors: only a prior on the total keeps the same claim for every k",

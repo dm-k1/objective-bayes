@@ -3,7 +3,7 @@
 ^docs$
 ^validation$
 ^vignette\.R$
-^_backup_original_files_.*$
+^cache$
 ^LICENSE\.md$
 ^\.git$
 ^.*\.Rproj$

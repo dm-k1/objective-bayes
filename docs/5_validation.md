@@ -49,17 +49,18 @@ the image small).
 | Script | Question | How | Run time |
 |---|---|---|---|
 | `00_initial_simulation.R` | The first result: what happens to partial r, R and R² as k grows, in valid correlation matrices? | 200,000 matrices per k = 1–10; three versions (partial r flat, R flat, R² flat); F1–F3: each version flat where it should be; writes `validation/results/00_first_result.md` | about a minute |
-| `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flatcor.stan`) get the prior and the posterior right, for each prior? | P1–P4 (flat R), P5–P7 (flat partial r), P8–P10 (flat R-squared): sample the prior alone and compare with its distribution. S: simulation-based calibration, k = 8, n = 60, 400 datasets, all three. Contrast: flat R sampled in coefficient coordinates | about 10 minutes |
-| `02_bayes_factor.R` | Is the whole-model Bayes factor right, for each prior? | One loop over the three priors: A1 against `integrate()` by a route that is not the package's; A2 invariance; A3 against a brute-force Bayes factor; A4 a second derivation; B1–B4 predictive matching, information and model-selection consistency | a few minutes |
-| `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below) | 5–10 minutes |
+| `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flatcor.stan`) get the prior and the posterior right, for each prior? | P1–P4 (flat R), P5–P7 (flat partial r), P8–P10 (flat R-squared): sample the prior alone and compare with its distribution. S: simulation-based calibration, k = 8, n = 60, 400 datasets, all three. Contrast: flat R sampled in coefficient coordinates | about 8 minutes |
+| `02_bayes_factor.R` | Is the whole-model Bayes factor right, for each prior? | One loop over the three priors: A1 against `integrate()` by a route that is not the package's; A2 invariance; A3 against a brute-force Bayes factor; A4 a second derivation; B1–B4 predictive matching, information and model-selection consistency; B5 intrinsic consistency | about a minute |
+| `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); U1–U2 | 10–15 minutes |
 | `04_matched_comparison.R` | Is a difference in 03 discrimination or calibration? | AUC (threshold-free), each method minus JZS with a paired bootstrap, matched thresholds, and why (M1–M4) | about 3 minutes |
-| `05_conditional_test.R` | Are the conditional tests right, and why η = 1? | C1–C5 for every prior; C7 why η = 1; C8 against Kucharský et al. (2026); C9–C11 the block test | a few minutes |
-| `06_broad_simulation.R` | Does the picture of 03–04 hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; all one-coefficient methods | 20–30 minutes |
-| `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; the three priors, JZS, Zellner–Siow, `lm()`; resumes if interrupted | 3–5 hours |
-| `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods (G1–G2) | under a minute |
+| `05_conditional_test.R` | Are the conditional tests right, and why η = 1? | C1–C5 for every prior; C7 why η = 1; C8 against Kucharský et al. (2026); C9–C11 the block test | under a minute |
+| `06_broad_simulation.R` | Does the picture of 03–04 hold beyond one design? | k = 2–20, n = 50–1000, correlation 0–0.7, sparse and dense other coefficients; all one-coefficient methods; every outcome (says null, undecided, says effect) at k = 2 and 20 | 20–30 minutes |
+| `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; the three priors, JZS, Zellner–Siow, `lm()`; resumes if interrupted | about 1.5 hours |
+| `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods (G1–G2) | about a minute |
 | `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real) | all whole-model methods and BIC; uniform and beta-binomial model priors; trade-off curves and AUC; V-checks | 3–5 minutes |
-| `10_calibration.R` | Is the conditional test calibrated on its own prior, and how far is it from one prior for everything? | P1–P2 calibration per prior, with data drawn from that prior and from JZS; P3–P5 against the Savage–Dickey ratio under the joint model | about 15 minutes |
-| `comparison_methods.R` | helper: the common method set (names, colours, Bayes factors), the LKJ sampler, the g-mixture check | – | – |
+| `10_calibration.R` | Is the conditional test calibrated on its own prior, and how far is it from one prior for everything? | P1–P2 calibration per prior, with data drawn from that prior and from JZS; P3–P5 against the Savage–Dickey ratio under the joint model | about 70 minutes |
+| `11_factor_terms.R` | Testing a factor (a term of q columns) | the block conditional test of the three priors against their joint tests, JZS (lmBF) and Zellner–Siow; q = 2–5, n = 50–1000, what the other predictors explain 0–0.9; F1–F3 | about an hour |
+| `comparison_methods.R` | helper: the common method set (names, Bayes factors), the figure style (`method_scales()`), the LKJ sampler, the g-mixture check | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
 
 ## The criteria from the literature, and where each is checked
@@ -81,9 +82,9 @@ the image small).
 
 ## The methods compared (03 on)
 
-One set, defined once in `comparison_methods.R` and used by every study. The
-three contenders keep the colours of study 00 (darker: conditional, lighter:
-joint); the references are grey.
+One set, defined once in `comparison_methods.R` and used by every study. In
+the figures each contender keeps its colour from study 00, with the
+conditional test solid and the joint test dashed; the references are grey.
 
 | Method | What it says | Whole models | One coefficient |
 |---|---|---|---|
@@ -107,7 +108,8 @@ joint); the references are grey.
 Each check prints PASS/FAIL with its criterion; 00, 01, 02 and 05 stop with an
 error if anything failed. Simulation results, Stan fits and logs are cached in
 `cache/` at the project root (not tracked by git); `validation/results/` holds
-only what is tracked: the run summary, the first result and the figures.
+only what is tracked: the run summary, the first result, the session info and
+the figures.
 
 **Simulation-based calibration** (01, S): draw the true parameters from the
 prior, simulate a dataset, fit it, and record where the true value falls among
@@ -144,6 +146,7 @@ bug (below and in section 10).
 | 02 B3b | slopes within 20% of q/2 (smaller model x1), within 30% of a (intercept only) | pass: 0.47 1.48 2.91; 0.51 1.46 2.86 | pass: 0.54 1.56 2.98; 0.47 0.50 0.48 | pass: 0.53 1.64 2.88; 0.99 1.00 1.01 |
 | 02 B4 | median log BF₁₀ increasing, > 20 at n = 5000 | pass (−0.0, 8.5, 53.3) | pass (0.9, 9.3, 54.1) | pass (1.1, 9.5, 54.3) |
 | 02 B5 | KS distance at n = 30, 300, 10⁵: < 0.01 at 10⁵ and falling | pass (0.034, 0.005, 0.005) | pass (0.026, 0.005, 0.005) | pass (0.032, 0.005, 0.005) |
+| 03 U1–U2 | k = 1 agreement within 1e-3; g-prior Monte Carlo within 0.01 | pass (U1 4.9e-06; U2 0.0012) | pass (U1, shared with flat partial r) | pass (U2 0.0015; U1 not applicable: at k = 1 a different prior) |
 | 05 C1–C5 | see the script | pass (C1 1.8e-06 for all; C4a KS ≤ 0.0025; C4b 1.8e-05; C5 3.5e-06) | pass (C2 KS 0.0024; C5 6.7e-05) | pass (C2 KS 0.0021; C5 5.0e-05) |
 | 05 C7–C11 | see the script; C10 (1.0e-04) and C11 (1.6e-14) cover all three | pass (C7, C8; C9 KS ≤ 0.016) | pass (C9 KS 0.0033) | pass (C9 KS 0.0038) |
 | 08 G1–G2 | median log BF for the truth rises with n (slope > 0.1) | pass (G1 slopes 98.8, 19.8; G2 108.4, 19.4) | pass (G1 0.24, 0.39; G2 43.1, 12.6) | pass (G1 0.49, 0.78; G2 43.0, 12.6) |
@@ -151,6 +154,7 @@ bug (below and in section 10).
 | 10 P1 | calibrated on its own prior: χ² p > 0.01, slope near 1 | pass (p 0.40–0.79; slopes 0.98–1.03) | pass (0.52–0.98; 0.99–1.02) | pass (0.37–0.94; 0.98–1.02) |
 | 10 P2 | miscalibration shows with JZS data | pass (χ² 503–556) | pass (233–1198) | pass (50–265) |
 | 10 P3–P5 | Savage–Dickey estimable and agreeing; conditional within a factor 2 | pass (P4 largest 0.092, factor 1.10) | not defined (see 10) | P3, P5 pass; **P4 fail** (largest 0.874, factor 2.40) |
+| 11 F1–F3 | block conditional test unchanged by what the others explain; same AUC for the three; JZS (lmBF) precise | pass (F1 1.4e-12 over all three; F2 identical AUC in 72 cells) | pass | pass (F3, shared: largest error 0.032) |
 
 **The one failure, 10 P4 for flat R-squared, is a finding, not a bug.** The
 conditional test and the Savage–Dickey ratio under the joint model differ by
@@ -221,10 +225,10 @@ flat and R² grows with k; keep R or R² flat and each partial r shrinks with k.
 | | partial r flat | partial r flat | R flat | R flat | R² flat | R² flat |
 | 1 | 0.70 | 0.29 | 0.70 | 0.29 | 0.91 | 0.50 |
 | 2 | 0.70 | 0.50 | 0.50 | 0.29 | 0.70 | 0.50 |
-| 3 | 0.70 | 0.64 | 0.41 | 0.29 | 0.60 | 0.50 |
+| 3 | 0.70 | 0.65 | 0.41 | 0.29 | 0.60 | 0.50 |
 | 4 | 0.70 | 0.75 | 0.36 | 0.29 | 0.54 | 0.50 |
 | 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.49 | 0.50 |
-| 6 | 0.70 | 0.87 | 0.29 | 0.29 | 0.45 | 0.50 |
+| 6 | 0.70 | 0.87 | 0.29 | 0.29 | 0.46 | 0.50 |
 | 7 | 0.70 | 0.91 | 0.27 | 0.29 | 0.43 | 0.50 |
 | 8 | 0.70 | 0.94 | 0.25 | 0.29 | 0.40 | 0.50 |
 | 9 | 0.70 | 0.96 | 0.23 | 0.29 | 0.38 | 0.50 |
@@ -287,8 +291,8 @@ difference 1.8e-06; C2 KS 0.0024 (flat R), 0.0021 (flat R-squared); C4a KS
 C11 1.6e-14.
 
 **C8: the flat partial r conditional test is not the Kucharský et al. (2026)
-test, but differs from it in one assumption only.** (Unchanged code; numbers
-from the run of 26 October 2026.) Their exact Bayes factor for a partial
+test, but differs from it in one assumption only.** (Numbers from the run of
+4 November 2026.) Their exact Bayes factor for a partial
 correlation with a flat prior (eq. 2, α = 1) is
 
 $$\mathrm{BF}_{10} = \frac{B(\tfrac12, 1 + h)}{B(\tfrac12, 1)}\,
@@ -384,7 +388,7 @@ mean bias of real effects:
 | | prediction error, k = 3: n = 30 / 60 / 200 | k = 8: n = 30 / 60 / 200 | coverage, real effects, k = 3 / 8 | lowest cell, real effects | mean bias, real effects |
 |---|---|---|---|---|---|
 | flat partial r | 0.83 / 0.89 / 0.97 | 0.74 / 0.84 / 0.95 | 0.957 / 0.940 | 0.916 | −0.016 (−8%) |
-| flat R | 0.72 / 0.85 / 1.02 | 0.51 / 0.73 / 0.94 | 0.947 / 0.928 | 0.760 | −0.054 (−28%) |
+| flat R | 0.72 / 0.85 / 1.02 | 0.51 / 0.73 / 0.94 | 0.947 / 0.928 | 0.760 | −0.054 (−29%) |
 | flat R-squared | 0.74 / 0.84 / 0.97 | 0.53 / 0.72 / 0.92 | 0.957 / 0.942 | 0.815 | −0.040 (−21%) |
 | JZS default | 0.70 / 0.80 / 0.95 | 0.56 / 0.72 / 0.91 | 0.959 / 0.951 | 0.870 | −0.037 (−19%) |
 | Zellner–Siow | 0.86 / 0.91 / 0.97 | 0.77 / 0.85 / 0.95 | 0.952 / 0.939 | 0.910 | −0.014 (−7%) |
@@ -441,8 +445,6 @@ Difference from flat R, beta-binomial model prior, 95% bootstrap over datasets:
 
 \* the 95% interval excludes 0.
 
-- The earlier experiment R² ~ Beta(k/(k+1), 1), growing from flat R toward
-  flat R-squared, is superseded by flat R-squared as a full member.
 - Against the intercept-only model the evidence for the null grows like
   a log n (½ log n for flat R, log n for flat R-squared, k/2 log n for flat
   partial r; `docs/3_consistency.md`), so how inclusive each prior is follows
@@ -485,6 +487,37 @@ correlations are dependent through R², and the joint posterior of x1's
 partial correlation also uses the other coefficients (section Last results).
 
 Figures: `validation/results/figures/10_calibration.png`, `10_coherence.png`.
+
+## 11: testing a factor (q = 2–5 columns, 200 datasets per cell)
+
+F1–F3 pass: the block conditional tests give the same Bayes factor however
+much the other predictors explain (largest difference 1.4e-12 over 14,400
+datasets), the three rank datasets identically (same AUC in all 72 cells), and
+JZS (lmBF) is precise enough (largest proportional error 0.032).
+
+Median log BF₁₀ for a null factor, n = 200, as the other predictors explain
+R² = 0 / 0.5 / 0.9 (2 other predictors; 10 others in brackets):
+
+| | R² of the others 0 | 0.5 | 0.9 |
+|---|---|---|---|
+| flat partial r conditional | −5.85 (−5.87) | −5.85 (−5.87) | −5.85 (−5.87) |
+| flat R conditional | −1.58 (−1.11) | −1.58 (−1.11) | −1.58 (−1.11) |
+| flat R-squared conditional | −2.88 (−1.99) | −2.88 (−1.99) | −2.88 (−1.99) |
+| flat partial r joint | −4.90 (−3.31) | −6.01 (−4.34) | −8.65 (−7.00) |
+| flat R joint | 0.10 (0.00) | −5.70 (−3.40) | −9.43 (−7.08) |
+| flat R-squared joint | 0.20 (0.02) | −5.70 (−3.39) | −9.44 (−7.08) |
+| JZS (lmBF) | −2.66 (−2.60) | −2.66 (−2.63) | −2.67 (−2.63) |
+| Zellner–Siow | −5.29 (−3.45) | −6.44 (−4.49) | −9.07 (−7.14) |
+
+The conditional tests do not move along a row; the joint tests do (the
+conditional Lindley paradox, Som et al., 2016), most for flat R and flat
+R-squared, which give no evidence either way for a null factor when the others
+explain nothing. JZS as lmBF computes it gives the factor its own g, so it
+barely moves either. True null factors confirmed (BF₀₁ > 3), averaged over n
+and the others, q = 2 → 5: flat partial r conditional 0.96 → 0.99, flat R
+conditional 0.51 → 0.63, flat R-squared conditional 0.79 → 0.87.
+
+Figures: `validation/results/figures/11_auc.png`, `11_calibration.png`.
 
 ## Not yet done
 

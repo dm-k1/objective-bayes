@@ -73,8 +73,8 @@ and they differ in one claim:
 - **It is rstanarm's `stan_lm` prior.** `stan_lm` uses exactly this
   construction: $\sqrt{R^2}$ times a uniformly random direction in orthogonalised
   predictor coordinates (its QR step), with $R^2 \sim$ Beta($k/2$, η) (Gabry &
-  Goodrich, rstanarm vignette). So flat R and `stan_lm` share everything except
-  the prior on $R^2$. But `stan_lm` has no default η: the user states where
+  Goodrich, rstanarm vignette). So all three priors share that construction with
+  `stan_lm`, and differ only in the prior on $R^2$. But `stan_lm` has no default η: the user states where
   $R^2$ is expected, and η follows; the rstanarm documentation does not
   recommend η = 1. Why η = 1 in particular: the subsection "Why η = 1" below.
   Using it for Bayes factors is not found there. In this package:
@@ -173,13 +173,13 @@ variables. LKJ gives every ordering of the variables the same distribution, so
 put $y$ and the tested predictor last: their partial correlation given all the
 others is that last-level Beta(η, η).
 
-Simulated (4,000 matrices per cell, KS distance):
+Simulated (4,000 matrices per cell, KS distance; run of 4 November 2026):
 
 | | $k = 1$ | $k = 3$ | $k = 8$ |
 |---|---|---|---|
-| η = 1, to flat | 0.017 | 0.010 | 0.011 |
-| η = 2, to flat | 0.107 | 0.099 | 0.110 |
-| η = 2, to Beta(2, 2) | 0.014 | 0.012 | 0.027 |
+| η = 1, to flat | 0.007 | 0.018 | 0.012 |
+| η = 2, to flat | 0.100 | 0.104 | 0.104 |
+| η = 2, to Beta(2, 2) | 0.013 | 0.014 | 0.013 |
 
 **What is not new.** A flat prior on each partial correlation is the default
 partial-correlation test (Wetzels & Wagenmakers, 2012; Kucharský et al., 2026,
@@ -254,8 +254,9 @@ correlation, 1,000,000 draws each:
 | median \|r\| | 0.50 | **0.31** |
 
 R2-D2 with "the same" $R^2$ prior puts 2.5 times as much weight on near-zero
-correlations: it leans toward small effects. So it finds true nulls more
-slowly and rarely calls a small real effect null (`validation/03_simulations.R`).
+correlations: it leans toward small effects, so as a test it finds true nulls
+more slowly and rarely calls a small real effect null (an earlier version of
+study 03 showed this; R2-D2 is no longer in the comparison).
 
 brms's closest built-in option,
 
@@ -296,7 +297,8 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
 ## Closest relatives
 
 - Jeffreys' flat prior on a correlation; Ly, Verhagen & Wagenmakers on
-  Jeffreys' default tests: flat R is this prior with one predictor.
+  Jeffreys' default tests: flat R and flat partial r are this prior with one
+  predictor.
 - Kucharský, Wagenmakers, van den Bergh & Ly (2026), *Test*: exact Bayes factor
   for one partial correlation with a stretched-beta prior. With α = 1 it is
   the flat partial r conditional test with random instead of fixed

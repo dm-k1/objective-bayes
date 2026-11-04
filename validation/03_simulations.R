@@ -16,7 +16,7 @@
 ##  R-squared Bayes factors against a Monte Carlo average over their g-priors.
 ##
 ##  Run from the project folder: Rscript validation/03_simulations.R
-##  About 5-10 minutes; cached (reruns only when its settings change).
+##  About 10-15 minutes on 7 cores; cached (reruns only when its settings change).
 ##  Figures are saved to validation/results/figures/.
 ## =====================================================================
 library(dplyr)
@@ -196,8 +196,4 @@ save_figure(
          title = "Finding nulls vs calling small effects null",
          subtitle = "top left is best; each line runs from n = 20 to n = 500"),
   "03_trade_off", width = 11, height = 5.5)
-## the docs show this one too
-file.copy(file.path(figures_folder, "03_trade_off.png"),
-          file.path("docs", "figures", "7_trade_off.png"), overwrite = TRUE)
-
 report_checks()

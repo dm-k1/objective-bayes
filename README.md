@@ -19,12 +19,15 @@ three options that leave:
 | **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 
 All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1. There is **no
-default**: every function asks for `prior =`. The studies in
-[`validation/`](docs/5_validation.md) test the three against the criteria
+default**: every function asks for `prior =`. The studies in `validation/`
+([report](docs/5_validation.md)) test the three against the criteria
 from the literature (Bayarri et al., 2012; simulation-based calibration;
 error rates and calibration), with the JZS default and Zellner–Siow as
-references; the comparison and what it means for the choice are in
-[`docs/4_comparison.md`](docs/4_comparison.md).
+references. The comparison is in [`docs/4_comparison.md`](docs/4_comparison.md);
+from the results it recommends **flat partial r** (section 8): the only one
+whose test of a coefficient means the same at every $k$, coherent with the
+joint model, with near-nominal interval coverage. Its costs are listed there
+(it leans to the null for small effects with little data, and shrinks less).
 
 All three divide the total over the predictors with no preference. As a
 density on the coefficients:
@@ -77,8 +80,8 @@ bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_r_squared")
 
 Requirements: R ≥ 4.3; MASS, posterior, loo and bayesplot are installed with
 the package. For estimation also cmdstanr with CmdStan (or rstan). Optional:
-BayesFactor (JZS comparison), ggplot2, dplyr, purrr, tidyr (vignette, figures
-and validation). Run the tests with `devtools::test()`. The exact package
+BayesFactor (JZS comparison), ggplot2, dplyr, purrr, tidyr, patchwork,
+logspline (vignette, figures and validation). Run the tests with `devtools::test()`. The exact package
 versions are in `renv.lock`, and `Dockerfile` builds the whole environment;
 running the validation anywhere: `docs/5_validation.md`.
 
@@ -133,7 +136,8 @@ test with many predictors, variable selection, Stan messages):
   flat R, then uniform correlations (now flat partial r) as the default.
 - **v3 (November 2026)**: study 00 showed that not everything can stay flat,
   so the three options (flat partial r, flat R, flat R²) are built and
-  validated as equals, with no default. The superseded scripts (by-hand
+  validated as equals, with no default; the results recommend flat partial r
+  (`docs/4_comparison.md`, section 8). The superseded scripts (by-hand
   tutorials, the brms version of the prior, earlier approaches) were in
   `archive/` and are in the git history up to commit 703d9c4.
 

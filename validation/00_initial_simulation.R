@@ -4,7 +4,7 @@
 ##  The starting question: what happens to partial r, R and R-squared as the
 ##  number of predictors k grows? With one predictor, a flat r (Jeffreys) is
 ##  all there is. With more, not everything can stay flat. This simulation
-##  shows the fork, and studies 01-10 test the three options it leaves.
+##  shows the fork, and studies 01-11 test the three options it leaves.
 ##
 ##  Three versions, k = 1 ... 10, all of them valid correlation matrices of
 ##  (y, x1 ... xk):

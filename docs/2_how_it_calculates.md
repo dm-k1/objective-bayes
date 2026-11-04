@@ -232,7 +232,8 @@ We want the Bayes factor of the model with $k$ predictors against the
 intercept-only model,
 $\mathrm{BF}_k = p(y \mid k \text{ predictors}) / p(y \mid \text{intercept only})$.
 Steps 1–4 build it for flat R ($a = ½$); step 5 gives the route that works for
-every $a$, which is how flat R-squared is computed.
+every $a$, which checks the closed forms and computes flat R-squared with one
+predictor.
 
 **The one-sentence version:** fix a direction first. Along one direction the
 model is a regression on a single constructed predictor, whose Bayes factor we
@@ -377,8 +378,9 @@ CDF), as the conditional test does.
 - **It reproduces the closed forms:** with $a = ½$ it gives flat R's Bayes
   factor of steps 1–4, with $a = k/2$ flat partial r's (section 8), within
   $2\times10^{-4}$ on the log scale (`tests/testthat/test-three-priors.R`;
-  `validation/02`, A4). So it is the route for flat R-squared, and the two
-  closed forms stay because they are faster.
+  `validation/02`, A4). So it is a check on the closed forms, and the route for
+  flat R-squared with one predictor, where no g-mixture exists (section 8); the
+  closed forms are used where they exist because they are faster.
 - **At $n = k + 1$** every model fits the data exactly ($R^2 = 1$) and the data
   say nothing about the effect; the Bayes factor is 1 for any proper prior on
   it (predictive matching, Bayarri et al., 2012). The closed forms give 1 there;
@@ -392,8 +394,11 @@ CDF), as the conditional test does.
   extreme evidence.
 
 **In the code:** `log_bayes_factor_vs_intercept_only(r_squared, n, k, prior)`:
-flat R and flat partial r through their closed forms, flat R-squared through
-`log_bayes_factor_shape_vs_intercept_only()` (the block route, internal).
+flat R and flat partial r through their closed forms; flat R-squared through
+its g-mixture for $k \ge 3$ (section 8; the hyperprior grid is computed once per
+$k$ and kept), the flat partial r closed form at $k = 2$ (the same prior there),
+and `log_bayes_factor_shape_vs_intercept_only()` (the block route, internal) at
+$k = 1$.
 
 ---
 
@@ -472,7 +477,7 @@ the same $W$, for $a \le k/2$ (checked in `validation/02`, A4, and
 | Prior | $B$ | A g-mixture? |
 |---|---|---|
 | flat R ($a = ½$) | Beta(½, (k−1)/2) | for every $k$ |
-| flat R-squared ($a = 1$) | Beta(1, $k/2 - 1$) | for $k \ge 3$; at $k = 2$, $B \equiv 1$ and it is flat partial r; at $k = 1$ no ($a > k/2$: it would need $B > 1$). The block route of section 7 covers every $k$ |
+| flat R-squared ($a = 1$) | Beta(1, $k/2 - 1$) | for $k \ge 3$ (the package computes it this way); at $k = 2$, $B \equiv 1$ and it is flat partial r; at $k = 1$ no ($a > k/2$: it would need $B > 1$), and the block route of section 7 is used |
 | flat partial r ($a = k/2$) | $B \equiv 1$: $g/n \sim$ Inverse-Gamma(1, ½) for every $k$ | for every $k$ |
 
 At $a = k/2$ the prior is the one you get when every correlation matrix of
@@ -627,7 +632,7 @@ curve averaged over the prior (`tests/testthat/test-support-curve.R`).
 
 ---
 
-**One coherent model space for flat partial r, close to it for flat R-squared.**
+**One coherent model space for flat partial r; not for flat R-squared or flat R.**
 The conditional test puts flat priors on the other coefficients, so it is not a
 ratio of marginal likelihoods under the joint prior, and a coefficient's
 conditional Bayes factor differs from `bayes_factor_models(full, without it)`

@@ -30,7 +30,7 @@
 ##
 ##  Run from the project folder, in a terminal, and leave it running:
 ##    Rscript validation/07_estimation.R
-##  Roughly 1.5 hours on 8 cores (the last two-prior run took 56 minutes).
+##  About 1.5 hours on 7 cores (84 minutes in the run of 4 November 2026).
 ##  Each design cell is saved when it finishes
 ##  (cache/estimation_three_priors/), so an interrupted run
 ##  resumes where it stopped; a saved cell is reused only if it holds exactly

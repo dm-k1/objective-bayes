@@ -115,7 +115,7 @@ summary_lines <- c(
     c("", readLines(file.path(results_folder, "00_first_result.md"))),
   "",
   "Studies 03, 04, 06, 07 and 09 are comparisons (results in their logs and",
-  "figures); they have few or no PASS/FAIL checks. Full output: `logs/`.")
+  "figures); they have few or no PASS/FAIL checks. Full output: `cache/logs/`.")
 all_failed <- unlist(lapply(outcomes, function(o) if (length(o$failed)) paste0(o$study, ": ", o$failed)))
 if (length(all_failed) > 0)
   summary_lines <- c(summary_lines, "", "## Failed", "", paste0("- ", all_failed))

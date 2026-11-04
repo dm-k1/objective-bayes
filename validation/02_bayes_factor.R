@@ -347,13 +347,13 @@ for (prior in priors) {
   ##     (docs/2_how_it_calculates.md, section 8), by nested integrate().
   ##     flat_r and flat_partial_r: the block route, which computes
   ##     flat_r_squared, against their closed forms. flat_r_squared: the
-  ##     the block route against its closed form (a g-mixture with the
+  ##     block route against its closed form (a g-mixture with the
   ##     hyperprior of t = g/n computed once per k), and for k >= 3 the
   ##     g-mixture by nested integrate().
   ##     Criterion: within 0.002 on the log scale.
   ##     (The nested integral for flat_r runs on the first five cases, those of
   ##     the original check; at very small R-squared its inner integral over a
-  ##     Beta(1/2, .) density is unstable. The block route covers all seven,
+  ##     Beta(1/2, .) density is unstable. The block route covers all eight,
   ##     extreme evidence included.)
   g_mixture_cases <- list(c(0.19, 60, 3), c(0.05, 100, 5), c(0.30, 200, 10), c(0.10, 30, 2),
                           c(0.40, 50, 1), c(0.9, 30, 4), c(0.001, 500, 3), c(0.99, 10000, 30))

@@ -239,7 +239,8 @@ extract_predictors_and_outcome <- function(model) {
 #' @param prior \code{"flat_partial_r"} (every correlation matrix equally
 #'   likely, R-squared ~ Beta(k/2, 1)), \code{"flat_r"} (R-squared ~
 #'   Beta(1/2, 1) for every k) or \code{"flat_r_squared"} (R-squared ~
-#'   Beta(1, 1) for every k); there is no default. See \code{docs/0_overview.md}.
+#'   Beta(1, 1) for every k); there is no default. The comparison, and the
+#'   recommendation (flat partial r), are in \code{docs/4_comparison.md}.
 #' @return The Bayes factor of model A against model B.
 #' @examples
 #' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),

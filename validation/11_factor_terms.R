@@ -41,7 +41,7 @@
 ##        10^6 draws where it is above 0.02).
 ##
 ##  Run from the project folder: Rscript validation/11_factor_terms.R
-##  About 25 minutes on 7 cores (lmBF dominates); cached.
+##  About an hour on 7 cores (lmBF dominates); cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)

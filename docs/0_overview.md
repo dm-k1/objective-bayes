@@ -2,8 +2,9 @@
 
 **In one sentence:** with one predictor, Jeffreys' flat correlation is the
 only objective choice; with several, not everything can stay flat, and the
-three priors that remain are built and validated side by side, so the choice
-between them follows from the results.
+three priors that remain are built and validated side by side, and the choice
+between them follows from the results: flat partial r is recommended
+([`4_comparison.md`](4_comparison.md), section 8).
 
 This page is the map. Every other document goes into one part of it.
 
@@ -26,7 +27,7 @@ versions, all valid correlation matrices, differing only in what is kept flat:
 |---|---|---|---|---|---|---|
 | 1 | 0.70 | 0.29 | 0.70 | 0.29 | 0.91 | 0.50 |
 | 2 | 0.70 | 0.50 | 0.50 | 0.29 | 0.70 | 0.50 |
-| 3 | 0.70 | 0.64 | 0.41 | 0.29 | 0.60 | 0.50 |
+| 3 | 0.70 | 0.65 | 0.41 | 0.29 | 0.60 | 0.50 |
 | 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.49 | 0.50 |
 | 10 | 0.70 | 0.97 | 0.22 | 0.29 | 0.36 | 0.50 |
 
@@ -37,7 +38,7 @@ are the same (Jeffreys); C is not flat on $r$ even then. The figure
 study 00) shows the three distributions per $k$; the table is also written to
 `validation/results/00_first_result.md`.
 
-Studies 01–10 test the three options this leaves.
+Studies 01–11 test the three options this leaves.
 
 ---
 
@@ -73,9 +74,10 @@ explained variance). They differ only in the shape $a$:
 | flat R | `"flat_r"` | ½ | Jeffreys | share ~ Beta(½, (k−1)/2) of the total | [`1_from_behaviour.md`](1_from_behaviour.md), step 4 |
 | flat R-squared | `"flat_r_squared"` | 1 | flat on $r^2$, not on $r$ | share ~ Beta(½, (k−1)/2) of the total | [`2_how_it_calculates.md`](2_how_it_calculates.md), section 2 |
 
-**There is no default.** Every function asks for `prior =`. The choice is to be
-made from the comparison in [`4_comparison.md`](4_comparison.md), which is
-filled from the validation reruns.
+**There is no default.** Every function asks for `prior =`. The comparison in
+[`4_comparison.md`](4_comparison.md), from the validation run of 4 November
+2026, recommends flat partial r (section 8) and lists what it costs; flat R and
+flat R-squared stay available.
 
 Flat partial r is rstanarm `stan_lm`'s $R^2$ prior with η = 1. All three are
 mixtures of Zellner g-priors, the family of the JZS default, for the shapes
@@ -179,7 +181,8 @@ finding about flat R-squared (validation 10, P4; see
 ## What to watch out for when using it
 
 - **Choose the prior.** There is no default; `prior =` must be given. What each
-  one assumes is in the branches above and in [`4_comparison.md`](4_comparison.md).
+  one assumes is in the branches above; the recommendation (flat partial r) and
+  its costs are in [`4_comparison.md`](4_comparison.md), section 8.
 - **Shrinkage at small $n$.** With several predictors at small $n$ the prior
   pulls estimates toward zero. The vignette prints the pull next to the
   ordinary estimates.

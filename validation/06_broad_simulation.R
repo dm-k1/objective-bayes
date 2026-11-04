@@ -18,9 +18,12 @@
 ##
 ##  Per cell: discrimination (AUC null vs 0.1 and vs 0.2, threshold-free) and
 ##  calibration at 3 (nulls found, false effects, 0.1 called null, 0.2 found).
+##  And every outcome at 3 (says null, undecided, says effect) for the
+##  conditional tests and JZS at k = 2 and 20: with equal AUC, a test that
+##  calls fewer effects null may simply decide less often.
 ##
 ##  Run from the project folder: Rscript validation/06_broad_simulation.R
-##  About 30-40 minutes on 7 cores (eight methods); cached.
+##  About 20-30 minutes on 7 cores (eight methods); cached.
 ## =====================================================================
 library(dplyr)
 library(tidyr)
