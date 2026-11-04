@@ -119,7 +119,7 @@ Two ways to test one coefficient, and why the package uses the second:
 | [`1_from_behaviour.md`](1_from_behaviour.md) | *Why* these priors: from study 00 and what effects can do, in steps with simulated figures |
 | [`2_how_it_calculates.md`](2_how_it_calculates.md) | *How* it computes: the density, the Stan model, the Bayes factor, the conditional test, the default-prior criteria |
 | [`3_consistency.md`](3_consistency.md) | The proofs and sketches behind the consistency criteria, for the whole family |
-| [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors |
+| [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors; what is new here and what is not |
 | [`4_comparison.md`](4_comparison.md) | The three compared per criterion, from the validation results; the recommendation (flat partial r) |
 | [`5_validation.md`](5_validation.md) | Every check and simulation study, with its numbers |
 | [`../vignette.R`](../vignette.R) | Use it on one dataset, start to finish |

@@ -294,6 +294,56 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
             r2d2   = summarise_correlation(correlation_r2d2)), 3)
 ```
 
+## What is new here, and what is not
+
+From a literature search of November 2026 (not a systematic review; the
+papers marked below still need a full read before anything is written up).
+
+**Not new, and cited as such:**
+
+- **The test of one coefficient under flat partial r.** A flat prior on one
+  partial correlation, with a closed-form Bayes factor in $n$, $k$ and the
+  sample partial correlation, is Kucharský et al. (2026) with α = 1. Ours
+  differs in one assumption (fixed instead of random predictors; `validation/05`,
+  C8). Other default tests for one partial correlation are Wetzels &
+  Wagenmakers (2012) and the Bayes factor functions for partial correlations
+  (arXiv 2503.10787; *Journal of Mathematical Psychology*, 2026).
+- **Flat partial r as a joint prior.** It is LKJ(1), uniform over correlation
+  matrices (Lewandowski et al., 2009), and `stan_lm`'s $R^2 \sim$
+  Beta($k/2$, 1) (Gabry & Goodrich); that each partial correlation given all
+  the others is then flat follows from the vine construction.
+- **A shared scale pushing small coefficients to zero.** This is the
+  conditional Lindley paradox (Som, Hans & MacEachern, 2016); block g-priors
+  and their Dirichlet-process mixtures (Porwal & Rodríguez, 2024) are the
+  proposed remedies.
+- **The criteria.** Bayarri et al. (2012); information inconsistency of
+  standard priors in normal linear models, Mulder, Berger, Peña & Bayarri (2021).
+
+**Not found in the literature searched:**
+
+- **The test of one coefficient as the Bayes factor of one joint model.**
+  Kucharský et al. justify their test by Jeffreys's desiderata, with separate
+  improper priors for the other parameters; they do not relate it to a prior
+  on the whole model (no LKJ, `stan_lm` or Savage–Dickey). Here the flat
+  partial r conditional test is the joint LKJ(1) model's Bayes factor (within a
+  factor 1.10 of Savage–Dickey, `validation/10`), and the same does not hold
+  for flat R-squared (a factor 2.40 at $k = 8$) or exist for flat R.
+- **How R-squared-based defaults drift with $k$, and that the drift is a
+  threshold, not accuracy.** No source found shows that under a fixed prior
+  on $R$ or $R^2$ the test of one coefficient changes as unrelated predictors
+  are added, while the ranking of datasets stays identical (AUC 0.701 for all
+  three at $k = 20$) and the difference is the share left undecided (92% of
+  true nulls under flat R; `validation/06`). Kucharský et al., Som et al. and
+  Liang et al. report no simulations of this kind.
+- **The three as one family**, $R^2 \sim$ Beta($a$, 1) with $a = k/2$, ½ or 1,
+  compared side by side on the Bayarri et al. criteria
+  ([`4_comparison.md`](4_comparison.md)).
+
+**Still to read in full:** Kucharský et al. (2026), on whether $k$ is
+discussed beyond its role in the formula; Som et al. (2016), its theorems on
+tests of single coefficients; Mulder et al. (2021); the Bayes factor functions
+paper.
+
 ## Closest relatives
 
 - Jeffreys' flat prior on a correlation; Ly, Verhagen & Wagenmakers on
@@ -321,6 +371,12 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
 - Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
   Analytic posterior distribution and Bayes factor for Pearson partial
   correlations. *TEST*.
+- Mulder, J., Berger, J. O., Peña, V., & Bayarri, M. J. (2021). On the
+  prevalence of information inconsistency in normal linear models. *TEST*.
+- Porwal, A., & Rodríguez, A. (2024). Dirichlet process mixtures of block g
+  priors for model selection and prediction in linear models. arXiv 2411.00471.
+- Bayes factor functions for testing partial correlation coefficients (2026).
+  *Journal of Mathematical Psychology*; arXiv 2503.10787.
 
 - Aguilar, J. E., & Bürkner, P.-C. (2023). Intuitive joint priors for Bayesian
   linear multilevel models: The R2D2M2 prior. *Electronic Journal of Statistics*.
