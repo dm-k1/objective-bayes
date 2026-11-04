@@ -197,7 +197,7 @@ log_bf_by_integration <- function(prior, r_squared, n, k) {
                      log_bf_g_mixture_by_integration(r_squared, n, k, a = 1))
 }
 
-## ---- Example data (same as the vignette) ---------------------
+## ---- Example data (same as docs/example.R) ---------------------
 set.seed(42)
 sample_size <- 60
 predictor_correlations <- matrix(0.4, 3, 3); diag(predictor_correlations) <- 1
@@ -256,7 +256,7 @@ log_bayes_factor_by_sampling <- function(predictors, outcome, prior, number_of_d
 }
 
 brute_force_cases <- list(
-  list(label = "k = 3, correlated (vignette data)", predictors = predictors, outcome = outcome),
+  list(label = "k = 3, correlated (example data)", predictors = predictors, outcome = outcome),
   local({ set.seed(11); x <- matrix(rnorm(80), 80, 1)
           list(label = "k = 1, n = 80", predictors = x, outcome = drop(0.3 * x) + rnorm(80)) }),
   local({ set.seed(12); x <- matrix(rnorm(100 * 5), 100) %*% chol(0.3 + 0.7 * diag(5))
@@ -265,7 +265,7 @@ brute_force_cases <- list(
 
 ## The brute-force cases of A3
 brute_force_cases <- list(
-  list(label = "k = 3, correlated (vignette data)", predictors = predictors, outcome = outcome),
+  list(label = "k = 3, correlated (example data)", predictors = predictors, outcome = outcome),
   local({ set.seed(11); x <- matrix(rnorm(80), 80, 1)
           list(label = "k = 1, n = 80", predictors = x, outcome = drop(0.3 * x) + rnorm(80)) }),
   local({ set.seed(12); x <- matrix(rnorm(100 * 5), 100) %*% chol(0.3 + 0.7 * diag(5))

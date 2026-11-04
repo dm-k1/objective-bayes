@@ -2,12 +2,8 @@
 ^renv\.lock$
 ^docs$
 ^validation$
-^vignette\.R$
 ^cache$
 ^LICENSE\.md$
 ^\.git$
 ^.*\.Rproj$
 ^\.Rproj\.user$
-^\.renvignore$
-^Dockerfile$
-^\.dockerignore$

@@ -1,5 +1,5 @@
 ## =====================================================================
-##  Vignette: flatcor on one dataset, start to finish
+##  Example: flatcor on one dataset, start to finish
 ##  Estimation (Stan), then Bayes factors for any model comparison, with the
 ##  three priors side by side: flat_partial_r, flat_r and flat_r_squared.
 ##  There is no default; every function asks for prior = (docs/0_overview.md).

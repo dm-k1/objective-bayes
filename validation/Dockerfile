@@ -5,7 +5,9 @@
 # the container runs, so results are written straight into it.
 #
 # Build once (20-40 minutes: packages and CmdStan compile from source):
-#   docker build -t flatcor-validation .
+#   docker build -f validation/Dockerfile -t flatcor-validation .
+# (from the project folder; Docker reads validation/Dockerfile.dockerignore
+# next to this file, which needs BuildKit, the default since Docker 23)
 # Run every study, or a selection (see validation/run_all.R):
 #   docker run --rm -v "$PWD":/project flatcor-validation
 #   docker run --rm -v "$PWD":/project flatcor-validation Rscript validation/run_all.R quick

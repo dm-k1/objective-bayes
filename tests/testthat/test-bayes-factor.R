@@ -13,7 +13,7 @@ example_data <- local({
   data
 })
 
-test_that("the vignette's Bayes factors are unchanged (joint and conditional)", {
+test_that("the example's Bayes factors are unchanged (joint and conditional)", {
   joint <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, test = "joint", prior = "flat_r")
   expect_equal(joint$BF10, c(18.696, 0.3827, 1.5872), tolerance = 1e-3)
   conditional <- bayes_factor_per_term(y ~ x1 + x2 + x3, example_data, prior = "flat_r")

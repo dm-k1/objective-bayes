@@ -33,13 +33,13 @@ correctness checks 01, 02 and 05; `run_all.R 03 04 09` runs a selection.
 
 ### Running it on another machine
 
-The environment is pinned: `renv.lock` (the R packages) and `Dockerfile` (R,
+The environment is pinned: `renv.lock` (the R packages) and `validation/Dockerfile` (R,
 those packages and CmdStan). renv is not activated in this folder; the
 lockfile is the record, and the image installs from it.
 
 | Where | How |
 |---|---|
-| Any machine with Docker (a cloud VM, a SURF Research Cloud workspace) | `git clone` the repository, then `docker build -t flatcor-validation .` (once, 20–40 minutes) and `docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatcor-validation`. Results land in `validation/results/` of the clone |
+| Any machine with Docker (a cloud VM, a SURF Research Cloud workspace) | `git clone` the repository, then `docker build -f validation/Dockerfile -t flatcor-validation .` (once, 20–40 minutes) and `docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatcor-validation`. Results land in `validation/results/` of the clone |
 | A machine with R but no Docker | `Rscript -e 'install.packages("renv"); renv::restore(library = .libPaths()[1], prompt = FALSE)'` (into your normal library), then `Rscript -e 'cmdstanr::install_cmdstan(version = "2.40.0")'`, then `Rscript validation/run_all.R` |
 | A cluster without Docker (Snellius) | the same as the previous row, or the image through Apptainer: `apptainer build flatcor.sif docker-daemon://flatcor-validation:latest` |
 

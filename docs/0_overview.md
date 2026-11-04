@@ -124,7 +124,7 @@ Two ways to test one coefficient, and why the package uses the second:
 | [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors; what is new here and what is not |
 | [`4_comparison.md`](4_comparison.md) | The three compared per criterion, from the validation results; the recommendation (flat partial r) |
 | [`5_validation.md`](5_validation.md) | Every check and simulation study, with its numbers |
-| [`../vignette.R`](../vignette.R) | Use it on one dataset, start to finish |
+| [`example.R`](example.R) | Use it on one dataset, start to finish |
 
 ---
 
@@ -186,7 +186,7 @@ finding about flat R-squared (validation 10, P4; see
   one assumes is in the branches above; the recommendation (flat partial r) and
   its costs are in [`4_comparison.md`](4_comparison.md), section 8.
 - **Shrinkage at small $n$.** With several predictors at small $n$ the prior
-  pulls estimates toward zero. The vignette prints the pull next to the
+  pulls estimates toward zero. The example (`example.R`) prints the pull next to the
   ordinary estimates.
 - **Flat R and flat R-squared: the conditional test is cautious with many
   predictors.** The prior expects each coefficient to be a small share of the
