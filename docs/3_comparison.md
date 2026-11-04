@@ -261,7 +261,9 @@ This is an argument, not a result of the studies.
   show for it.
 - Flat partial r's own cost, its lean towards the null for small effects, is
   visible and can be reported with the support curve, and only its
-  conditional test agrees with one joint model.
+  conditional test agrees with one joint model (by conditioning, the notion
+  the Savage–Dickey ratio assumes; see `relation_to_others.md`, "What is new
+  here, and what is not", for the other notions of compatible priors).
 
 ### What it costs (to be stated when it is used)
 

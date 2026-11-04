@@ -10,7 +10,7 @@ the same rate for any number of predictors. If the total is kept flat (**flat
 R**, **flat R²**), the test drifts with the number of predictors without
 becoming more accurate. At 20 predictors all three rank datasets identically, yet flat R
 leaves 92% of true nulls undecided while flat partial r confirms 88%. Only
-flat partial r's conditional test is also the Bayes factor of one joint model.
+flat partial r's conditional test is also the Bayes factor of one joint model (the full model against its restriction by conditioning, as the Savage–Dickey ratio assumes).
 
 ![What each test says about one coefficient as predictors are added](validation/results/figures/06_outcomes.png)
 

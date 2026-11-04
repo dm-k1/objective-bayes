@@ -305,7 +305,9 @@ test of Kucharský et al. (2026) with α = 1, and the joint prior is LKJ(1)
 (Lewandowski et al., 2009), which is also `stan_lm` with η = 1. Two points were
 not found in the literature searched. The first is that this test is the
 Bayes factor of one joint model, and that no such model exists under flat
-*R*. The second is that, for the conditional tests, the drift of *R*-based and
+*R*, both in the sense of compatibility by conditioning, the notion the
+Savage–Dickey ratio assumes (marginalisation and projection are the
+alternatives; Consonni & Veronese, 2008). The second is that, for the conditional tests, the drift of *R*-based and
 *R*²-based defaults with *k* changes where the test decides and leaves what it
 can detect unchanged. Their joint tests are a different matter: with
 correlated predictors they separate nulls from small effects worse than JZS
@@ -323,6 +325,8 @@ published regressions.
 - Bayarri, M. J., Berger, J. O., Forte, A., & García-Donato, G. (2012).
   Criteria for Bayesian model choice with application to variable selection.
   *Annals of Statistics*.
+- Consonni, G., & Veronese, P. (2008). Compatibility of prior specifications
+  across linear models. *Statistical Science*, *23*(3), 332–353.
 - Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
   Analytic posterior distribution and Bayes factor for Pearson partial
   correlations. *TEST*, *35*(2), 535–558.

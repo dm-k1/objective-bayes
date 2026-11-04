@@ -378,7 +378,21 @@ The following points were not found in the literature searched:
   Savage–Dickey on the 16 of 20 datasets where it is estimable;
   `validation/10`). This does not hold for flat R-squared (a factor 2.40 at
   $k = 8$), and under flat R the restricted model is not a proper alternative:
-  it collapses to the intercept-only model (study 10, P7).
+  it collapses to the intercept-only model (study 10, P7). In the terms of
+  the literature on **compatible priors** (= priors for nested models derived
+  from one prior on the full model; Dawid & Lauritzen, 2001; Consonni &
+  Veronese, 2008), this is compatibility by *conditioning*, the notion that
+  the Savage–Dickey ratio assumes. It is one of three: the submodel prior can
+  also be obtained by marginalisation or by Kullback–Leibler projection, and
+  Consonni and Veronese compare the three for *g*-priors without favouring
+  conditioning (an earlier version of their paper calls it "not particularly
+  advisable"). Conditioning on a single value also depends on the variable
+  conditioned on (the Borel–Kolmogorov paradox); here it is the partial
+  correlation of the tested predictor. The coherence claim is therefore
+  specific: under flat partial r the conditional test equals the Bayes factor
+  of the full model against its conditional restriction, and under flat R
+  that restriction does not exist. Under projection, flat R would have a
+  proper restricted model.
 - **How $R^2$-based defaults drift with $k$, and that for the conditional
   tests the drift moves the threshold and leaves the ranking unchanged.** No
   source found shows that, under a fixed prior on $R$ or $R^2$, the
@@ -389,6 +403,19 @@ The following points were not found in the literature searched:
   separate worse than JZS when predictors are correlated (AUC −.064 at
   $k = 2$, correlation .70). In the parts of Kucharský et al., Som et al. and
   Liang et al. read so far we found no simulations of this kind.
+- **Under flat partial r, the conditional restriction is not flat partial r
+  with one predictor fewer.** Conditioning the LKJ(1) prior on the tested
+  partial correlation being zero leaves the other predictors with
+  $R^2 \sim$ Beta($(k-1)/2$, 3/2), which is `stan_lm`'s prior with η = 3/2
+  on $k - 1$ predictors, not the flat partial r prior Beta($(k-1)/2$, 1)
+  (prior draws with |partial correlation| < .01: KS distance .006 at $k = 3$
+  and .008 at $k = 8$ to Beta($(k-1)/2$, 3/2), against .15 and .19 to
+  Beta($(k-1)/2$, 1); the medians .37 and .73 are those of study 10, P6).
+  This is why flat partial r's joint test, which uses the flat partial r prior
+  for the smaller model, differs from its conditional test: the two tests use
+  different priors for the model without the tested predictor. It follows
+  from the vine construction of LKJ (the submatrix of the other variables is
+  LKJ(3/2)); it was checked here by simulation only.
 - **The three priors as one family**, $R^2 \sim$ Beta($a$, 1) with
   $a = k/2$, ½ or 1, compared side by side on the Bayarri et al. criteria
   ([`3_comparison.md`](3_comparison.md)).
@@ -396,16 +423,27 @@ The following points were not found in the literature searched:
 Still to be read in full: Kucharský et al. (2026), on whether $k$ is
 discussed beyond its role in the formula; Som et al. (2016), for its theorems
 on tests of single coefficients; Mulder et al. (2021); the Bayes factor
-functions paper; and the review of objective priors by Consonni, Fouskakis,
-Liseo and Ntzoufras (2018), whose model-selection part surveys the priors
-compared here (*g*-priors and their mixtures, the robust and intrinsic priors)
-and is the most likely place for a prior statement of the drift with *k* or
-of coherence between priors across nested models. Not yet read: the journal
-site requires a browser check that could not be passed here. Of lower
-priority: Steel (2020), a review of Bayesian model averaging whose discussion
-of *g*-priors and priors over model size bears on study 09; and Pramanik and
-Johnson (2024), for how a psychology audience is likely to read the slow
-growth of evidence for nulls.
+functions paper; and, most relevant to the coherence claim, Consonni and
+Veronese (2008) and Dawid and Lauritzen (2001) on compatible priors across
+nested models, which may already contain the conditioning result for flat R
+or for LKJ priors. Of lower priority: Steel (2020), a review of Bayesian
+model averaging whose discussion of *g*-priors and priors over model size
+bears on study 09; and Pramanik and Johnson (2024), for how a psychology
+audience is likely to read the slow growth of evidence for nulls.
+
+The review of objective priors by Consonni, Fouskakis, Liseo and Ntzoufras
+(2018) has been read (its model-comparison part, sections 3.1 to 3.6). It
+does not discuss how the test of one coefficient depends on the number of
+other predictors, priors on $R^2$ or on (partial) correlations, LKJ, or
+operating characteristics such as how often true nulls are confirmed. It
+does cover three points that bear on this project: compatibility of priors
+across models (above); the unbalanced learning rates of local priors, with
+evidence for a true null growing only as a power of $n$ (Dawid, 2011, as cited there;
+Johnson & Rossell, 2010; see "How fast evidence for a true null grows"); and
+block hyper-*g* priors for the case where one coefficient is much larger than
+the rest (Som et al.), as well as the tendency of hyper-*g* priors to inflate
+the inclusion probabilities of unimportant covariates (Dellaportas et al.,
+2012, as cited there).
 
 ## Closest relatives
 
@@ -432,12 +470,19 @@ growth of evidence for nulls.
   to shrinkage. *Statistica Sinica*.
 - Bayarri, M. J., Berger, J. O., Forte, A., & García-Donato, G. (2012). Criteria
   for Bayesian model choice with application to variable selection. *Annals of Statistics*.
+- Consonni, G., & Veronese, P. (2008). Compatibility of prior specifications
+  across linear models. *Statistical Science*, *23*(3), 332–353.
+  https://doi.org/10.1214/08-STS258
 - Consonni, G., Fouskakis, D., Liseo, B., & Ntzoufras, I. (2018). Prior
   distributions for objective Bayesian analysis. *Bayesian Analysis*, *13*(2),
   627–679. https://doi.org/10.1214/18-BA1103
 - Datta, S., & Johnson, V. E. (2026). Bayes factor functions for testing
   partial correlation coefficients. *Journal of Mathematical Psychology*.
   arXiv:2503.10787.
+- Dawid, A. P., & Lauritzen, S. L. (2001). Compatible prior distributions. In
+  E. I. George (Ed.), *Bayesian methods with applications to science, policy
+  and official statistics* (pp. 109–118). Office for Official Publications of
+  the European Communities.
 - Gabry, J., & Goodrich, B. Estimating regularized linear models with
   rstanarm (`stan_lm` vignette). https://mc-stan.org/rstanarm/articles/lm.html
 - Johnson, V. E., & Rossell, D. (2010). On the use of non-local prior

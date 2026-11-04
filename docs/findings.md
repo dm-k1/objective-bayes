@@ -153,7 +153,12 @@ for the conditional tests the drift of *R*-based and *R*²-based defaults with
 *k* changes where the test decides, while their ability to separate nulls
 from small effects stays the same. Their joint tests do separate worse than
 JZS with correlated predictors (mean AUC .064 below JZS for flat R at
-*k* = 2 and correlation .70; study 06). The search was not a systematic review;
+*k* = 2 and correlation .70; study 06). "One joint model" here means compatibility by conditioning (the
+restricted model is the full model's prior conditioned on the tested partial
+correlation being zero), the notion the Savage–Dickey ratio assumes; the
+literature on compatible priors also uses marginalisation and projection
+(Consonni & Veronese, 2008), under which flat R would have a proper
+restricted model. The search was not a systematic review;
 [`relation_to_others.md`](relation_to_others.md) lists the sources and the
 papers that still need a full reading.
 
