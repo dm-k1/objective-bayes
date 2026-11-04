@@ -1,6 +1,5 @@
 ^renv$
 ^renv\.lock$
-^archive$
 ^docs$
 ^validation$
 ^vignette\.R$

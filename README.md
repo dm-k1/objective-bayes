@@ -2,43 +2,46 @@
 
 > Define what's possible, not what you expect.
 
-**In one sentence:** every correlation matrix of the outcome and the predictors
-is equally likely, so each coefficient's partial correlation gets Jeffreys'
-flat prior, whatever the number of other predictors.
+**In one sentence:** with one predictor, Jeffreys' flat correlation is the
+only choice; with several, not everything can stay flat, so three ways to
+carry it to k predictors are built and validated side by side.
 
-Two ways to extend Jeffreys' flat correlation to several predictors are built
-and validated side by side; the validation studies chose the first as the
-default (`validation/README.md`, "In short"):
+**Where it starts** ([`validation/00_initial_simulation.R`](validation/00_initial_simulation.R),
+the first result): draw valid correlation matrices of $(y, x_1 \ldots x_k)$.
+Keep each partial correlation flat and $R^2$ grows with $k$; keep $R$ or
+$R^2$ flat and each partial correlation shrinks toward zero with $k$. The
+three options that leave:
 
 | | What is flat | Implied $R^2$ | One coefficient's prior |
 |---|---|---|---|
-| **uniform correlations** (`prior = "uniform_correlations"`, the default) | every correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
-| **flat-R** (`prior = "flat_r"`) | the total, the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
+| **flat partial r** (`prior = "flat_partial_r"`) | every valid correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1), grows with $k$ | a flat partial correlation, for every $k$ |
+| **flat R** (`prior = "flat_r"`) | the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
+| **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 
-Why the default: for testing one coefficient it confirms true nulls about as
-often whatever the number of covariates (0.87 at k = 2 to 20, against 0.55 to
-0.06 for flat-R), and its 95% intervals keep their coverage (0.92 or higher in
-every design; flat-R down to 0.76). Its cost: an effect of a partial
-correlation of about 0.1 is called null in about half the datasets at moderate
-n. The reasoning: [`docs/4_why_this_default.md`](docs/4_why_this_default.md); the
-map: [`docs/0_overview.md`](docs/0_overview.md).
+All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1. There is **no
+default**: every function asks for `prior =`. The studies in
+[`validation/`](validation/README.md) test the three against the criteria
+from the literature (Bayarri et al., 2012; simulation-based calibration;
+error rates and calibration), with the JZS default and Zellner–Siow as
+references; the comparison and what it means for the choice are in
+[`docs/4_comparison.md`](docs/4_comparison.md).
 
-Both divide the total over the predictors with no preference. As a density on
-the coefficients:
+All three divide the total over the predictors with no preference. As a
+density on the coefficients:
 
 ```
 P(beta) = P(total) x P(this combination | total) x unit conversion
-          R^2 ~ Beta(k/2, 1)   every split equally likely   noise units -> data units
-          (flat-R: R flat)
+          R^2 ~ Beta(a, 1)     every split equally likely   noise units -> data units
 ```
 
-- Both are mixtures of Zellner g-priors, the family of the JZS / JASP default;
-  intercept and noise get the same neutral priors as there (flat, and $1/\sigma$).
-- Uniform correlations is rstanarm `stan_lm`'s prior with η = 1, the one shape
-  for which every coefficient's partial correlation is flat.
+- All three are mixtures of Zellner g-priors (flat R² from two predictors
+  on), the family of the JZS / JASP default; intercept and noise get the same
+  neutral priors as there (flat, and $1/\sigma$).
+- Flat partial r is rstanarm `stan_lm`'s prior with η = 1, the one shape for
+  which every coefficient's partial correlation is flat.
 
 **What you get:** estimation with Stan (with `loo()`, `pp_check()`, bayesplot),
-Bayes factors between any two linear models from a closed form that needs only
+Bayes factors between any two linear models from a formula that needs only
 $R^2$, $n$ and $k$, and a test per coefficient.
 
 **Start with [`docs/0_overview.md`](docs/0_overview.md)**: the map of the
@@ -58,16 +61,18 @@ Then:
 ```r
 library(flatcor)
 
-fit <- fit_regression(y ~ x1 + x2 + x3, my_data)   # estimation (Stan)
-fit                                                # estimates and diagnostics
+## every function asks for the prior: "flat_partial_r", "flat_r" or "flat_r_squared"
+fit <- fit_regression(y ~ x1 + x2 + x3, my_data, prior = "flat_partial_r")   # estimation (Stan)
+fit                                                                         # estimates and diagnostics
 loo(fit); pp_check(fit)
 
-bayes_factor_per_term(y ~ x1 + x2 + x3, my_data)                     # BF per term (conditional test)
-bayes_factor_models(fit, lm(y ~ x2 + x3, my_data))                   # any two models
-bayes_factor_models(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data))   # no Stan needed
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_partial_r")   # BF per term (conditional test)
+bayes_factor_models(fit, lm(y ~ x2 + x3, my_data), prior = "flat_partial_r") # any two models
+bayes_factor_models(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data),           # no Stan needed
+                    prior = "flat_r")
 
-## the other prior: the same functions with prior = "flat_r"
-bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_r")
+## the same with another prior
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_r_squared")
 ```
 
 Requirements: R ≥ 4.3; MASS, posterior, loo and bayesplot are installed with
@@ -82,24 +87,24 @@ running the validation anywhere: `validation/README.md`.
 | Path | What it is |
 |---|---|
 | `R/fit.R` | `fit_regression()`, with `print()`, `loo()` and `pp_check()` |
-| `R/bayes_factor.R` | `bayes_factor_models()`, `bayes_factor_per_term()` and the closed form behind them |
-| `R/conditional.R` | `log_bayes_factor_flat_r_conditional()`: the test for one coefficient |
+| `R/priors.R` | The three priors: their names and the shape $a$ of $R^2$ ~ Beta($a$, 1) |
+| `R/bayes_factor.R` | `bayes_factor_models()`, `bayes_factor_per_term()` and `log_bayes_factor_vs_intercept_only()`, the formula behind them |
+| `R/conditional.R` | `log_bayes_factor_conditional()`: the test for one coefficient or one term |
 | `R/prior_draws.R` | `draw_coefficients_from_prior()`: the prior as a recipe |
 | `R/support_curve.R` | Optional reporting next to a null Bayes factor: which effect sizes the data can't tell apart from zero |
-| `inst/stan/flatcor.stan` | The Stan model: samples $R$ and a direction, computes the coefficients |
+| `inst/stan/flatcor.stan` | The Stan model: samples $R$ (with $R^2$ ~ Beta($a$, 1)) and a direction, computes the coefficients |
 | `tests/` | Fast checks (`devtools::test()`); the full checks are in `validation/` |
 | `DESCRIPTION`, `NAMESPACE`, `man/` | Package files (`man/` and `NAMESPACE` are generated by roxygen2 from the comments in `R/`) |
 | `vignette.R` | Use it on a dataset, start to finish |
-| `docs/0_overview.md` | **The map**: the two ways to extend a flat correlation, the three questions the package answers, the status of each claim, what to watch out for, what is open |
+| `docs/0_overview.md` | **The map**: the fork from study 00, the three priors, the questions the package answers, the status of each claim, what to watch out for, what is open |
 | `docs/1_from_behaviour.md` | Where the prior comes from: from what effects can do to the one sentence, with simulated figures |
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
 | `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
-| `docs/4_why_this_default.md` | Why uniform correlations is the default: the stance, the comparison with JZS, Zellner–Siow and flat-R, and its one cost |
-| `docs/relation_to_others.md` | Which priors drift with the number of predictors; the other extension (flat over correlation matrices, `stan_lm`); why this is not R2-D2 |
+| `docs/4_comparison.md` | The three priors compared, criterion by criterion, with the JZS default and Zellner–Siow as references |
+| `docs/relation_to_others.md` | Which priors drift with the number of predictors; flat partial r as `stan_lm`'s prior; why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
-| `validation/` | Does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `validation/README.md` |
+| `validation/` | Study 00 (the first result: the fork), then for each prior: does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `validation/README.md` |
 | `renv.lock`, `Dockerfile` | The pinned environment: R packages, and R + packages + CmdStan as a container |
-| `archive/` | Superseded code (by-hand tutorials, the brms version of the prior, earlier approaches), kept for history |
 
 ## Scope
 
@@ -123,7 +128,13 @@ test with many predictors, variable selection, Stan messages):
   scale shared by all predictors so that together they explain at most the
   outcome's variance (scale ≈ 1/√k).
 - **v2 (October 2026, this project)**: the exact version, with a closed-form
-  Bayes factor and Stan estimation in the prior's own coordinates.
+  Bayes factor and Stan estimation in the prior's own coordinates; first
+  flat R, then uniform correlations (now flat partial r) as the default.
+- **v3 (November 2026)**: study 00 showed that not everything can stay flat,
+  so the three options (flat partial r, flat R, flat R²) are built and
+  validated as equals, with no default. The superseded scripts (by-hand
+  tutorials, the brms version of the prior, earlier approaches) were in
+  `archive/` and are in the git history up to commit 703d9c4.
 
 ## Author
 

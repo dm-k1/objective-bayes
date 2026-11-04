@@ -1,26 +1,32 @@
 # Relation to other priors
 
-**In one sentence:** the flat-R prior is a mixture of Zellner g-priors, the
-family of the JZS default, and the only member whose implied $R^2$ stays
-the same for every number of predictors *and* is Jeffreys' flat correlation for
-one predictor (constant in $k$ alone is not enough: $R^2 \sim$ Beta(½, $b$) for
-every $k$ is a g-mixture for every $b$, checked in `validation/09`, V5; see
-[`2_how_it_calculates.md`](2_how_it_calculates.md), section 8). Its closest neighbour is the other
-natural way to extend Jeffreys' flat correlation to several predictors: flat
-over all correlation matrices, which is rstanarm `stan_lm`'s $R^2$ prior with
-η = 1.
+**In one sentence:** the three priors, $R^2 \sim$ Beta($a$, 1) with a uniform
+direction, sit in the family of the JZS default (mixtures of Zellner g-priors)
+and next to rstanarm `stan_lm`: flat partial r ($a = k/2$) *is* `stan_lm`'s
+$R^2$ prior with η = 1, flat R ($a = ½$) is the only g-mixture whose implied
+$R^2$ stays the same for every $k$ *and* is Jeffreys' flat correlation for one
+predictor, and flat R-squared ($a = 1$) keeps the total flat on the $R^2$
+ruler.
+
+Constant in $k$ alone does not single out flat R: $R^2 \sim$ Beta(½, $b$) for
+every $k$ is a g-mixture for every $b$ (checked in `validation/09`, V5; see
+[`2_how_it_calculates.md`](2_how_it_calculates.md), section 8). Where the three
+come from: [`1_from_behaviour.md`](1_from_behaviour.md), step 0 (study 00).
 
 ## Its family: mixtures of g-priors
 
 Zellner–Siow (JZS, the BayesFactor/JASP default), hyper-g, hyper-g/n,
 beta-prime, robust and intrinsic priors all put a prior on Zellner's $g$. The
-flat-R prior does too, with $g/n = B \cdot W$, $B \sim$ Beta(½, (k−1)/2),
-$W \sim$ Inverse-Gamma(1, ½) ([`2_how_it_calculates.md`](2_how_it_calculates.md),
-section 8). How much $R^2$ each member claims before any data, as $k$ grows,
-is the table in that section: from 0.25 at every $k$ (flat-R) to 0.98 at
-$k = 30$ (Zellner–Siow).
+three priors do too, with $g/n = B \cdot W$, $W \sim$ Inverse-Gamma(1, ½), and
+$B \sim$ Beta($a$, $k/2 - a$): Beta(½, (k−1)/2) for flat R, Beta(1, $k/2 - 1$)
+for flat R-squared ($k \ge 3$; at $k = 2$ it is flat partial r, at $k = 1$ it
+is not a g-mixture), $B \equiv 1$ for flat partial r
+([`2_how_it_calculates.md`](2_how_it_calculates.md), section 8). How much $R^2$
+each member claims before any data, as $k$ grows, is the table in that section:
+from 0.25 at every $k$ (flat R) and 0.5 at every $k$ (flat R-squared) to 0.98
+at $k = 30$ (Zellner–Siow).
 
-The flat-R hyperprior involves Kummer's confluent hypergeometric function, so
+The flat R hyperprior involves Kummer's confluent hypergeometric function, so
 it is not a special case of the tCCH family of Li & Clyde (2018), which unifies
 hyper-g, beta-prime, robust and intrinsic priors. A search of the g-prior
 literature did not turn it up; that is a finding of a search, not a proof.
@@ -40,21 +46,24 @@ predictors are added ([`1_from_behaviour.md`](1_from_behaviour.md), step 2).
 | JZS / Zellner–Siow (BayesFactor, JASP) | yes, milder | heavy-tailed mixture over $g$, but still per-dimension |
 | spike-and-slab with a fixed slab | yes | with the number of included predictors |
 | independent flat partial correlations, combined | yes, strongly | $1 - R^2$ is a product of one factor per predictor |
-| rstanarm `stan_lm` | yes, by design | $R^2 \sim$ Beta($k/2$, η); η = 1 is "every correlation matrix equally likely" (next section) |
+| rstanarm `stan_lm`, and **flat partial r** (η = 1) | yes, by design | $R^2 \sim$ Beta($k/2$, η); η = 1 is "every correlation matrix equally likely" (next section) |
 | hyper-g (Liang et al., 2008), Maruyama & George (2011) | partly | prior on the shrinkage $g/(1+g)$ |
 | regularized horseshoe | no | global scale tied to the expected number of relevant predictors |
 | R2-D2 (Zhang et al., 2022), R2D2M2 (Aguilar & Bürkner, 2023) | no | fixed prior on $R^2$, Dirichlet split |
-| **flat-R** | no | flat on $R$ for every $k$, even split |
+| **flat R** | no | flat on $R$ for every $k$, even split |
+| **flat R-squared** | no | flat on $R^2$ for every $k$, even split |
 
-## The other extension: flat over all correlation matrices
+## Three extensions: flat on the correlations, on R, or on R²
 
-With one predictor, flat-R is Jeffreys' flat correlation. There are two natural
-ways to extend that to $k$ predictors, and they differ in one claim:
+With one predictor, Jeffreys' flat correlation is the starting point. Valid
+correlation matrices allow three ways to extend it to $k$ predictors (study 00),
+and they differ in one claim:
 
-| | what is flat | implied $R^2$ | median $R^2$, $k$ = 1 / 3 / 10 / 30 |
-|---|---|---|---|
-| **flat-R** | the total $R$, whatever $k$ is | Beta(½, 1) | 0.25 / 0.25 / 0.25 / 0.25 |
-| **uniform correlations** | every correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1) | 0.25 / 0.63 / 0.87 / 0.95 |
+| | what is flat | implied $R^2$ | median $R^2$, $k$ = 1 / 3 / 10 / 30 | Jeffreys at $k = 1$? |
+|---|---|---|---|---|
+| **flat partial r** | every correlation matrix of $(y, x_1 \ldots x_k)$ | Beta($k/2$, 1) | 0.25 / 0.63 / 0.87 / 0.95 | yes |
+| **flat R** | the total $R$, whatever $k$ is | Beta(½, 1) | 0.25 / 0.25 / 0.25 / 0.25 | yes |
+| **flat R-squared** | the total $R^2$, whatever $k$ is | Beta(1, 1) | 0.50 / 0.50 / 0.50 / 0.50 | no: $r$ has density $\lvert r\rvert$ |
 
 - **Where Beta($k/2$, 1) comes from.** Under the LKJ distribution with shape η
   (Lewandowski, Kurowicka & Joe, 2009; η = 1 is uniform), the squared multiple
@@ -64,17 +73,17 @@ ways to extend that to $k$ predictors, and they differ in one claim:
 - **It is rstanarm's `stan_lm` prior.** `stan_lm` uses exactly this
   construction: $\sqrt{R^2}$ times a uniformly random direction in orthogonalised
   predictor coordinates (its QR step), with $R^2 \sim$ Beta($k/2$, η) (Gabry &
-  Goodrich, rstanarm vignette). So flat-R and `stan_lm` share everything except
+  Goodrich, rstanarm vignette). So flat R and `stan_lm` share everything except
   the prior on $R^2$. But `stan_lm` has no default η: the user states where
   $R^2$ is expected, and η follows; the rstanarm documentation does not
   recommend η = 1. Why η = 1 in particular: the subsection "Why η = 1" below.
   Using it for Bayes factors is not found there. In this package:
-  `prior = "uniform_correlations"` in every function.
+  `prior = "flat_partial_r"` in every function.
 - **The same growth is forced by consistency between model sizes.** As a
   g-mixture (section 8 of [`2_how_it_calculates.md`](2_how_it_calculates.md)) it
   has $B \equiv 1$: a fixed hyperprior $g/n \sim$ Inverse-Gamma(1, ½), so the
   prior is the same scale mixture of normals for every $k$, and models of
-  different sizes agree with each other. Flat-R gives that up to keep the total
+  different sizes agree with each other. Flat R gives that up to keep the total
   fixed.
 - **Zellner–Siow is the η = ½ member.** With scale 1, $f^2 = \chi^2_k/\chi^2_1$, so
   $R^2 \sim$ Beta($k/2$, ½) exactly (the medians in the table above, 0.50 / 0.84 /
@@ -86,7 +95,7 @@ ways to extend that to $k$ predictors, and they differ in one claim:
   $k + 2$ degrees of freedom, keeps every single correlation flat for any $k$, and
   implies the same $R^2 \sim$ Beta($k/2$, 1) (simulation, KS ≤ 0.007 for $k$ =
   2–8, 40,000 draws). So "flat on the correlations", in either sense, gives
-  $a = k/2$; only "flat on the total" gives flat-R.
+  $a = k/2$; only "flat on the total" gives flat R.
 
 ### How Beta($k/2$, 1) was found: simulate, then derive, then check
 
@@ -105,8 +114,8 @@ values with the Beta distribution that a short argument predicts.
    directly. It draws **partial correlations** (= the correlation left after
    the earlier variables are taken out). These can be chosen independently
    and always give a valid matrix. Each is a Beta on (−1, 1), and they are
-   converted back into ordinary correlations: `draw_uniform_correlation_matrix()`
-   in `validation/09_variable_selection.R`.
+   converted back into ordinary correlations: `draw_lkj_correlation_matrix()`
+   in `validation/comparison_methods.R` (also used by study 00).
 3. **Compute each matrix's population $R^2$.** With $\rho$ the correlations of
    $y$ with the predictors and $\Sigma$ the correlations among the predictors:
 
@@ -134,9 +143,9 @@ reading "every single correlation flat" was checked the same way, with the
 correlations of an inverse-Wishart with $k + 2$ degrees of freedom (Barnard et
 al., 2000): the same Beta($k/2$, 1).
 
-This is the $R^2$ prior of the **uniform correlations** extension. The flat-R
-share per predictor, Beta(½, (k−1)/2), is a different result found the same way:
-[`1_from_behaviour.md`](1_from_behaviour.md), step 4.
+This is the $R^2$ prior of the **flat partial r** extension. The share per
+predictor, Beta(½, (k−1)/2) for every member of the family, is a different
+result found the same way: [`1_from_behaviour.md`](1_from_behaviour.md), step 4.
 
 ### Why η = 1
 
@@ -183,37 +192,45 @@ Give ours that extra uncertainty and the two agree to 5e-7; the priors on the
 noise and the other coefficients are the same in both. As it is, ours is lower
 on the log scale by up to 0.26 (n = 20, k = 8, r = 0), 0.10 at n = 50 and
 0.005 at n = 1000, largest at r = 0 (where ours does not depend on k).
-What uniform correlations adds is: the fixed-X version of their test, that this
+What flat partial r adds is: the fixed-X version of their test, that this
 test follows from one prior on the whole model, and that the same prior gives
 Bayes factors between whole models and estimates (`stan_lm` with η = 1).
 
-**In variable selection** (`validation/README.md`, 09) neither dominates:
-flat-R separates real from null predictors better in small samples with
-uncorrelated predictors, uniform correlations does better when predictors are
-correlated. Uniform correlations is at least as good as JZS everywhere; flat-R
-beats JZS in small uncorrelated samples and trails it slightly (AUC ≤ 0.007)
-with correlated predictors. Which extension describes
-real research better is an empirical question: how fast explained variance
-grows with the number of predictors in published regressions. Uniform
-correlations predicts a median $R^2$ of 0.76 with 5 predictors and 0.84 with 8;
-flat-R predicts 0.25 at any size.
+**In variable selection** (`validation/README.md`, 09) the three are compared
+with JZS, Zellner–Siow and BIC: (rerun pending). Which extension describes real
+research better is partly an empirical question: how fast explained variance
+grows with the number of predictors in published regressions. Flat partial r
+predicts a median $R^2$ of 0.76 with 5 predictors and 0.84 with 8; flat R
+predicts 0.25 and flat R-squared 0.5 at any size.
+
+### Flat R-squared, and the earlier "growing" experiment
+
+An earlier version of study 09 tried $R^2 \sim$ Beta($a$, 1) with
+$a = k/(k+1)$: flat R at one predictor, moving toward flat R-squared as $k$
+grows. It barely differed from flat R and was dropped. Flat R-squared is now a
+full member of the comparison instead ($a = 1$ for every $k$), built and
+checked like the other two, so that experiment is superseded. Its one
+structural difference: at $k = 1$ it is flat on $r^2$, not on $r$, so it does
+not start from Jeffreys' correlation (study 00, version C).
 
 ## The conditional Lindley paradox
 
 Priors with one scale shared by all coefficients (Zellner–Siow, hyper-g, and the
-joint tests of both flat-R and uniform correlations) let large coefficients drive
-the test of a small one toward "no effect" (Som, Hans & MacEachern, 2016). Their
-remedy, block hyper-g priors, gives groups of coefficients their own scale. The
-conditional tests do the same for one coefficient: under flat-R its own share of
-the flat total, under uniform correlations its own flat partial correlation
+joint tests of all three priors) let large coefficients drive the test of a
+small one toward "no effect" (Som, Hans & MacEachern, 2016). Their remedy,
+block hyper-g priors, gives groups of coefficients their own scale. The
+conditional tests do the same for one coefficient: under flat R and flat
+R-squared its own share of the total, under flat partial r its own flat partial
+correlation
 ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 10).
 
 ## Is this just R2-D2?
 
-No. Both can start from Beta(½, 1) on $R^2$, but they turn it into
-coefficients differently, so they are different priors, even with one predictor.
+No. Both can start from Beta(½, 1) on $R^2$ (flat R), but they turn it into
+coefficients differently, so they are different priors, even with one
+predictor. The same holds for flat R-squared against R2-D2 with Beta(1, 1).
 
-| | Flat-R | R2-D2 (brms `R2D2()`) |
+| | Flat R | R2-D2 (brms `R2D2()`) |
 |---|---|---|
 | Given a drawn $R^2$ | the length of the effect is **fixed** by it; only the direction is random | $R^2$ sets the **variance** of a normal distribution for the coefficients |
 | Implied $R^2$ | follows Beta(½, 1) exactly | does **not** follow Beta(½, 1): the normal draw lands below or above it |
@@ -223,7 +240,7 @@ coefficients differently, so they are different priors, even with one predictor.
 **One predictor** (only the first difference matters). Implied prior on the
 correlation, 1,000,000 draws each:
 
-| | Flat-R | brms R2D2 with Beta(½, 1) |
+| | Flat R | brms R2D2 with Beta(½, 1) |
 |---|---|---|
 | P(\|r\| < 0.1) | 0.10 | **0.25** |
 | P(\|r\| < 0.5) | 0.50 | **0.65** |
@@ -240,7 +257,7 @@ brms's closest built-in option,
 prior(R2D2(mean_R2 = 1/3, prec_R2 = 1.5), class = b)   # Beta(1/2, 1) on R2
 ```
 
-is the different prior above. A custom brms prior can state the flat-R density,
+is the different prior above. A custom brms prior can state the flat R density,
 but brms samples the coefficients directly and misses the prior's peak at zero
 for larger $k$. That is why `fit_regression()` uses its own Stan model,
 sampled in $R$ and a direction ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 6).
@@ -251,7 +268,7 @@ Reproduce the one-predictor table:
 set.seed(1)
 number_of_draws <- 1e6
 
-## Flat-R, one predictor: flat on the correlation
+## Flat R, one predictor: flat on the correlation
 correlation_flat_r <- runif(number_of_draws, min = -1, max = 1)
 
 ## brms-style R2D2, one predictor: R2 ~ Beta(1/2, 1) sets the variance
@@ -273,17 +290,17 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
 ## Closest relatives
 
 - Jeffreys' flat prior on a correlation; Ly, Verhagen & Wagenmakers on
-  Jeffreys' default tests: flat-R is this prior with one predictor.
+  Jeffreys' default tests: flat R is this prior with one predictor.
 - Kucharský, Wagenmakers, van den Bergh & Ly (2026), *Test*: exact Bayes factor
   for one partial correlation with a stretched-beta prior. With α = 1 it is
-  the uniform-correlations conditional test with random instead of fixed
-  predictors (`validation/05`, C8). Flat-R puts the
+  the flat partial r conditional test with random instead of fixed
+  predictors (`validation/05`, C8). Flat R puts the
   same kind of prior on the *total* instead of on each partial correlation. The
-  conditional flat-R test uses the same inputs (the sample partial correlation,
+  conditional flat R test uses the same inputs (the sample partial correlation,
   $n$ and $k$), with the prior the flat total implies for one coefficient.
 - rstanarm `stan_lm` (Gabry & Goodrich): the same construction with
   $R^2 \sim$ Beta($k/2$, η), for estimation only; with η = 1 it is the
-  "uniform correlations" extension above.
+  "flat partial r" extension above.
 
 ## References
 

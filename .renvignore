@@ -1,4 +1,3 @@
 # folders renv does not scan for package dependencies
-archive/
 _backup_original_files_*/
 validation/results_before_*/

@@ -1,34 +1,50 @@
 # 3. Consistency: arguments behind the default-prior criteria
 
-Section 10 of [`2_how_it_calculates.md`](2_how_it_calculates.md) lists the seven
+Section 11 of [`2_how_it_calculates.md`](2_how_it_calculates.md) lists the seven
 criteria of Bayarri et al. (2012). This document gives the arguments for the
-three that need one. Each is labelled **proof** (complete, short) or **sketch**
-(the steps are right, but a careful write-up with all conditions is still to do).
-Numerical checks back each one up.
+three that need one, for the whole family $R^2 \sim$ Beta($a$, 1) with a
+uniform direction: flat partial r ($a = k/2$), flat R ($a = ½$) and flat
+R-squared ($a = 1$). Each argument is labelled **proof** (complete, short) or
+**sketch** (the steps are right, but a careful write-up with all conditions is
+still to do). Numerical checks back each one up (`validation/02`, which runs
+every check for each prior).
 
-Throughout: the flat-R prior is the mixture of Zellner g-priors with
+**In one sentence:** all three meet the same criteria by the same arguments;
+they differ only in how fast evidence for the null model grows, $a \log n$
+against the intercept-only model, because that rate is set by the prior's mass
+near zero, $P(R^2 < 1/n) \approx n^{-a}$.
+
+Throughout, for $a < k/2$ the prior is the mixture of Zellner g-priors with
 
 $$
-t = \frac{g}{n} = B \cdot W, \qquad B \sim \mathrm{Beta}\!\left(\tfrac12, \tfrac{k-1}{2}\right),
+t = \frac{g}{n} = B \cdot W, \qquad B \sim \mathrm{Beta}\!\left(a, \tfrac k2 - a\right),
 \qquad W \sim \text{Inverse-Gamma}\!\left(1, \tfrac12\right)
 $$
 
-(section 8 of document 2), so the density of $t$ is
+(section 8 of document 2), and for $a = k/2$ it is the same with $B \equiv 1$.
+That covers flat R (every $k$), flat partial r (every $k$) and flat R-squared
+for $k \ge 3$; at $k = 2$ flat R-squared *is* flat partial r ($a = k/2 = 1$),
+and at $k = 1$ it is not a g-mixture, so the arguments there go through the
+effect $f$ directly. The density of $t$ is
 
 $$
 p(t) = \frac{1}{2t^2}\, E\!\left[B\, e^{-B/(2t)}\right]
 $$
 
 (take the expectation over $B$ of the Inverse-Gamma density of $W = t/B$, times
-the change of variables $1/B$). Two bounds on it do all the work below:
+the change of variables $1/B$). Two bounds on it do the work below:
 
-- **large $t$:** since $0 < B \le 1$ and $E[B] = 1/k$,
-  $\;\dfrac{e^{-1/(2t)}}{2k\,t^2} \;\le\; p(t) \;\le\; \dfrac{1}{2k\,t^2}$;
-- **small $t$:** only small $B$ contribute, where the Beta density behaves like
-  $b^{-1/2}/\mathrm{B}(\tfrac12, \tfrac{k-1}{2})$, so
-  $p(t) \approx c_k\, t^{-1/2}$ as $t \to 0$ for $k \ge 2$, with
-  $c_k = \sqrt2\,\Gamma(\tfrac32) / \mathrm{B}(\tfrac12, \tfrac{k-1}{2})$ (checked numerically: for $k = 4$, $\sqrt t\,p(t) = 0.7978$ at $t = 10^{-4}$, against $c_4 = 0.7979$).
-  (For $k = 1$, $B = 1$ and $p(t)$ vanishes faster than any power as $t \to 0$.)
+- **large $t$:** since $0 < B \le 1$ and $E[B] = 2a/k$,
+  $\;\dfrac{e^{-1/(2t)}\,E[B]}{2t^2} \;\le\; p(t) \;\le\; \dfrac{E[B]}{2t^2}$, the
+  same order $t^{-2}$ for every member;
+- **small $t$:** only small $B$ contribute, where the Beta($a$, $k/2-a$) density
+  behaves like $b^{a-1}/\mathrm{B}(a, \tfrac k2 - a)$, so
+  $p(t) \approx c_{a,k}\, t^{a-1}$ as $t \to 0$ for $a < k/2$, with
+  $c_{a,k} = 2^{a}\,\Gamma(a+1) / \mathrm{B}(a, \tfrac k2 - a)$. For flat R that is
+  $t^{-1/2}$ (checked numerically: for $k = 4$, $\sqrt t\,p(t) = 0.7978$ at
+  $t = 10^{-4}$, against $c_{1/2,4} = 0.7979$); for flat R-squared, $k \ge 3$, it
+  is a constant. For $a = k/2$ ($B \equiv 1$) $p(t) = e^{-1/(2t)}/(2t^2)$ vanishes
+  faster than any power as $t \to 0$.
 
 The Bayes factor against the intercept-only model is (Liang et al., 2008)
 
@@ -40,30 +56,51 @@ $$
 
 ## Information consistency: proof
 
-**Claim.** $\mathrm{BF}_k \to \infty$ as $R^2 \to 1$ if and only if $n \ge k + 3$.
+**Claim.** For every member of the family, $\mathrm{BF}_k \to \infty$ as
+$R^2 \to 1$ if and only if $n \ge k + 3$.
 
-As $R^2 \to 1$ the integrand increases to $(1+nt)^{(n-1-k)/2} p(t)$ (monotone
-convergence), so $\mathrm{BF}_k$ tends to $\int_0^\infty (1+nt)^{(n-1-k)/2} p(t)\,dt$.
-Near 0 this integral is finite. For large $t$, by the bounds above, the
-integrand lies between two constants times $t^{(n-1-k)/2 - 2}$, so the integral
-diverges if and only if $(n-1-k)/2 - 2 \ge -1$, that is $n \ge k + 3$. ∎
+*g-mixture members.* As $R^2 \to 1$ the integrand increases to
+$(1+nt)^{(n-1-k)/2} p(t)$ (monotone convergence), so $\mathrm{BF}_k$ tends to
+$\int_0^\infty (1+nt)^{(n-1-k)/2} p(t)\,dt$. Near 0 this integral is finite.
+For large $t$, by the bounds above, the integrand lies between two constants
+times $t^{(n-1-k)/2 - 2}$, so the integral diverges if and only if
+$(n-1-k)/2 - 2 \ge -1$, that is $n \ge k + 3$.
+
+*Every member, through $f$.* Write $\mathrm{BF}_k = \int_0^\infty L(f)\, p_a(f)\, df$
+with $L$ the likelihood ratio of document 2, section 7 (step 5), and $p_a$ the
+prior density of the length $f$ (section 2 there). For $f \ge 1$,
+
+$$
+\frac{p_a(f)}{p_{1/2}(f)} = 2a\left(\frac{f^2}{1+f^2}\right)^{a-1/2}
+$$
+
+lies between two positive constants ($2a\,2^{1/2-a}$ and $2a$ for $a \ge ½$). On
+$f < 1$ the integral stays bounded as $R^2 \to 1$ ($L$ is continuous in $R^2$ and
+$f$ on that compact range). So $\mathrm{BF}_k$ diverges for shape $a$ exactly
+when it diverges for flat R, whose boundary is $n \ge k + 3$ by the g-mixture
+argument. This covers flat R-squared at $k = 1$, the one case that is not a
+g-mixture. ∎
+
+The same tail in one line: $p_a(f) \approx 2a f^{-3}$ for large $f$, for every $a$.
 
 Checked in `validation/02_bayes_factor.R` (B2b): at $n = k + 2$ the log Bayes
-factor levels off (0.91 for $k = 1$, 0.63 for $k = 3$), at $n = k + 3$ it keeps rising.
+factor levels off (flat R: 0.91 for $k = 1$, 0.63 for $k = 3$), at $n = k + 3$
+it keeps rising. Flat partial r passes the same check; flat R-squared:
+(rerun pending).
 
 ---
 
 ## Intrinsic consistency: proof
 
 **Claim.** As $n \to \infty$, the prior for the coefficients converges to a fixed
-proper prior.
+proper prior, for every member.
 
 The prior for $\beta$ given $\sigma$ depends on the data only through
-$\Sigma_n = X_c^\top X_c / n$ (the hyperprior on $t = g/n$ does not involve $n$).
-If $\Sigma_n \to \Sigma$, positive definite, as for predictors sampled from a
-population, the flat-R density (section 5 of document 2) is continuous in
-$\Sigma$ for every $\beta \ne 0$, so it converges pointwise to the flat-R density
-with $\Sigma$, which is proper. By Scheffé's lemma the priors converge in total
+$\Sigma_n = X_c^\top X_c / n$ (the shape $a$ and the hyperprior on $t = g/n$ do
+not involve $n$). If $\Sigma_n \to \Sigma$, positive definite, as for predictors
+sampled from a population, the density (section 5 of document 2) is continuous
+in $\Sigma$ for every $\beta \ne 0$, so it converges pointwise to the density with
+$\Sigma$, which is proper. By Scheffé's lemma the priors converge in total
 variation. ∎
 
 ---
@@ -74,31 +111,39 @@ variation. ∎
 model $M_0$ with $k_0$ predictors inside the larger $M_1$ with $k = k_0 + q$:
 
 - if $M_0$ is true and is the **intercept-only model** ($k_0 = 0$),
-  $\log \mathrm{BF}_{01}$ grows like $\tfrac12 \log n$, **the same rate for every $q$**;
+  $\log \mathrm{BF}_{01}$ grows like $a \log n$, with $a$ the shape of the larger
+  model's prior: ½ log n for flat R and $\log n$ for flat R-squared, **the same
+  for every $q$**; $\tfrac q2 \log n$ for flat partial r;
 - if $M_0$ is true and **has a real effect** ($k_0 \ge 1$, $\rho_0^2 > 0$),
   $\log \mathrm{BF}_{01}$ grows like $\tfrac q2 \log n$, the usual rate for $q$
-  extra parameters;
+  extra parameters, for all three;
 - if $M_1$ is true, $\log \mathrm{BF}_{10}$ grows linearly in $n$.
 
-In both null cases the true model wins, so the prior is consistent; the two
-rates differ, and that difference is a property of flat-R worth knowing.
+In every case the true model wins, so all three are consistent; the rates under
+the intercept-only null differ, and that difference is worth knowing.
 
 **Why the rates differ, in one picture.** The evidence for a model is roughly
 its best fit times its *Occam factor*: the prior mass within the posterior's
 reach, a neighbourhood of size $n^{-1/2}$ around the estimate.
 
 - When the estimate is near $\beta = 0$ (the null is true), that neighbourhood
-  is a ball of radius $\propto n^{-1/2}$ around 0. Flat on $R$ gives it prior
-  mass $P(R \lesssim n^{-1/2}) \propto n^{-1/2}$, for every $k$: the prior density
-  of $\beta$ peaks at 0 (like $|\beta|^{-(k-1)}$), so leaving the null model
-  costs only $n^{-1/2}$.
-- When the estimate is away from 0 (some effect is real), the neighbourhood is a
-  box of volume $\propto n^{-k/2}$ where the prior density is finite and
-  positive (flat in $R$, uniform in direction). The Occam factor is
-  $n^{-k/2}$, and adding $q$ null predictors costs $n^{-q/2}$.
+  is a ball of radius $\propto n^{-1/2}$ in $f$ around 0. Its prior mass is
+  $P(f \lesssim n^{-1/2}) \approx P(R^2 \lesssim 1/n) = n^{-a}$:
 
-So flat-R has no extra penalty for leaving the null model, but the ordinary
-penalty for each extra dimension once some effect is in the model.
+  | | prior on $R^2$ | $P(R^2 \le x)$ | Occam factor at $x = 1/n$ | $\log \mathrm{BF}_{01}$ grows like |
+  |---|---|---|---|---|
+  | flat R | Beta(½, 1) | $x^{1/2}$ | $n^{-1/2}$ | $\tfrac12 \log n$ |
+  | flat R-squared | Beta(1, 1) | $x$ | $n^{-1}$ | $\log n$ |
+  | flat partial r | Beta($k/2$, 1) | $x^{k/2}$ | $n^{-k/2}$ | $\tfrac k2 \log n$ |
+
+  For flat R the prior density of $\beta$ peaks at 0 (like $|\beta|^{1-k}$), so
+  leaving the null model costs only $n^{-1/2}$ whatever $k$ is; flat R-squared's
+  peak is lower ($|\beta|^{2-k}$), so it costs $n^{-1}$; flat partial r has no
+  peak and pays the ordinary $n^{-k/2}$.
+- When the estimate is away from 0 (some effect is real), the neighbourhood is
+  a box of volume $\propto n^{-k/2}$ where the prior density is finite and
+  positive, for all three. The Occam factor is $n^{-k/2}$, and adding $q$ null
+  predictors costs $n^{-q/2}$.
 
 *The smaller model is the intercept-only model and is true.* Then $nR^2$
 stays bounded in probability ($\approx \chi^2_k$). Put $t = s/n$:
@@ -109,19 +154,22 @@ $$
 \; p\!\left(\tfrac{s}{n}\right) \frac{ds}{n} .
 $$
 
-With $p(s/n) \approx c_k (s/n)^{-1/2}$ for small $s/n$:
+For $a < k/2$, with $p(s/n) \approx c_{a,k} (s/n)^{a-1}$ for small $s/n$:
 
 $$
-\mathrm{BF}_k \approx n^{-1/2}\, c_k \int_0^\infty (1+s)^{-k/2} s^{-1/2}\,
+\mathrm{BF}_k \approx n^{-a}\, c_{a,k} \int_0^\infty (1+s)^{-k/2} s^{a-1}\,
 e^{\frac{nR^2}{2}\frac{s}{1+s}}\, ds ,
 $$
 
-and the integral is finite and bounded in probability for $k \ge 2$
-(for $k = 1$ the same rate follows from $E[t^{-1/2}] < \infty$). So
-$\mathrm{BF}_{10} = O_p(n^{-1/2})$: the evidence for the true null grows like
-$\tfrac12 \log n$ for every fixed $k$. The integral concentrates at
-$t \approx 1/n$, where $p(t) \propto t^{-1/2}$: that is the $n^{-1/2}$ of the
-picture above.
+and the integral is finite and bounded in probability because $a - 1 - k/2 < -1$.
+So $\mathrm{BF}_{10} = O_p(n^{-a})$: the evidence for the true null grows like
+$a \log n$ for every fixed $k$. The integral concentrates at $t \approx 1/n$,
+where $p(t) \propto t^{a-1}$: that is the $n^{-a}$ of the picture above. For
+$a = k/2$, $p(t)$ vanishes faster than any power near 0, the integral has no
+such region, and the $(1+s)^{-k/2}$ factor sets the rate $\tfrac k2 \log n$.
+For flat R-squared at $k = 1$ ($a > k/2$, not a g-mixture) the same rate,
+$\log n$, follows from the Occam picture with $P(f^2 < 1/n) \approx n^{-1}$; it is
+checked numerically, not proven here (study 02, B3b, $q = 1$).
 
 *The smaller model has a real effect and is true.* Now
 $R^2 \to \rho_0^2 > 0$ under both models, and the integrand of $\mathrm{BF}_k$
@@ -150,30 +198,38 @@ $$
 and the middle term tends to $\tfrac12\chi^2_q$ (the likelihood-ratio statistic),
 so it is bounded in probability. The $(nt)^{-k/2}$ is the $n^{-k/2}$ box of the
 picture: it is the average over a uniform direction, which spreads the prior
-over all $k$ dimensions. Under the null this factor stays of order 1
-(because $s = nt$ stays of order 1), which is why the rate there does not depend
-on $k$.
+over all $k$ dimensions. The argument needs only a prior density that is finite
+and positive away from $\beta = 0$, which all three have (for flat R-squared at
+$k = 1$ the same Laplace step applies to the integral over $f$).
 
 Checked numerically (`validation/02`, B3b; 200 datasets per $n$ at
 $n$ = 50, 200, 1000, 5000, slope of the median $\log \mathrm{BF}_{01}$ against
-$\log n$):
+$\log n$; criterion: within 20% of $\tfrac q2$ when the smaller model is $x_1$,
+within 30% of $a$ when it is the intercept-only model):
 
-| $q$ null predictors added to | $q = 1$ | $q = 3$ | $q = 6$ |
-|---|---|---|---|
-| intercept only (expected $\tfrac12$) | 0.51 | 0.51 | 0.51 |
-| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ (expected $\tfrac q2$) | 0.55 | 1.59 | 2.91 |
+| $q$ null predictors added to | prior | expected | $q = 1$ | $q = 3$ | $q = 6$ |
+|---|---|---|---|---|---|
+| intercept only | flat R | ½, ½, ½ | 0.50 | 0.49 | 0.51 |
+| intercept only | flat partial r | ½, 3/2, 3 | 0.50 | 1.47 | 2.81 |
+| intercept only | flat R-squared | 1, 1, 1 | (rerun pending) | (rerun pending) | (rerun pending) |
+| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | flat R | $\tfrac q2$ | 0.54 | 1.55 | 2.91 |
+| $x_1$ | flat partial r | $\tfrac q2$ | 0.47 | 1.49 | 2.93 |
+| $x_1$ | flat R-squared | $\tfrac q2$ | (rerun pending) | (rerun pending) | (rerun pending) |
 
-Check B3 ($x_1, x_2$ real, $x_3$ null: $q = 1$) gives slope 0.53.
+Check B3 ($x_1, x_2$ real, $x_3$ null: $q = 1$) gives slope 0.53 for flat R and
+0.49 for flat partial r; flat R-squared: (rerun pending).
 
 *The larger model is true.* Then $R^2_{\text{large}} \to \rho_1^2 > \rho_0^2 \leftarrow R^2_{\text{small}}$,
 and for $t$ bounded away from 0 the ratio of the two integrands behaves like
 $\bigl((1-R^2_{\text{small}})/(1-R^2_{\text{large}})\bigr)^{(n-1)/2}$, which grows
 exponentially; the prior contributes only polynomial factors in $n$. So
-$\log \mathrm{BF}_{10}$ grows linearly in $n$ (`validation/02`, B4: 0.9, 9.3, 54.1
-at $n$ = 200, 1000, 5000).
+$\log \mathrm{BF}_{10}$ grows linearly in $n$ (`validation/02`, B4, median
+$\log\mathrm{BF}_{10}$ at $n$ = 200, 1000, 5000: flat R 0.9, 9.3, 54.1; flat
+partial r −0.0, 8.5, 53.3; flat R-squared (rerun pending)).
 
 **What a full proof still needs:** the dominated-convergence steps written out
-with explicit bounds, and the non-nested case.
+with explicit bounds, the non-nested case, and the null rate of flat R-squared
+at $k = 1$.
 
 ---
 
@@ -188,73 +244,36 @@ $\log\mathrm{BF}_{01}$ of the null model against the full model):
 
 | | $n$ = 50 | 200 | 1000 | 2000 |
 |---|---|---|---|---|
-| flat-R, $k = n/4$ | 1.0 | 1.3 | 1.7 | 1.9 |
-| flat-R, $k = \sqrt n$ | 1.1 | 1.7 | 2.3 | 2.5 |
-| uniform correlations, $k = n/4$ | 8.8 | 39.2 | 202.8 | 407.7 |
-| uniform correlations, $k = \sqrt n$ | 6.3 | 18.1 | 52.6 | 82.6 |
+| flat R, $k = n/4$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
+| flat R, $k = \sqrt n$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
+| flat R-squared, $k = n/4$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
+| flat R-squared, $k = \sqrt n$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
+| flat partial r, $k = n/4$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
+| flat partial r, $k = \sqrt n$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
 
-Flat-R stays consistent, but its evidence for the null barely moves: with 500
-null predictors at $n = 2000$, $\mathrm{BF}_{01} \approx 7$. Its alternative stays at
-"$R$ flat", which predicts data close to the null's; uniform correlations and
-Zellner–Siow expect $R^2$ near 1 when $k$ is large, which the data easily rule
-out. That is the shared-total property, seen from the null side.
-
----|---|---|---|---|---|
-| $k$ fixed at 5 | 1.19 | 1.86 | 2.59 | 3.43 | 4.12 |
-| $k = \sqrt n$ | 1.18 | 1.64 | 2.25 | 2.98 | 3.49 |
-| $k = n/4$ | 0.99 | 1.34 | 1.80 | 2.15 | 2.49 |
-
-Consistent, but with $k = n/4$ at about half the rate of fixed $k$. Zellner–Siow
-accumulates evidence for the null much faster here, because its prior expects
-$R^2$ near 1 when $k$ is large, which the data easily rule out; flat-R's
-alternative stays at "$R$ flat", which is harder to tell apart from the null.
-That is the same shared-total property, seen from the null side.
+The earlier run (26 October 2026, the same code for flat R and flat partial r)
+gave, at $k = n/4$: flat R 1.0, 1.3, 1.7, 1.9; flat partial r 8.8, 39.2, 202.8,
+407.7. Flat R stays consistent, but its evidence for the null barely moves:
+with 500 null predictors at $n = 2000$, $\mathrm{BF}_{01} \approx 7$. Its
+alternative stays at "$R$ flat", which predicts data close to the null's; flat
+partial r and Zellner–Siow expect $R^2$ near 1 when $k$ is large, which the
+data easily rule out. Flat R-squared's alternative stays at "$R^2$ flat", so it
+is expected between the two, nearer flat R: (rerun pending).
 
 ---
 
-## The uniform-correlations prior: the same criteria
+## The three priors side by side
 
-**In one sentence:** uniform correlations meets the same criteria by the same
-arguments, with one difference: leaving the null model costs the usual
-$\tfrac k2 \log n$, because its prior has no peak at $\beta = 0$.
-
-As a g-mixture its hyperprior is the same for every $k$ (document 2, section 8,
-$B \equiv 1$):
-
-$$
-t = \frac gn \sim \text{Inverse-Gamma}\!\left(1, \tfrac12\right), \qquad
-p(t) = \frac{1}{2t^2}\, e^{-1/(2t)} .
-$$
-
-| Criterion | Flat-R | Uniform correlations | Why |
-|---|---|---|---|
-| Information consistency | from $n \ge k + 3$ | from $n \ge k + 3$ | the same $t^{-2}$ tail; the proof above with $p(t) \le 1/(2t^2)$ (`validation/02`, B2b and CB2) |
-| Intrinsic consistency | yes | yes | the hyperprior does not involve $n$; the prior density is continuous in $\Sigma$ |
-| Predictive matching | yes | yes | every g-mixture gives BF = 1 at $n = k + 1$ (B1, CB1) |
-| Null rate, smaller model = intercept only | $\tfrac12 \log n$ | $\tfrac q2 \log n$ | the prior mass near $\beta = 0$, below |
-| Null rate, smaller model with an effect | $\tfrac q2 \log n$ | $\tfrac q2 \log n$ | the Laplace argument above holds for any finite, positive prior density |
-| Under an effect | linear in $n$ | linear in $n$ | (B4, CB4) |
-
-**Why the null rate differs.** The Occam factor of the picture above is the
-prior mass within $n^{-1/2}$ of $\beta = 0$, which is $P(R \lesssim n^{-1/2})$:
-
-| | prior on $R$ | $P(R \le a)$ | Occam factor at $a = n^{-1/2}$ | $\log \mathrm{BF}_{01}$ grows like |
+| Criterion | Flat partial r | Flat R | Flat R-squared | Why |
 |---|---|---|---|---|
-| flat-R | flat | $a$ | $n^{-1/2}$ | $\tfrac12 \log n$ |
-| uniform correlations | density $k R^{k-1}$ ($R^2 \sim$ Beta($k/2$, 1)) | $a^k$ | $n^{-k/2}$ | $\tfrac k2 \log n$ |
+| Information consistency | from $n \ge k + 3$ | from $n \ge k + 3$ | from $n \ge k + 3$ | the same $f^{-3}$ tail, $p(t) \asymp t^{-2}$ (proof above; `validation/02`, B2b) |
+| Intrinsic consistency | yes | yes | yes | neither $a$ nor the hyperprior involves $n$; the density is continuous in $\Sigma$ |
+| Predictive matching | yes | yes | yes | at $n = k + 1$ the data cannot tell the models apart, for any proper prior on the effect (B1) |
+| Null rate, smaller model = intercept only | $\tfrac q2 \log n$ | $\tfrac12 \log n$ | $\log n$ | the prior mass near $\beta = 0$, $n^{-a}$ |
+| Null rate, smaller model with an effect | $\tfrac q2 \log n$ | $\tfrac q2 \log n$ | $\tfrac q2 \log n$ | the Laplace argument above holds for any finite, positive prior density |
+| Under an effect | linear in $n$ | linear in $n$ | linear in $n$ | (B4) |
 
-So under uniform correlations the null model gets the ordinary penalty per
-dimension, like Zellner–Siow and BIC. In the g-mixture form: $p(t)$ vanishes
-faster than any power as $t \to 0$, so the integral of the null case above has
-no $t^{-1/2}$ region near $t \approx 1/n$, and the $(1+s)^{-k/2}$ factor sets the rate.
-
-Checked (`validation/02`, CB3; slope of the median $\log \mathrm{BF}_{01}$
-against $\log n$, expected $\tfrac q2$ in every cell):
-
-| $q$ null predictors added to | $q = 1$ | $q = 3$ | $q = 6$ |
-|---|---|---|---|
-| intercept only | 0.50 | 1.46 | 2.87 |
-| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | 0.50 | 1.47 | 2.89 |
-
-With $k$ growing with $n$ it accumulates evidence for the null at the
-Zellner–Siow rate (the table in "When k grows with n" above).
+So flat partial r gives the null model the ordinary penalty per dimension, like
+Zellner–Siow and BIC; flat R gives the smallest penalty for leaving the null
+model, whatever the number of predictors; flat R-squared sits between, with
+one full $\log n$ whatever the number of predictors.

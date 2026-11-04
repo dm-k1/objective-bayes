@@ -6,15 +6,16 @@ Authors@R:
            role = c("aut", "cre"))
 Description: Bayes factors and estimation for linear regression with
     objective priors that extend Jeffreys' flat correlation to several
-    predictors. The default makes every correlation matrix of the outcome and
-    predictors equally likely: R-squared ~ Beta(k/2, 1) (as rstanarm stan_lm
-    with eta = 1), and each coefficient's partial correlation is flat for any
-    number of predictors, so testing one coefficient is Jeffreys' correlation
-    test with or without covariates. The alternative, flat-R, is flat on the
-    multiple correlation R for every number of predictors (R-squared ~
-    Beta(1/2, 1)). Both are mixtures of Zellner g-priors with closed-form Bayes
-    factors that need only R-squared, n and k; estimation samples the prior in
-    its own coordinates (R and a direction) with Stan.
+    predictors. With more than one predictor not everything can stay flat,
+    so three priors are built and validated side by side, all R-squared ~
+    Beta(a, 1) with a uniform direction: flat partial r (a = k/2: every
+    correlation matrix of the outcome and predictors equally likely, as
+    rstanarm stan_lm with eta = 1, so each coefficient's partial correlation
+    is flat for any number of predictors), flat R (a = 1/2) and flat
+    R-squared (a = 1). There is no default prior. All give Bayes factors that
+    need only R-squared, n and k, and a conditional test per coefficient;
+    estimation samples the prior in its own coordinates (R and a direction)
+    with Stan.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
