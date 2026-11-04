@@ -48,6 +48,9 @@ To update the lockfile after installing or upgrading packages:
 (rstan is only the fallback when cmdstanr is missing, and is left out to keep
 the image small).
 
+Run times are for a run without caches (the first full run, 4 November 2026);
+with the caches in `cache/` a rerun takes about 20 minutes.
+
 | Script | Question | How | Run time |
 |---|---|---|---|
 | `00_initial_simulation.R` | The first result: what happens to partial r, R and R² as k grows, in valid correlation matrices? | 200,000 matrices per k = 1–10; three versions (partial r flat, R flat, R² flat); F1–F3: each version flat where it should be; writes `validation/results/00_first_result.md` | about a minute |
@@ -60,7 +63,7 @@ the image small).
 | `07_estimation.R` | How good are the estimates? | bias, coefficient error and prediction error relative to `lm()`, coverage of 95% intervals; the three priors, JZS, Zellner–Siow, `lm()`; resumes if interrupted | about 1.5 hours |
 | `08_growing_k.R` | Consistency when k grows with n (k = n/4, k = √n) | null true and small model true; all whole-model methods (G1–G2) | about a minute |
 | `09_variable_selection.R` | Choosing among 4,096 subsets of 12 candidates (4 real) | all whole-model methods and BIC; uniform and beta-binomial model priors; trade-off curves and AUC; V-checks | 3–5 minutes |
-| `10_calibration.R` | Is the conditional test calibrated on its own prior, and how far is it from one prior for everything? | P1–P2 calibration per prior, with data drawn from that prior and from JZS; P3–P5 against the Savage–Dickey ratio under the joint model | about 70 minutes |
+| `10_calibration.R` | Is the conditional test calibrated on its own prior, and how far is it from one prior for everything? | P1–P2 calibration per prior, with data drawn from that prior and from JZS; P3–P5 against the Savage–Dickey ratio under the joint model; P6–P7 what a zero partial correlation means under each joint prior | about 70 minutes |
 | `11_factor_terms.R` | Testing a factor (a term of q columns) | the block conditional test of the three priors against their joint tests, JZS (lmBF) and Zellner–Siow; q = 2–5, n = 50–1000, what the other predictors explain 0–0.9; F1–F3 | about an hour |
 | `comparison_methods.R` | helper: the common method set (names, Bayes factors), the figure style (`method_scales()`), the LKJ sampler, the g-mixture check | – | – |
 | `settings.R` | helper: parallel cores, caching, `record_check()`, `save_figure()` | – | – |
@@ -70,17 +73,17 @@ the image small).
 | Criterion | Source | Study and checks |
 |---|---|---|
 | Basic: proper prior on the tested coefficients, no arbitrary scale | Bayarri, Berger, Forte & García-Donato (2012) | by construction (`docs/2_how_it_calculates.md`, section 11); 01, P-checks (the prior integrates to its stated distribution) |
-| Model selection consistency, fixed k | Bayarri et al. (2012) | 02, B3, B3b (the rate, with and without an effect in the smaller model), B4; proofs and sketches in `docs/3_consistency.md` |
+| Model selection consistency, fixed k | Bayarri et al. (2012) | 02, B3, B3b (the rate, with and without an effect in the smaller model), B4 |
 | Model selection consistency, k growing with n | Bayarri et al. (2012) | 08, G1–G2 |
 | Information consistency | Bayarri et al. (2012) | 02, B2, B2b (the boundary n = k + 3) |
-| Intrinsic consistency | Bayarri et al. (2012) | 02, B5 (the prior with the sample covariance tends to the prior with the population covariance); proof in `docs/3_consistency.md` |
+| Intrinsic consistency | Bayarri et al. (2012) | 02, B5 (the prior with the sample covariance tends to the prior with the population covariance) |
 | Predictive matching (null and dimensional) | Bayarri et al. (2012) | 02, B1 (null: n = k + 1 gives BF = 1). Dimensional matching (two models of the same size at their minimal sample give BF = 1) holds by construction: the Bayes factor depends only on R², n and k, and at n = k + 1 both fit exactly |
 | Measurement and group invariance | Bayarri et al. (2012) | 02, A2; by construction |
 | Correctness of the computation | the g-prior closed form: Liang, Paulo, Molina, Clyde & Berger (2008) | 02, A1, A3, A4; 05, C1–C5, C9–C11 |
 | Simulation-based calibration of the posterior | Talts, Betancourt, Simpson, Vehtari & Gelman (2018) | 01, S |
 | Frequentist operating characteristics: nulls found, small effects called null, effects found, false effects, discrimination (AUC) | Schönbrodt & Wagenmakers (2018), Bayes factor design analysis | 03, 04, 06; variable selection 09; estimation 07 |
 | Calibration of the Bayes factor (share of nulls = 1/(1 + BF₁₀) under the prior) | Schad, Nicenboim, Bürkner, Betancourt & Vasishth (2023) | 10, P1–P2 |
-| Coherence with one prior for everything (Savage–Dickey) | Wagenmakers, Lodewyckx, Kuriyal & Grasman (2010); the conditional Lindley paradox it avoids: Som, Hans & MacEachern (2016) | 10, P3–P5 |
+| Coherence with one prior for everything (Savage–Dickey) | Wagenmakers, Lodewyckx, Kuriyal & Grasman (2010); the conditional Lindley paradox it avoids: Som, Hans & MacEachern (2016) | 10, P3–P7 |
 
 ## The methods compared (03 on)
 
@@ -119,20 +122,27 @@ so the counts per bin should be flat (Talts et al., 2018).
 coefficients has a sharp peak at zero (`docs/2_how_it_calculates.md`, section
 3), which a sampler moving through the coefficients directly can miss without
 any warning. Sampling R and a direction avoids the peak; checks P1–P10 of
-study 01 show the model reproduces each prior (KS ≤ 0.012).
+study 01 show the model reproduces each prior (KS ≤ 0.012). In a separate
+diagnostic run of the same calibration setting (k = 8, n = 60, 400 datasets
+per prior), the package's model had no divergent transitions in any of its
+1,200 fits; the contrast model, sampled in coefficient coordinates, had every
+transition divergent in 165 of its 400 fits.
 
 ## Last results
 
-The run of 4 November 2026 at commit 643c0b8, all studies (00–11), 7 cores
-(`validation/results/run_summary.md`, logs in `cache/logs/`): **131 of 132 checks
-pass**. The one failure is 10 P4 for flat R-squared, a finding rather than a
+The run of 4 November 2026 at commit 21d42dc (started 12:24), all studies
+(00–11), 7 cores (`validation/results/run_summary.md`, logs in `cache/logs/`):
+**137 of 138 checks pass**. Studies 03, 06, 07, 09, 10 (parts 1 and 2) and 11
+reused the simulations cached by the first full run (each design cell has its
+own seed, so they are the same simulations); 00, 01, 02, 04, 05, 08 and
+10 (part 3) were computed afresh. The one failure is 10 P4 for flat R-squared, a finding rather than a
 bug (below and in section 10).
 
 | Check | Criterion | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|
-| 00 F1–F3 | KS distance < 0.01 | pass (F1, 0.0031) | pass (F2, 0.0027) | pass (F3, 0.0030) |
+| 00 F1–F3 | KS distance < 0.01 | pass (F1, 0.0026) | pass (F2, 0.0024) | pass (F3, 0.0038) |
 | 01 P-checks | KS distance < 0.03 | pass (P5–P7, 0.003–0.012) | pass (P1–P4, 0.004–0.009) | pass (P8–P10, 0.006–0.009) |
-| 01 S | rank bins, χ² p > 0.01 (R², b1, σ) | pass (p = 0.43, 0.94, 0.76) | pass (0.61, 0.86, 0.67) | pass (0.89, 0.91, 0.45) |
+| 01 S | rank bins, χ² p > 0.01 (R², b1, σ) | pass (p = 0.64, 0.21, 0.020) | pass (0.38, 0.63, 0.42) | pass (0.51, 0.82, 0.22) |
 | 02 A1 | log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 2.6e-07 | pass, 4.1e-05 | pass, 8.4e-05 |
 | 02 A2 | identical up to 1e-8 | pass, 2.4e-14 | pass, 1.9e-14 | pass, 2.2e-14 |
 | 02 A3 | within 0.05 of brute force (400,000 draws) | pass: 0.817 vs 0.797 (k = 3), −0.692 vs −0.689 (k = 1), 0.284 vs 0.308 (k = 5) | pass: 1.644 vs 1.629, −0.692 vs −0.689, 2.507 vs 2.524 | pass: 1.325 vs 1.308, −1.730 vs −1.727, 2.155 vs 2.175 |
@@ -140,17 +150,18 @@ bug (below and in section 10).
 | 02 B1 | BF within 0.001 of 1 at n = k + 1 | pass (k = 1–6) | pass (k = 1–6) | pass (k = 2–6) |
 | 02 B2, B2b | increasing, > 50 at R² = 0.9999; boundary n = k + 3 | pass (13.5 29.7 45.8 61.9) | pass (12.6 28.6 44.7 60.9) | pass (13.2 29.3 45.4 61.5) |
 | 02 B3 | slope of median log BF₀₁ in 0.35–0.65 | pass (0.49) | pass (0.53) | pass (0.51) |
-| 02 B3b | slopes within 20% of q/2 (smaller model x1), within 30% of a (intercept only) | pass: 0.47 1.48 2.91; 0.51 1.46 2.86 | pass: 0.54 1.56 2.98; 0.47 0.50 0.48 | pass: 0.53 1.64 2.88; 0.99 1.00 1.01 |
+| 02 B3b | slopes within 20% of q/2 (smaller model x1), within 30% of a (intercept only) | pass: 0.50 1.47 2.95; 0.51 1.44 2.90 | pass: 0.56 1.58 2.97; 0.51 0.48 0.50 | pass: 0.55 1.55 2.95; 1.01 0.96 0.99 |
 | 02 B4 | median log BF₁₀ increasing, > 20 at n = 5000 | pass (−0.0, 8.5, 53.3) | pass (0.9, 9.3, 54.1) | pass (1.1, 9.5, 54.3) |
 | 02 B5 | KS distance at n = 30, 300, 10⁵: < 0.01 at 10⁵, and at n = 30 more than twice that | pass (0.034, 0.005, 0.005) | pass (0.026, 0.005, 0.005) | pass (0.032, 0.005, 0.005) |
 | 03 U1–U2 | k = 1 agreement within 1e-3; g-prior Monte Carlo within 0.01 | pass (U1 4.9e-06; U2 0.0012) | pass (U1, shared with flat partial r) | pass (U2 0.0015; U1 not applicable: at k = 1 a different prior) |
 | 05 C1–C5 | see the script | pass (C1 1.8e-06 for all; C4a KS ≤ 0.0025; C4b 1.8e-05; C5 3.5e-06) | pass (C2 KS 0.0024; C5 6.7e-05) | pass (C2 KS 0.0021; C5 5.0e-05) |
-| 05 C7–C11 | see the script; C10 (1.0e-04) and C11 (1.6e-14) cover all three | pass (C7, C8; C9 KS ≤ 0.016) | pass (C9 KS 0.0033) | pass (C9 KS 0.0038) |
-| 08 G1–G2 | median log BF for the truth rises with n (slope > 0.1) | pass (G1 slopes 98.8, 19.8; G2 108.4, 19.4) | pass (G1 0.24, 0.39; G2 43.1, 12.6) | pass (G1 0.49, 0.78; G2 43.0, 12.6) |
+| 05 C7–C11 | see the script; C10 (1.0e-04) and C11 (1.6e-14) cover all three | pass (C7, C8; C9 KS ≤ 0.017) | pass (C9 KS 0.0033) | pass (C9 KS 0.0038) |
+| 08 G1–G2 | median log BF for the truth rises with n (slope > 0.1) | pass (G1 slopes 98.9, 20.0; G2 108.2, 19.7) | pass (G1 0.25, 0.40; G2 42.7, 12.9) | pass (G1 0.50, 0.80; G2 42.6, 12.8) |
 | 09 V1–V5 | tables and draws (shared by the methods) | pass (V3, V4: KS ≤ 0.013) | pass (V2: 7.7e-06) | pass (V1 tables: 2.8e-06) |
 | 10 P1 | calibrated on its own prior: χ² p > 0.01, slope near 1 | pass (p 0.40–0.79; slopes 0.98–1.03) | pass (0.52–0.98; 0.99–1.02) | pass (0.37–0.94; 0.98–1.02) |
 | 10 P2 | miscalibration shows with JZS data | pass (χ² 503–556) | pass (233–1198) | pass (50–265) |
-| 10 P3–P5 | Savage–Dickey estimable and agreeing; conditional within a factor 2 | pass (P4 largest 0.092, factor 1.10) | not defined (see 10) | P3, P5 pass; **P4 fail** (largest 0.874, factor 2.40) |
+| 10 P3–P5 | Savage–Dickey estimable and agreeing; conditional within a factor 2 | pass (P4 largest 0.092, factor 1.10) | not estimable: infinite prior density at 0 (see P7) | P3, P5 pass; **P4 fail** (largest 0.874, factor 2.40) |
+| 10 P6–P7 | the joint prior given \|ρ₁\| < ε, ε = 0.1, 0.02, 0.005: density near 0 settles (P6) or grows and the others' R² goes to 0 (P7) | pass (P6: density 0.498 0.502 0.485 at k = 3, 0.504 0.497 0.491 at k = 8; others' R² 0.37, 0.73) | pass (P7: density 1.51 2.30 2.99 at k = 3, 2.23 3.83 5.20 at k = 8; others' median R² down to 0.001 and 0.003) | pass (P6: density 0.741 0.767 0.781 at k = 3, 1.342 1.537 1.558 at k = 8; others' R² 0.17–0.22) |
 | 11 F1–F3 | block conditional test unchanged by what the others explain; same AUC for the three; JZS (lmBF) precise | pass (F1 1.4e-12 over all three; F2 identical AUC in 72 cells) | pass | pass (F3, shared: largest error 0.032) |
 
 **The one failure, 10 P4 for flat R-squared, is a finding, not a bug.** The
@@ -170,7 +181,7 @@ test is not "one prior for everything".
 
 ## In short: what the studies say about the three priors
 
-The per-criterion comparison is [`docs/4_comparison.md`](4_comparison.md).
+The per-criterion comparison is [`docs/3_comparison.md`](3_comparison.md).
 
 - **Correctness and the Bayarri et al. (2012) criteria** (01, 02, 05): all
   three pass every check: the sampler, SBC, the Bayes factors against
@@ -193,8 +204,9 @@ The per-criterion comparison is [`docs/4_comparison.md`](4_comparison.md).
   JZS under correlated predictors.
 - **Calibration and coherence** (10): each is calibrated on data from its own
   prior. Only flat partial r's conditional test matches Savage–Dickey under
-  its joint model; flat R-squared's drifts with k, and for flat R the ratio is
-  not defined.
+  its joint model; flat R-squared's drifts with k. Under flat R a zero partial
+  correlation for x1 drags every other coefficient to zero (P7): no joint
+  model corresponds to its test of one coefficient.
 - **Variable selection and estimation** (07, 09): flat R and flat R-squared
   include more predictors (fewer real ones missed, more nulls included), and
   shrink more: lower prediction error at small n (k = 8, n = 30: 0.51 and
@@ -207,7 +219,7 @@ The per-criterion comparison is [`docs/4_comparison.md`](4_comparison.md).
 | Separating nulls from small effects, one coefficient (AUC minus JZS, conditional, correlation 0.7, mean over k) | +0.038 | +0.038 | +0.038 | 04, 06 |
 | Confirming a true null, one coefficient (BF₀₁ > 3), conditional, k = 2 / 20 | 0.86 / 0.88 | 0.55 / 0.06 | 0.86 / 0.26 | 06 |
 | Calling a small effect (0.1) null, conditional, k = 2 / 20 | 0.52 / 0.60 | 0.19 / 0.005 | 0.52 / 0.04 | 06 |
-| Evidence for the null when k grows with n (median log BF₀₁, k = n/4, n = 2000) | 407.7 | 1.9 | 3.7 | 08 |
+| Evidence for the null when k grows with n (median log BF₀₁, k = n/4, n = 2000) | 407.6 | 1.9 | 3.7 | 08 |
 | Variable selection (n = 500, uncorrelated): real missed of 4 / nulls included of 8 | 0.84 / 0.13 | 0.45 / 0.91 | 0.44 / 0.92 | 09 |
 | Estimation: prediction error against OLS, k = 8, n = 30 / 200 | 0.74 / 0.95 | 0.51 / 0.94 | 0.53 / 0.92 | 07 |
 | Estimation: 95% interval coverage, real effects, k = 3 / 8 (lowest cell) | 0.957 / 0.940 (0.92) | 0.947 / 0.928 (0.76) | 0.957 / 0.942 (0.82) | 07 |
@@ -224,8 +236,8 @@ flat and R² grows with k; keep R or R² flat and each partial r shrinks with k.
 | 2 | 0.70 | 0.50 | 0.50 | 0.29 | 0.70 | 0.50 |
 | 3 | 0.70 | 0.65 | 0.41 | 0.29 | 0.60 | 0.50 |
 | 4 | 0.70 | 0.75 | 0.36 | 0.29 | 0.54 | 0.50 |
-| 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.49 | 0.50 |
-| 6 | 0.70 | 0.87 | 0.29 | 0.29 | 0.46 | 0.50 |
+| 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.50 | 0.50 |
+| 6 | 0.70 | 0.88 | 0.29 | 0.29 | 0.46 | 0.50 |
 | 7 | 0.70 | 0.91 | 0.27 | 0.29 | 0.43 | 0.50 |
 | 8 | 0.70 | 0.94 | 0.25 | 0.29 | 0.40 | 0.50 |
 | 9 | 0.70 | 0.96 | 0.23 | 0.29 | 0.38 | 0.50 |
@@ -284,7 +296,7 @@ a = k/2 is a flat partial correlation; the grids against `integrate()` up to
 n = 10⁶), C7 (why η = 1), C9–C11 (the block test): all pass. C1 largest
 difference 1.8e-06; C2 KS 0.0024 (flat R), 0.0021 (flat R-squared); C4a KS
 ≤ 0.0025; C4b 1.8e-05; C5 largest difference 3.5e-06 (flat partial r),
-6.7e-05 (flat R), 5.0e-05 (flat R-squared); C9 KS ≤ 0.016; C10 1.0e-04;
+6.7e-05 (flat R), 5.0e-05 (flat R-squared); C9 KS ≤ 0.017; C10 1.0e-04;
 C11 1.6e-14.
 
 **C8: the flat partial r conditional test is not the Kucharský et al. (2026)
@@ -409,12 +421,12 @@ per n):
 
 | | n = 200 | n = 2000 |
 |---|---|---|
-| k = n/4: flat partial r / flat R / flat R-squared / JZS / Zellner–Siow | 39.2 / 1.3 / 2.6 / 15.1 / 41.2 | 407.7 / 1.9 / 3.7 / 149.3 / 410.9 |
-| k = √n: flat partial r / flat R / flat R-squared / JZS / Zellner–Siow | 18.1 / 1.7 / 3.3 / 8.8 / 19.6 | 82.6 / 2.5 / 5.0 / 44.2 / 84.7 |
+| k = n/4: flat partial r / flat R / flat R-squared / JZS / Zellner–Siow | 39.5 / 1.4 / 2.6 / 15.3 / 41.5 | 407.6 / 1.9 / 3.7 / 149.3 / 410.8 |
+| k = √n: flat partial r / flat R / flat R-squared / JZS / Zellner–Siow | 17.7 / 1.6 / 3.2 / 8.5 / 19.2 | 83.0 / 2.6 / 5.1 / 44.6 / 85.1 |
 
 When the small model is true, the evidence for it at n = 2000, k = n/4
-(median log BF, true vs full): 443.6 flat partial r, 175.1 flat R, 175.1 flat
-R-squared, 245.5 JZS, 445.9 Zellner–Siow. Every method's evidence keeps
+(median log BF, true vs full): 443.8 flat partial r, 174.1 flat R, 174.1 flat
+R-squared, 244.9 JZS, 446.1 Zellner–Siow. Every method's evidence keeps
 rising (G1, G2 pass for all three priors), but under flat R and flat
 R-squared the evidence for a true null grows slowly: their prior puts R² of
 the full model near 0 often enough that an empty model of 500 predictors is
@@ -447,7 +459,7 @@ Difference from flat R, beta-binomial model prior, 95% bootstrap over datasets:
 
 - Against the intercept-only model the evidence for the null grows like
   a log n (½ log n for flat R, log n for flat R-squared, k/2 log n for flat
-  partial r; `docs/3_consistency.md`), so how inclusive each prior is follows
+  partial r; 02, B3b), so how inclusive each prior is follows
   from its shape a; the prior over models sets the rest.
 
 ## 10: is the conditional test calibrated, and how far is it from one prior for everything?
@@ -474,7 +486,7 @@ datasets (k = 3, 8; n = 50, 200):
 | | conditional: mean absolute / largest | joint: mean absolute / largest |
 |---|---|---|
 | flat partial r | 0.028 / 0.092 (16 of 20 estimable) | 0.226 / 0.422 |
-| flat R | not defined: infinite prior density at 0 | not defined |
+| flat R | not estimable: infinite prior density at 0 (P7) | not estimable |
 | flat R-squared | 0.283 / 0.874 (19 of 20 estimable) | 1.007 / 2.365 |
 
 P1 ranges are over k = 3, 8 and n = 50, 200 (χ² over 8–11 bins); all four
@@ -485,6 +497,30 @@ Savage–Dickey and more so at larger k (mean −0.04 at k = 3; −0.48 and −0
 at k = 8, n = 50 and 200), so P4 (within a factor 2) fails: its partial
 correlations are dependent through R², and the joint posterior of x1's
 partial correlation also uses the other coefficients (section Last results).
+
+**What a zero partial correlation means (P6–P7).** Prior draws only, 400,000
+per prior and k, independent predictors: the joint prior conditioned on
+|ρ₁| < ε, for ε = 0.1, 0.02, 0.005. Density of ρ₁ near 0, P(|ρ₁| < ε) / (2ε),
+and the median R² of the other predictors given it:
+
+| | k | density near 0 (ε = 0.1 / 0.02 / 0.005) | others' median R² |
+|---|---|---|---|
+| flat partial r | 3 | 0.498 / 0.502 / 0.485 | 0.372 / 0.372 / 0.374 |
+| flat partial r | 8 | 0.504 / 0.497 / 0.491 | 0.730 / 0.733 / 0.728 |
+| flat R-squared | 3 | 0.741 / 0.767 / 0.781 | 0.185 / 0.169 / 0.180 |
+| flat R-squared | 8 | 1.342 / 1.537 / 1.558 | 0.221 / 0.174 / 0.162 |
+| flat R | 3 | 1.506 / 2.301 / 2.990 | 0.024 / 0.005 / 0.001 |
+| flat R | 8 | 2.229 / 3.827 / 5.204 | 0.054 / 0.012 / 0.003 |
+
+Under flat partial r (density ½, a flat partial correlation) and flat
+R-squared the density settles and the other predictors keep their R²: "x1's
+partial correlation is 0" is a proper restricted model, and Savage–Dickey
+applies (P6). Under flat R the density keeps growing as ε shrinks (it is
+infinite at 0) and the others' R² goes to 0 (P7): conditioning on a zero
+partial correlation for x1 drags every other coefficient to zero, so the
+restricted model collapses to the intercept-only model. Under flat R no joint
+model corresponds to testing one coefficient; its conditional test stands on
+its own.
 
 Figures: `validation/results/figures/10_calibration.png`, `10_coherence.png`.
 

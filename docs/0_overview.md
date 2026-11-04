@@ -4,7 +4,7 @@
 only objective choice; with several, not everything can stay flat, and the
 three priors that remain are built and validated side by side, and the choice
 between them follows from the results: flat partial r is recommended
-([`4_comparison.md`](4_comparison.md), section 8).
+([`3_comparison.md`](3_comparison.md), section 8).
 
 This page is the map. Every other document goes into one part of it. The
 finding itself, in one page: [`findings.md`](findings.md).
@@ -29,7 +29,7 @@ versions, all valid correlation matrices, differing only in what is kept flat:
 | 1 | 0.70 | 0.29 | 0.70 | 0.29 | 0.91 | 0.50 |
 | 2 | 0.70 | 0.50 | 0.50 | 0.29 | 0.70 | 0.50 |
 | 3 | 0.70 | 0.65 | 0.41 | 0.29 | 0.60 | 0.50 |
-| 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.49 | 0.50 |
+| 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.50 | 0.50 |
 | 10 | 0.70 | 0.97 | 0.22 | 0.29 | 0.36 | 0.50 |
 
 Keep each partial correlation flat and the total grows with $k$; keep the total
@@ -76,7 +76,7 @@ explained variance). They differ only in the shape $a$:
 | flat R-squared | `"flat_r_squared"` | 1 | flat on $r^2$, not on $r$ | share ~ Beta(½, (k−1)/2) of the total | [`2_how_it_calculates.md`](2_how_it_calculates.md), section 2 |
 
 **There is no default.** Every function asks for `prior =`. The comparison in
-[`4_comparison.md`](4_comparison.md), from the validation run of 4 November
+[`3_comparison.md`](3_comparison.md), from the validation run of 4 November
 2026, recommends flat partial r (section 8) and lists what it costs; flat R and
 flat R-squared stay available.
 
@@ -120,10 +120,9 @@ Two ways to test one coefficient, and why the package uses the second:
 | [`findings.md`](findings.md) | What the project shows: the claim and the evidence for it, in one page |
 | [`1_from_behaviour.md`](1_from_behaviour.md) | *Why* these priors: from study 00 and what effects can do, in steps with simulated figures |
 | [`2_how_it_calculates.md`](2_how_it_calculates.md) | *How* it computes: the density, the Stan model, the Bayes factor, the conditional test, the default-prior criteria |
-| [`3_consistency.md`](3_consistency.md) | The proofs and sketches behind the consistency criteria, for the whole family |
 | [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors; what is new here and what is not |
-| [`4_comparison.md`](4_comparison.md) | The three compared per criterion, from the validation results; the recommendation (flat partial r) |
-| [`5_validation.md`](5_validation.md) | Every check and simulation study, with its numbers |
+| [`3_comparison.md`](3_comparison.md) | The three compared per criterion, from the validation results; the recommendation (flat partial r) |
+| [`4_validation.md`](4_validation.md) | Every check and simulation study, with its numbers |
 | [`example.R`](example.R) | Use it on one dataset, start to finish |
 
 ---
@@ -134,7 +133,7 @@ Two ways to test one coefficient, and why the package uses the second:
 |---|---|---|
 | **total** | the multiple correlation $R$ of the whole model | "shared total" |
 | **shape** $a$ | the first parameter of $R^2 \sim$ Beta($a$, 1): $k/2$, ½ or 1 | `r_squared_shape` (Stan), `prior_shape()` |
-| **share** | the fraction of the total one predictor gets; Beta(½, (k−1)/2) for every $a$ | $c^2$ (squared alignment, doc 2 section 7), $B$ (doc 2 section 8, doc 3) |
+| **share** | the fraction of the total one predictor gets; Beta(½, (k−1)/2) for every $a$ | $c^2$ (squared alignment, doc 2 section 7), $B$ (doc 2 section 8) |
 | **noise units**, $f$ | an effect divided by the noise SD $\sigma$; $f^2$ is Cohen's $f^2$ | |
 | **joint test** | the Bayes factor of the model with against without a term | |
 | **conditional test** | the test on one coefficient's partial correlation | "per-coefficient test" |
@@ -148,25 +147,25 @@ Two ways to test one coefficient, and why the package uses the second:
 
 ## Status of each claim
 
-**proven** = a complete proof in doc 3; **checked** = a numerical check that
-passes on the current code; **sketch** = the steps of a proof, with a check;
-**run** = a simulation study run on the current code, with its result; details
-in [`5_validation.md`](5_validation.md). All from the full run of
-4 November 2026 (commit 643c0b8): 131 of 132 checks pass; the one failure is a
+**checked** = a numerical check that passes on the current code, in the
+settings the study covers (no claim is proven analytically here); **run** = a
+simulation study run on the current code, with its result; details
+in [`4_validation.md`](4_validation.md). All from the full run of
+4 November 2026 (commit 21d42dc): 137 of 138 checks pass; the one failure is a
 finding about flat R-squared (validation 10, P4; see
-[`4_comparison.md`](4_comparison.md), section 5).
+[`3_comparison.md`](3_comparison.md), section 5).
 
 | Claim | Flat partial r | Flat R | Flat R-squared | Where |
 |---|---|---|---|---|
 | Valid correlation matrices give the three versions | checked (F1) | checked (F2) | checked (F3) | validation 00 |
 | The Stan model samples the prior correctly | checked (P5–P7, KS ≤ 0.012) | checked (P1–P4, KS ≤ 0.009) | checked (P8–P10, KS ≤ 0.009) | validation 01, P1–P10 |
-| The Stan posterior is calibrated ($k = 8$) | checked (SBC p ≥ 0.43) | checked (SBC p ≥ 0.61) | checked (SBC p ≥ 0.45) | validation 01, S |
+| The Stan posterior is calibrated ($k = 8$) | checked (SBC p ≥ 0.02) | checked (SBC p ≥ 0.38) | checked (SBC p ≥ 0.22) | validation 01, S |
 | The whole-model Bayes factor is exact | checked (A1–A4) | checked (A1–A4) | checked (A1–A4) | validation 02 |
 | Units and recoding don't change the answer | checked (A2) | checked (A2) | checked (A2) | validation 02 |
 | Predictive matching (BF = 1 at $n = k + 1$) | checked (B1) | checked (B1) | checked (B1) | validation 02 |
-| Information consistency, for $n \ge k + 3$ | proven, checked | proven, checked | proven, checked | doc 3; validation 02, B2b |
-| Intrinsic consistency | proven | proven | proven | doc 3 |
-| Model-selection consistency, fixed $k$ | sketch, checked: $\tfrac q2 \log n$ in every case | sketch, checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | sketch: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise (slopes 0.99, 1.00, 1.01 and 0.53, 1.64, 2.88) | doc 3; validation 02, B3, B3b, B4 |
+| Information consistency, for $n \ge k + 3$ | checked (B2, B2b) | checked (B2, B2b) | checked (B2, B2b) | validation 02 |
+| Intrinsic consistency | checked (B5) | checked (B5) | checked (B5) | validation 02 |
+| Model-selection consistency, fixed $k$ | checked: $\tfrac q2 \log n$ in every case | checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | checked: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise (slopes 1.01, 0.96, 0.99 and 0.55, 1.55, 2.95) | validation 02, B3, B3b, B4 |
 | Model-selection consistency, $k$ growing with $n$ | checked (G1, G2): evidence grows fast (log BF₀₁ 408 at $n = 2000$, $k = n/4$) | checked, but slowly under the null (log BF₀₁ 1.9) | checked, but slowly under the null (log BF₀₁ 3.7) | validation 08 |
 | What singles the prior out | checked (C7) | checked (V5) | – | validation 05, 09 |
 | The conditional test is computed correctly | checked (C1, C3–C5) | checked (C1, C2, C5) | checked (C1, C2, C5) | validation 05, C1–C5 |
@@ -184,7 +183,7 @@ finding about flat R-squared (validation 10, P4; see
 
 - **Choose the prior.** There is no default; `prior =` must be given. What each
   one assumes is in the branches above; the recommendation (flat partial r) and
-  its costs are in [`4_comparison.md`](4_comparison.md), section 8.
+  its costs are in [`3_comparison.md`](3_comparison.md), section 8.
 - **Shrinkage at small $n$.** With several predictors at small $n$ the prior
   pulls estimates toward zero. The example (`example.R`) prints the pull next to the
   ordinary estimates.
@@ -218,8 +217,9 @@ finding about flat R-squared (validation 10, P4; see
 
 ## Open
 
-- **Model-selection consistency, in full:** the dominated-convergence steps of
-  the sketch, non-nested models, and a proof for $k$ growing with $n$ (doc 3).
+- **Proofs.** The consistency criteria are checked numerically (studies 02
+  and 08), in the settings those studies cover; none is proven analytically
+  here, and non-nested models are not covered.
 - **The empirical question between the branches:** how explained variance
   grows with the number of predictors in published regressions. Flat partial r
   predicts a median $R^2$ of 0.76 with 5 predictors; flat R predicts 0.25 and

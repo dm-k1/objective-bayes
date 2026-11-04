@@ -1,7 +1,7 @@
 # Validation run
 
-- **started:** 2026-11-04 04:23 CET
-- **commit:** 643c0b8
+- **started:** 2026-11-04 12:24 CET
+- **commit:** 21d42dc (with uncommitted changes)
 - **R:** R version 4.6.1 (2026-06-24)
 - **CmdStan:** 2.40.0
 - **machine:** Darwin arm64
@@ -10,18 +10,18 @@
 
 | Study | Status | Minutes | Checks passed | Checks failed |
 |---|---|---|---|---|
-| 00_initial_simulation | pass | 1.2 | 3 | 0 |
-| 01_prior_and_posterior | pass | 7.4 | 19 | 0 |
+| 00_initial_simulation | pass | 1.1 | 3 | 0 |
+| 01_prior_and_posterior | pass | 8.4 | 19 | 0 |
 | 02_bayes_factor | pass | 1.3 | 45 | 0 |
-| 03_simulations | pass | 11.5 | 2 | 0 |
-| 04_matched_comparison | pass | 2.5 | 0 | 0 |
-| 05_conditional_test | pass | 0.4 | 13 | 0 |
-| 06_broad_simulation | pass | 21.3 | 0 | 0 |
-| 07_estimation | pass | 83.7 | 0 | 0 |
-| 08_growing_k | pass | 1.4 | 12 | 0 |
-| 09_variable_selection | pass | 3.0 | 5 | 0 |
-| 10_calibration | FAIL | 68.3 | 29 | 1 |
-| 11_factor_terms | pass | 63.6 | 3 | 0 |
+| 03_simulations | pass | 0.0 | 2 | 0 |
+| 04_matched_comparison | pass | 2.7 | 0 | 0 |
+| 05_conditional_test | pass | 0.5 | 13 | 0 |
+| 06_broad_simulation | pass | 0.0 | 0 | 0 |
+| 07_estimation | pass | 0.0 | 0 | 0 |
+| 08_growing_k | pass | 1.3 | 12 | 0 |
+| 09_variable_selection | pass | 0.9 | 5 | 0 |
+| 10_calibration | FAIL | 0.1 | 35 | 1 |
+| 11_factor_terms | pass | 0.0 | 3 | 0 |
 
 ## 00: the first result
 
@@ -35,8 +35,8 @@ and R-squared grows with k; keep R or R-squared flat and each partial r shrinks 
 | 2 | 0.70 | 0.50 | 0.50 | 0.29 | 0.70 | 0.50 |
 | 3 | 0.70 | 0.65 | 0.41 | 0.29 | 0.60 | 0.50 |
 | 4 | 0.70 | 0.75 | 0.36 | 0.29 | 0.54 | 0.50 |
-| 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.49 | 0.50 |
-| 6 | 0.70 | 0.87 | 0.29 | 0.29 | 0.46 | 0.50 |
+| 5 | 0.70 | 0.82 | 0.32 | 0.29 | 0.50 | 0.50 |
+| 6 | 0.70 | 0.88 | 0.29 | 0.29 | 0.46 | 0.50 |
 | 7 | 0.70 | 0.91 | 0.27 | 0.29 | 0.43 | 0.50 |
 | 8 | 0.70 | 0.94 | 0.25 | 0.29 | 0.40 | 0.50 |
 | 9 | 0.70 | 0.96 | 0.23 | 0.29 | 0.38 | 0.50 |

@@ -8,8 +8,8 @@ flat and the test drifts with $k$, and the drift is not a gain in accuracy:
 the test sees the same, it only decides less.
 
 All numbers come from the validation run of 4 November 2026 (commit
-643c0b8; 131 of 132 checks pass), with references to the study that
-produced them. The full results are in [`5_validation.md`](5_validation.md)
+21d42dc; 137 of 138 checks pass), with references to the study that
+produced them. The full results are in [`4_validation.md`](4_validation.md)
 and [`../validation/report.html`](../validation/report.html).
 
 ---
@@ -29,6 +29,11 @@ $R^2 \sim$ Beta($a$, 1):
 | flat partial r | $k/2$ | each partial correlation (LKJ(1); `stan_lm` with η = 1) |
 | flat R | ½ | the multiple correlation $R$ |
 | flat R-squared | 1 | $R^2$ |
+
+The simulated draws are these three forms: each version is flat on its own
+scale for every $k$ (checks F1–F3: largest KS distance 0.0026 for each partial
+$r$ under A, 0.0024 for $R$ under B, 0.0038 for $R^2$ under C, with 200,000
+matrices per $k$).
 
 ![Study 00: what valid correlation matrices force](../validation/results/figures/00_partial_r_R_R2_by_k.png)
 
@@ -68,7 +73,13 @@ against the same model with that coefficient zero (the Savage–Dickey ratio).
 For flat partial r it is, within a factor 1.10. For flat R-squared it drifts
 from it as $k$ grows (a factor 2.40 at $k = 8$; the one failed check of the
 run, a property of that prior: its partial correlations are tied together
-through $R^2$). For flat R the ratio is not defined.
+through $R^2$). Under flat R there is no such model at all: the prior density
+of one partial correlation at 0 is infinite, and conditioning on it being 0
+drags every other coefficient to 0 too (median $R^2$ of the other predictors
+0.001 at $k = 3$ and 0.003 at $k = 8$ given |partial r| < 0.005, study 10,
+P7). The restricted model collapses to the intercept-only model, so no joint
+model corresponds to testing one coefficient under flat R. Under flat partial
+r and flat R-squared the restriction is a proper model (P6).
 
 ![Study 10: the conditional and joint tests against the joint model](../validation/results/figures/10_coherence.png)
 
@@ -98,6 +109,6 @@ what is not".
 
 ---
 
-**Recommendation** ([`4_comparison.md`](4_comparison.md), section 8): flat
+**Recommendation** ([`3_comparison.md`](3_comparison.md), section 8): flat
 partial r, with the costs above stated when it is used. The package keeps no
 default; every function asks for `prior =`.

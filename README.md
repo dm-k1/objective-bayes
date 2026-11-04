@@ -15,9 +15,9 @@ Only flat partial r's test is also the Bayes factor of one joint model.
 
 **The evidence in one page:** [`docs/findings.md`](docs/findings.md). All
 three are built and validated side by side against the criteria from the
-literature (131 of 132 checks pass; [report](validation/report.html),
-[details](docs/5_validation.md)); the comparison and the recommendation of
-flat partial r, with its costs, are in [`docs/4_comparison.md`](docs/4_comparison.md).
+literature (137 of 138 checks pass; [report](validation/report.html),
+[details](docs/4_validation.md)); the comparison and the recommendation of
+flat partial r, with its costs, are in [`docs/3_comparison.md`](docs/3_comparison.md).
 
 ## The three priors
 
@@ -90,7 +90,7 @@ the package. For estimation also cmdstanr with CmdStan (or rstan). Optional:
 BayesFactor (JZS comparison), ggplot2, dplyr, purrr, tidyr, patchwork,
 logspline (example, figures and validation). Run the tests with `devtools::test()`. The exact package
 versions are in `renv.lock`, and `validation/Dockerfile` builds the whole environment;
-running the validation anywhere: `docs/5_validation.md`.
+running the validation anywhere: `docs/4_validation.md`.
 
 ## What's where
 
@@ -110,12 +110,11 @@ running the validation anywhere: `docs/5_validation.md`.
 | `docs/0_overview.md` | **The map**: the fork from study 00, the three priors, the questions the package answers, the status of each claim, what to watch out for, what is open |
 | `docs/1_from_behaviour.md` | Where the prior comes from: from what effects can do to the one sentence, with simulated figures |
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
-| `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
-| `docs/4_comparison.md` | The three priors compared, criterion by criterion, with the JZS default and Zellner–Siow as references |
-| `docs/5_validation.md` | The validation report: how to run the studies, the criteria from the literature and where each is checked, every result, references |
+| `docs/3_comparison.md` | The three priors compared, criterion by criterion, with the JZS default and Zellner–Siow as references |
+| `docs/4_validation.md` | The validation report: how to run the studies, the criteria from the literature and where each is checked, every result, references |
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; flat partial r as `stan_lm`'s prior; why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
-| `validation/` | Study 00 (the first result: the fork), then for each prior: does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `docs/5_validation.md` |
+| `validation/` | Study 00 (the first result: the fork), then for each prior: does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `docs/4_validation.md` |
 | `validation/report.qmd`, `report.html` | The validation report: every figure and check, with what each score means (open `report.html` in a browser; rebuild with `quarto render validation/report.qmd`) |
 | `renv.lock`, `validation/Dockerfile` | The pinned environment: R packages, and R + packages + CmdStan as a container |
 
@@ -146,7 +145,7 @@ test with many predictors, variable selection, Stan messages):
 - **v3 (November 2026)**: study 00 showed that not everything can stay flat,
   so the three options (flat partial r, flat R, flat R²) are built and
   validated as equals, with no default; the results recommend flat partial r
-  (`docs/4_comparison.md`, section 8). The superseded scripts (by-hand
+  (`docs/3_comparison.md`, section 8). The superseded scripts (by-hand
   tutorials, the brms version of the prior, earlier approaches) were in
   `archive/` and are in the git history up to commit a2886a7.
 

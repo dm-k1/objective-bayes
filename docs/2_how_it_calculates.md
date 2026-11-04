@@ -7,7 +7,7 @@
 > derivation is written out for one shape (flat R, $a = ½$, in sections 7–8),
 > the general case follows it. Where they come from:
 > [`1_from_behaviour.md`](1_from_behaviour.md); how they compare:
-> [`4_comparison.md`](4_comparison.md).
+> [`3_comparison.md`](3_comparison.md).
 
 The whole prior in one sentence:
 
@@ -483,7 +483,7 @@ At $a = k/2$ the prior is the one you get when every correlation matrix of
 $(y, x_1 \ldots x_k)$ is equally likely, and rstanarm `stan_lm`'s $R^2$ prior
 with η = 1. Zellner–Siow (scale 1) is $R^2 \sim$ Beta($k/2$, ½) exactly (its
 row in the table). How the three compare:
-[`relation_to_others.md`](relation_to_others.md) and [`4_comparison.md`](4_comparison.md).
+[`relation_to_others.md`](relation_to_others.md) and [`3_comparison.md`](3_comparison.md).
 
 ![](figures/6_g_prior_family.png)
 
@@ -525,7 +525,7 @@ When the others explain 5%, the joint flat R Bayes factor for x1 is 2.25; when t
 explain 60%, it is 0.70, with the same evidence about x1. This is the
 **conditional Lindley paradox** of Som, Hans and MacEachern (2016): every prior
 with one scale shared by all coefficients has it, including the JZS default
-(weaker; [`5_validation.md`](5_validation.md), study 04). Its cause is the shared scale.
+(weaker; [`4_validation.md`](4_validation.md), study 04). Its cause is the shared scale.
 
 The conditional test gives the tested coefficient its own scale: its share of
 the total ([`1_from_behaviour.md`](1_from_behaviour.md), step 4). With $f$ its effect in noise units,
@@ -572,7 +572,7 @@ The three conditional tests rank datasets identically (their AUC for null vs
 0.1 is the same, 0.001 to 0.045 above JZS), but they set the threshold
 differently: a true null gets BF₀₁ > 3 in 86–88% of datasets under flat
 partial r for every $k$, against 86% → 26% (flat R-squared) and 55% → 6%
-(flat R) from $k = 2$ to 20. Summary in [`4_comparison.md`](4_comparison.md).
+(flat R) from $k = 2$ to 20. Summary in [`3_comparison.md`](3_comparison.md).
 
 **In the code:** `log_bayes_factor_conditional(partial_r, n, k, prior)`, used by
 `bayes_factor_per_term()` for every one-column term.
@@ -639,7 +639,8 @@ conditional Bayes factor differs from `bayes_factor_models(full, without it)`
 model, the Bayes factor for a zero partial correlation of x1 is the
 Savage–Dickey ratio: the prior density of that partial correlation at 0 over
 its posterior density at 0, estimated from `fit_regression()` draws
-(`validation/10`, part 2; run of 4 November 2026). On 20 datasets per prior
+(`validation/10`, part 2; validation run of 4 November 2026, commit
+21d42dc). On 20 datasets per prior
 (k = 3, 8; n = 50, 200):
 
 - **Flat partial r** (prior density 1/2 at 0, flat on (−1, 1)): the conditional
@@ -663,8 +664,21 @@ its posterior density at 0, estimated from `fit_regression()` draws
   $R^2$, so what the other coefficients explain moves the posterior of x1's
   partial correlation, and the gap grows with $k$. The joint test is further
   still (mean absolute 1.0, up to 2.4).
-- **Flat R**: not defined; its implied prior for one partial correlation has
-  an infinite density at 0 for $k \ge 2$.
+- **Flat R**: there is no such model to compare with. Its implied prior for
+  one partial correlation has an infinite density at 0 for $k \ge 2$, and
+  conditioning the joint prior on that partial correlation being 0 drags the
+  other coefficients to 0 as well (`validation/10`, part 3, check P7: with
+  |ρ₁| below 0.1, 0.02 and 0.005, the density of ρ₁ near 0 grows from 1.51 to
+  2.30 to 2.99 at k = 3, and from 2.23 to 3.83 to 5.20 at k = 8, while the
+  median R² of the other predictors falls from 0.024 to 0.005 to 0.001 at
+  k = 3, and from 0.054 to 0.012 to 0.003 at k = 8). The restricted model
+  collapses to the intercept-only model, so under flat R no joint model
+  corresponds to testing one coefficient, and the Savage–Dickey ratio cannot
+  be formed. Under flat partial r and flat R-squared the same conditioning is
+  a proper restriction (check P6): the density near 0 settles (flat partial
+  r 0.50, 0.50, 0.49 at k = 3; flat R-squared 0.74, 0.77, 0.78) and the other
+  predictors keep their R² (flat partial r 0.37 at k = 3, 0.73 at k = 8; flat
+  R-squared 0.16–0.22).
 
 Each prior is also calibrated on itself: with data drawn from the joint prior
 (half with x1 = 0), the share of nulls among datasets with Bayes factor BF₁₀ is
@@ -687,15 +701,16 @@ the joint Bayes factors to compare or average over whole models.
 Bayarri, Berger, Forte and García-Donato (2012) list seven criteria a default
 prior for model choice should meet. Status for each of the three priors;
 "checked" means a numerical check in `validation/02_bayes_factor.R` (which
-runs every check for each prior), "proof" and "sketch" refer to
-[`3_consistency.md`](3_consistency.md).
+runs every check for each prior) or `validation/08_growing_k.R`, in the
+settings those studies cover; none of the criteria is proven analytically
+here.
 
 | # | Criterion | Meaning | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|---|
 | 1 | Basic | the prior on the tested coefficients is proper, and not arbitrarily vague | **met**, by construction | **met** | **met** |
-| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **sketch**, checked (B3, B3b, B4): null rate $\tfrac q2 \log n$ in every case | **sketch**, checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | **sketch**: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; checked (B3, B3b, B4): slopes 0.99, 1.00, 1.01 and 0.53, 1.64, 2.88 |
-| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: proof, checked (B2, B2b) | **met for $n \ge k + 3$**: proof, checked | **met for $n \ge k + 3$**: proof (through $f$ for $k = 1$), checked (B2, B2b) |
-| 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **met**: proof | **met**: proof | **met**: proof |
+| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | checked (B3, B3b, B4): null rate $\tfrac q2 \log n$ in every case | checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | checked (B3, B3b, B4): $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; slopes 1.01, 0.96, 0.99 and 0.55, 1.55, 2.95 |
+| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: checked (B2, B2b) | **met for $n \ge k + 3$**: checked (B2, B2b) | **met for $n \ge k + 3$**: checked (B2, B2b) |
+| 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **met**: checked (B5) | **met**: checked (B5) | **met**: checked (B5) |
 | 5 | Predictive matching | on minimal samples ($n = k + 1$) BF = 1 with the null and between models of equal size | **met**: checked (B1) | **met**: checked (B1) | **met**: by the general argument, checked against the ground truth for $k \ge 2$ (B1) |
 | 6 | Measurement invariance | units of the data do not change the answer | **met**, by construction, checked (A2) | **met**, checked (A2) | **met**, checked (A2) |
 | 7 | Group invariance | the common parameters get the right-Haar prior, and the prior respects the invariance | **met** | **met** | **met** |

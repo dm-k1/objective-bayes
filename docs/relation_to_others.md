@@ -93,8 +93,7 @@ and they differ in one claim:
   predictor 0.50, 0.35, 0.23 for $k$ = 1, 3, 8). The marginally uniform prior of
   Barnard, McCulloch & Meng (2000), the correlations of an inverse-Wishart with
   $k + 2$ degrees of freedom, keeps every single correlation flat for any $k$, and
-  implies the same $R^2 \sim$ Beta($k/2$, 1) (simulation, KS ≤ 0.007 for $k$ =
-  2–8, 40,000 draws). So "flat on the correlations", in either sense, gives
+  implies the same $R^2 \sim$ Beta($k/2$, 1). So "flat on the correlations", in either sense, gives
   $a = k/2$; only "flat on the total" gives flat R.
 
 ### How Beta($k/2$, 1) was found: simulate, then derive, then check
@@ -134,7 +133,7 @@ values with the Beta distribution that a short argument predicts.
    with $p_j$ the partial correlations of step 2: independent Betas whose
    parameters step up by ½ each time. A product of Betas like that collapses
    into one Beta, which predicts $R^2 \sim$ Beta($k/2$, η). The simulated $R^2$
-   matches that Beta to within simulation noise (KS ≈ 0.01; check V4 in 09),
+   matches that Beta to within simulation noise (KS 0.010–0.013; check V4 in 09),
    and η = 2 matches too, so the formula holds beyond the flat case.
 
 Neither half is enough alone: the simulation without the formula is only
@@ -173,13 +172,14 @@ variables. LKJ gives every ordering of the variables the same distribution, so
 put $y$ and the tested predictor last: their partial correlation given all the
 others is that last-level Beta(η, η).
 
-Simulated (4,000 matrices per cell, KS distance; run of 4 November 2026):
+Simulated (4,000 matrices per cell, KS distance; validation run of 4 November
+2026, commit 21d42dc):
 
 | | $k = 1$ | $k = 3$ | $k = 8$ |
 |---|---|---|---|
-| η = 1, to flat | 0.007 | 0.018 | 0.012 |
-| η = 2, to flat | 0.100 | 0.104 | 0.104 |
-| η = 2, to Beta(2, 2) | 0.013 | 0.014 | 0.013 |
+| η = 1, to flat | 0.016 | 0.013 | 0.013 |
+| η = 2, to flat | 0.097 | 0.104 | 0.101 |
+| η = 2, to Beta(2, 2) | 0.012 | 0.018 | 0.014 |
 
 **What is not new.** A flat prior on each partial correlation is the default
 partial-correlation test (Wetzels & Wagenmakers, 2012; Kucharský et al., 2026,
@@ -196,7 +196,7 @@ What flat partial r adds is: the fixed-X version of their test, that this
 test follows from one prior on the whole model, and that the same prior gives
 Bayes factors between whole models and estimates (`stan_lm` with η = 1).
 
-**In variable selection** ([`5_validation.md`](5_validation.md), 09) the three are compared
+**In variable selection** ([`4_validation.md`](4_validation.md), 09) the three are compared
 with JZS, Zellner–Siow and BIC. They rank real above null predictors almost
 equally (flat partial r and flat R-squared within 0.025 of flat R in AUC in
 every cell; +0.003 and −0.002 on average). They differ in where they draw the line: at
@@ -332,7 +332,7 @@ papers marked below still need a full read before anything is written up).
   Liang et al. report no simulations of this kind.
 - **The three as one family**, $R^2 \sim$ Beta($a$, 1) with $a = k/2$, ½ or 1,
   compared side by side on the Bayarri et al. criteria
-  ([`4_comparison.md`](4_comparison.md)).
+  ([`3_comparison.md`](3_comparison.md)).
 
 **Still to read in full:** Kucharský et al. (2026), on whether $k$ is
 discussed beyond its role in the formula; Som et al. (2016), its theorems on

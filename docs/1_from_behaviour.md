@@ -12,13 +12,13 @@ then goes step by step. Each step has a figure that is a simulation, made by
 become a density and a Bayes factor is in
 [`2_how_it_calculates.md`](2_how_it_calculates.md).
 
-| Step | What effects can do | What the prior says | A judgement? |
-|---|---|---|---|
-| 0 | valid correlation matrices can't keep everything flat as $k$ grows | a choice of what stays flat | yes: the fork, three branches |
-| 1 | one correlation lies between −1 and 1 | flat on the correlation | yes: which ruler is flat |
-| 2 | together, predictors explain at most 100% | a prior on the total, $R^2 \sim$ Beta($a$, 1) | yes: $a = k/2$, ½ or 1 |
-| 3 | the total can be divided in many ways | every division equally plausible | yes: symmetry |
-| 4 | — | each predictor's share is Beta(½, (k−1)/2) | no: follows from 2 and 3 |
+| Step | What effects can do                                                  | What the prior says                               | A judgement?                  |
+| ---- | -------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------- |
+| 0    | valid correlation matrices can't keep everything flat as $k$ grows | a choice of what stays flat                       | yes: the fork, three branches |
+| 1    | one correlation lies between −1 and 1                               | flat on the correlation                           | yes: which ruler is flat      |
+| 2    | together, predictors explain at most 100%                            | a prior on the total, $R^2 \sim$ Beta($a$, 1) | yes: $a = k/2$, ½ or 1     |
+| 3    | the total can be divided in many ways                                | every division equally plausible                  | yes: symmetry                 |
+| 4    | —                                                                   | each predictor's share is Beta(½, (k−1)/2)      | no: follows from 2 and 3      |
 
 ---
 
@@ -39,17 +39,17 @@ the other predictors, $R$, and $R^2$.
    $R^2$ moves toward 1. In B and C the total stays where it was put, and the
    partial correlation narrows toward 0 as $k$ grows:
 
-   | $k$ | 1 | 2 | 3 | 5 | 10 |
-   |---|---|---|---|---|---|
+   | $k$                     | 1    | 2    | 3    | 5    | 10   |
+   | ------------------------- | ---- | ---- | ---- | ---- | ---- |
    | A: P(\|partial r\| > 0.3) | 0.70 | 0.70 | 0.70 | 0.70 | 0.70 |
-   | A: P($R^2$ > 0.5) | 0.29 | 0.50 | 0.65 | 0.82 | 0.97 |
+   | A: P($R^2$ > 0.5)       | 0.29 | 0.50 | 0.65 | 0.82 | 0.97 |
    | B: P(\|partial r\| > 0.3) | 0.70 | 0.50 | 0.41 | 0.32 | 0.22 |
-   | C: P(\|partial r\| > 0.3) | 0.91 | 0.70 | 0.60 | 0.49 | 0.36 |
+   | C: P(\|partial r\| > 0.3) | 0.91 | 0.70 | 0.60 | 0.50 | 0.36 |
 
    (B keeps P($R^2$ > 0.5) at 0.29 and C at 0.50, for every $k$.)
 3. **Check.** Each version is flat where it should be: A's partial correlation,
    B's $R$ and C's $R^2$, against the flat distribution for every $k$ (checks
-   F1–F3, largest KS distance 0.0027–0.0031).
+   F1–F3, largest KS distance 0.0024–0.0038).
 
 The figure is `validation/results/figures/00_partial_r_R_R2_by_k.png` (made
 by running the study). At $k = 1$, A and B are the same prior: Jeffreys' flat
@@ -99,13 +99,13 @@ grows with every predictor added:
 
 ![](figures/2_drift.png)
 
-| Prior | median implied $R^2$, $k = 1$ | $k = 10$ | $k = 30$ |
-|---|---|---|---|
-| JZS default (Cauchy, scale 0.354) | 0.11 | 0.72 | 0.89 |
-| independent flat partial correlation per predictor | 0.25 | 0.997 | 1.00 |
-| **flat partial r** (every correlation matrix equally likely) | 0.25 | 0.87 | 0.95 |
-| **flat R** | 0.25 | 0.25 | 0.25 |
-| **flat R-squared** | 0.50 | 0.50 | 0.50 |
+| Prior                                                              | median implied $R^2$, $k = 1$ | $k = 10$ | $k = 30$ |
+| ------------------------------------------------------------------ | --------------------------------- | ---------- | ---------- |
+| JZS default (Cauchy, scale 0.354)                                  | 0.11                              | 0.72       | 0.89       |
+| independent flat partial correlation per predictor                 | 0.25                              | 0.997      | 1.00       |
+| **flat partial r** (every correlation matrix equally likely) | 0.25                              | 0.87       | 0.95       |
+| **flat R**                                                   | 0.25                              | 0.25       | 0.25       |
+| **flat R-squared**                                           | 0.50                              | 0.50       | 0.50       |
 
 The three branches of step 0 are the three ways to keep the bound and stay
 objective:
@@ -174,7 +174,6 @@ simulating, then deriving, then checking.**
    \text{share} \sim \mathrm{Beta}\!\left(\tfrac12, \tfrac{k-1}{2}\right),
    \qquad E[\text{share}] = \frac{1/2}{1/2 + (k-1)/2} = \frac1k .
    $$
-
 3. **Check** (printed by `docs/figures/make_figures.R`). 40,000 directions per
    $k$: KS distance to that Beta 0.003–0.006, mean share 0.499, 0.330, 0.200,
    0.101 for $k$ = 2, 3, 5, 10. For $k = 1$ the
@@ -200,22 +199,23 @@ The motto "define what's possible, not what you expect" holds for whatever is
 flat. Each branch does carry expectations, and they are stated here rather
 than left for a reader to find:
 
-| | Flat partial r | Flat R | Flat R-squared |
-|---|---|---|---|
-| $E[R^2]$ | $k/(k+2)$: 1/3, 3/5, 5/6 at $k$ = 1, 3, 10 | 1/3 | 1/2 |
-| median $R^2$ | $0.5^{2/k}$: 0.25, 0.63, 0.87 | 0.25 | 0.50 |
-| expected share per predictor | $1/(k+2)$ | $1/(3k)$ | $1/(2k)$ |
-| one coefficient's prior | flat partial correlation, any $k$ | narrows with $k$ | narrows with $k$ |
-| evidence for the null against the intercept-only model grows like | $\tfrac k2 \log n$ | $\tfrac12 \log n$ | $\log n$ |
+|                                                                   | Flat partial r                                 | Flat R              | Flat R-squared     |
+| ----------------------------------------------------------------- | ---------------------------------------------- | ------------------- | ------------------ |
+| $E[R^2]$                                                        | $k/(k+2)$: 1/3, 3/5, 5/6 at $k$ = 1, 3, 10 | 1/3                 | 1/2                |
+| median $R^2$                                                    | $0.5^{2/k}$: 0.25, 0.63, 0.87                | 0.25                | 0.50               |
+| expected share per predictor                                      | $1/(k+2)$                                    | $1/(3k)$          | $1/(2k)$         |
+| one coefficient's prior                                           | flat partial correlation, any $k$            | narrows with $k$  | narrows with $k$ |
+| evidence for the null against the intercept-only model grows like | $\tfrac k2 \log n$                           | $\tfrac12 \log n$ | $\log n$         |
 
 - For flat R and flat R-squared, adding predictors does not add explained
   variance to the prior: a built-in correction for testing many predictors, and
   shrinkage toward zero at small $n$.
 - For flat partial r, each coefficient keeps the same prior whatever the model
   around it, and a large model claims a large total.
-- How much prior mass sits near zero sets the null rate in the last row
-  ([`3_consistency.md`](3_consistency.md)): $P(R^2 < 1/n) \approx n^{-a}$.
+- How much prior mass sits near zero sets the null rate in the last row:
+  $P(R^2 < 1/n) \approx n^{-a}$ for $R^2 \sim$ Beta($a$, 1), which study 02
+  measures as the slope of the evidence against $\log n$ (B3b).
 
 No branch gets every property for free; the trade-offs are measured in
-[`4_comparison.md`](4_comparison.md), which ends with the recommendation (flat
+[`3_comparison.md`](3_comparison.md), which ends with the recommendation (flat
 partial r) and what it costs.

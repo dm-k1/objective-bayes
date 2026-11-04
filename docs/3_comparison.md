@@ -1,12 +1,12 @@
-# 4. The three priors compared
+# 3. The three priors compared
 
 **In one sentence:** the three priors that study 00 leaves (flat partial r,
 flat R, flat R-squared) are compared on the criteria from the literature, each
 with a column, and the choice between them is made from this table, not
 before it.
 
-The numbers come from the full validation run of 4 November 2026 (commit
-643c0b8; [`5_validation.md`](5_validation.md)): 131 of 132
+The numbers come from the full validation run of 4 November 2026 (started
+12:24, commit 21d42dc; [`4_validation.md`](4_validation.md)): 137 of 138
 checks pass, and the one failure (10, P4, flat R-squared) is a finding,
 explained in section 5. JZS (Cauchy, scale
 0.354, the BayesFactor/JASP default) and Zellner–Siow (scale 1) are reference
@@ -39,9 +39,9 @@ differ in which scale they keep flat as predictors are added.
 
 | Check | Flat partial r | Flat R | Flat R-squared | Study |
 |---|---|---|---|---|
-| Valid correlation matrices give the version | pass (F1, KS 0.003) | pass (F2, KS 0.003) | pass (F3, KS 0.003) | 00 |
+| Valid correlation matrices give the version | pass (F1, KS 0.003) | pass (F2, KS 0.002) | pass (F3, KS 0.004) | 00 |
 | Stan samples the prior (KS < 0.03) | pass (P5–P7, KS ≤ 0.012) | pass (P1–P4, KS ≤ 0.009) | pass (P8–P10, KS ≤ 0.009) | 01, P1–P10 |
-| Simulation-based calibration (Talts et al., 2018) | pass ($k = 8$, $n = 60$; χ² p ≥ 0.43) | pass (p ≥ 0.60) | pass (p ≥ 0.44) | 01, S |
+| Simulation-based calibration (Talts et al., 2018) | pass ($k = 8$, $n = 60$; χ² p ≥ 0.02) | pass (p ≥ 0.38) | pass (p ≥ 0.22) | 01, S |
 | Whole-model BF against `integrate()` (162 settings) | pass, largest error 2.6e-07 | pass, largest error 4.1e-05 | pass, largest error 8.4e-05 | 02, A1 |
 | Against a brute-force BF (no formula) | pass | pass | pass | 02, A3 |
 | A second derivation | pass (block route, 5.1e-05) | pass (g-mixture and block route, 3.5e-04) | pass (block route and g-mixture by `integrate()`, 2.4e-05) | 02, A4 |
@@ -58,12 +58,12 @@ differ in which scale they keep flat as predictors are added.
 | Predictive matching ($n = k + 1$) | met, checked | met, checked | met, checked | 02, B1 |
 | Measurement invariance | met, checked | met, checked | met, checked | 02, A2 |
 | Group invariance | met | met | met | doc 2, section 11 |
-| Information consistency ($n \ge k + 3$) | proof, checked | proof, checked | proof, checked | doc 3; 02, B2, B2b |
-| Intrinsic consistency | proof | proof | proof | doc 3 |
-| Model selection consistency, fixed $k$ | sketch, checked | sketch, checked | sketch, checked | doc 3; 02, B3, B3b, B4 |
-| Null rate against the intercept-only model | $\tfrac q2 \log n$ (slopes 0.51, 1.46, 2.86 for $q$ = 1, 3, 6) | $\tfrac12 \log n$ (0.47, 0.50, 0.48) | $\log n$ (0.99, 1.00, 1.01) | 02, B3b |
-| Null rate between models with an effect | $\tfrac q2 \log n$ (0.47, 1.48, 2.91) | $\tfrac q2 \log n$ (0.54, 1.56, 2.98) | $\tfrac q2 \log n$ (0.53, 1.64, 2.88) | 02, B3b |
-| Model selection consistency, $k$ growing with $n$ (median log BF₀₁, $k = n/4$, $n = 2000$) | pass, 407.7 | pass, but slow: 1.9 | pass, but slow: 3.7 | 08 (JZS 149.3, Zellner–Siow 410.9) |
+| Information consistency ($n \ge k + 3$) | checked | checked | checked | 02, B2, B2b |
+| Intrinsic consistency | checked | checked | checked | 02, B5 |
+| Model selection consistency, fixed $k$ | checked | checked | checked | 02, B3, B3b, B4 |
+| Null rate against the intercept-only model | $\tfrac q2 \log n$ (slopes 0.51, 1.44, 2.90 for $q$ = 1, 3, 6) | $\tfrac12 \log n$ (0.51, 0.48, 0.50) | $\log n$ (1.01, 0.96, 0.99) | 02, B3b |
+| Null rate between models with an effect | $\tfrac q2 \log n$ (0.50, 1.47, 2.95) | $\tfrac q2 \log n$ (0.56, 1.58, 2.97) | $\tfrac q2 \log n$ (0.55, 1.55, 2.95) | 02, B3b |
+| Model selection consistency, $k$ growing with $n$ (median log BF₀₁, $k = n/4$, $n = 2000$) | pass, 407.6 | pass, but slow: 1.9 | pass, but slow: 3.7 | 08 (JZS 149.3, Zellner–Siow 410.8) |
 
 ---
 
@@ -83,7 +83,7 @@ Conditional tests unless stated; JZS and Zellner–Siow test jointly.
 
 What the rows above leave out is the third answer, "undecided". At $k = 20$
 (conditional tests, share of datasets; full table in
-[`5_validation.md`](5_validation.md), study 06):
+[`4_validation.md`](4_validation.md), study 06):
 
 | Truth | | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|
@@ -108,8 +108,9 @@ another prior, as it should be)?
 | | Flat partial r | Flat R | Flat R-squared | Study |
 |---|---|---|---|---|
 | Calibrated on its own prior (χ² p, logistic slope) | pass: p 0.40–0.79, slope 0.98–1.03 | pass: p 0.52–0.98, slope 0.99–1.02 | pass: p 0.37–0.94, slope 0.98–1.02 | 10, P1 |
+| "x1's partial correlation = 0" is a proper restriction of the joint prior (density of ρ₁ near 0, ε = 0.1 → 0.005, $k$ = 3 / 8) | yes (P6): 0.50 → 0.49 / 0.50 → 0.49 | no (P7): 1.51 → 2.99 / 2.23 → 5.20, others' median $R^2$ → 0.001 / 0.003 | yes (P6): 0.74 → 0.78 / 1.34 → 1.56 | 10, P6–P7 |
 | Miscalibration shows with JZS data | yes: χ² 503–556, slope 0.89–0.95 | yes: χ² 233–1198, slope 1.16–1.41 | yes, least: χ² 50–265, slope 0.95–1.12 | 10, P2 |
-| Conditional test against Savage–Dickey under the joint model (largest log difference) | pass: 0.092 (factor 1.10) | not defined (infinite prior density at 0) | **fail (P4)**: 0.874 (factor 2.40), at $k = 8$ | 10, P3–P5 |
+| Conditional test against Savage–Dickey under the joint model (largest log difference) | pass: 0.092 (factor 1.10) | no joint counterpart (P7): the prior density of one partial correlation at 0 is infinite, and fixing it at 0 drags the other coefficients to 0 | **fail (P4)**: 0.874 (factor 2.40), at $k = 8$ | 10, P3–P5, P7 |
 
 ---
 
@@ -136,7 +137,7 @@ another prior, as it should be)?
   R-squared, $\tfrac12 \log n$ for flat R.
 - **$k$ growing with $n$ (08):** all three are consistent, but under the null
   flat R and flat R-squared gain evidence very slowly (log BF₀₁ 1.9 and 3.7 with
-  500 null predictors at $n = 2000$), flat partial r fast (407.7).
+  500 null predictors at $n = 2000$), flat partial r fast (407.6).
 - **One coefficient (04, 06):** the conditional tests rank datasets the same
   way for all three priors; they differ in the threshold. Flat partial r's
   answer does not depend on $k$ (true null found 0.86–0.88; a 0.1 effect
@@ -151,8 +152,11 @@ another prior, as it should be)?
   the joint model holds for flat partial r (within a factor 1.10 of
   Savage–Dickey), not for flat R-squared at $k = 8$ (a factor 2.40; P4, the
   one failed check: its partial correlations are dependent through $R^2$, so
-  the conditional test is not the Bayes factor of the joint model), and is
-  undefined for flat R.
+  the conditional test is not the Bayes factor of the joint model). For flat
+  R there is no joint counterpart at all: its prior density for one partial
+  correlation is infinite at 0, and conditioning on it being 0 drags the other
+  coefficients to 0 (P7: the others' median $R^2$ falls to 0.001 at $k = 3$),
+  so the restricted model collapses to the intercept-only model.
 - **Variable selection (09):** ranking is nearly identical. Flat partial r
   includes few null predictors and misses more real ones, like Zellner–Siow;
   flat R and flat R-squared include more and miss fewer.
@@ -180,11 +184,13 @@ another prior, as it should be)?
   same.
 - **It is coherent.** Its conditional test is the Bayes factor of the joint
   model (within a factor 1.10 of Savage–Dickey, 10). Flat R-squared fails this
-  check at $k = 8$ (a factor 2.40), and for flat R it is not defined.
+  check at $k = 8$ (a factor 2.40). Under flat R no joint model corresponds
+  to testing one coefficient: fixing its partial correlation at 0 drags the
+  other coefficients to 0 as well (10, P7).
 - **Its joint test barely depends on what the other predictors explain**
   (−0.5 per unit $R^2$, against −5.2 and −5.1; 04).
 - **Evidence for a true null keeps growing with large models** (log BF₀₁
-  407.7 with 500 null predictors at $n = 2000$, against 1.9 and 3.7; 08).
+  407.6 with 500 null predictors at $n = 2000$, against 1.9 and 3.7; 08).
 - **Its estimates are close to honest**: −8% bias, 95% interval coverage
   0.916 or above, better than OLS in every cell (07). Flat R: −28%, down to
   0.760.
@@ -207,9 +213,11 @@ another prior, as it should be)?
 - **In variable selection it is conservative**: few null predictors included,
   more real ones missed (0.84 of 4 missed at $n = 500$ with the beta-binomial
   model prior, against 0.45 for flat R; 09), much like Zellner–Siow.
-- **Against the intercept-only model its null rate grows with $k$**
-  ($\tfrac k2 \log n$): with many predictors it rejects "nothing matters"
-  quickly, by design (section 3).
+- **Against the intercept-only model its evidence depends on $k$**: for a
+  true null it grows like $\tfrac k2 \log n$ (section 3), because the prior
+  expects a large total with many predictors (median $R^2$ 0.87 at
+  $k = 10$); a model whose predictors together explain little is judged
+  against that expectation.
 
 **What stays the same.** The package keeps no default: every function asks
 for `prior =`, so the choice is stated in every analysis, and flat R and flat

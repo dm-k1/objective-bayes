@@ -101,8 +101,12 @@ checks_of("00_initial_simulation")
 distance below 0.03), and simulation-based calibration (Talts et al., 2018):
 the rank of the true value among posterior draws is uniform (χ² p > 0.01).
 
-**Result.** All pass for all three priors (KS ≤ 0.012; SBC χ² p ≥ 0.43 at
-*k* = 8, *n* = 60).
+**Result.** All pass for all three priors (KS ≤ 0.012; SBC χ² p ≥ 0.02 at
+*k* = 8, *n* = 60, the lowest of nine). The fully divergent fits in the log
+belong to the contrast model, which samples the coefficients directly and is
+there to show why that fails (its SBC fails, p < 0.001); a separate
+diagnostic of the same 400 datasets per prior found no divergent transitions
+in the package's model.
 
 ```{r}
 checks_of("01_prior_and_posterior")
@@ -293,7 +297,8 @@ checks_of("09_variable_selection")
 drawn from the prior, the share of true nulls among datasets with a given
 BF₁₀ is 1/(1 + BF₁₀) (P1), and it is off for data from another prior (P2).
 Coherence: the conditional test against the Savage–Dickey ratio of the joint
-model (Wagenmakers et al., 2010) (P3–P5).
+model (Wagenmakers et al., 2010) (P3–P5). What "x1's partial correlation = 0"
+means under each joint prior (P6–P7).
 
 ```{r}
 figure("10_calibration")
@@ -304,7 +309,17 @@ figure("10_coherence")
 conditional test equals its joint model's Bayes factor (within a factor 1.10).
 Flat R-squared's drifts from it at *k* = 8 (a factor 2.40): the one failed
 check, a property of that prior, whose partial correlations are dependent
-through *R*². For flat R the ratio is not defined.
+through *R*².
+
+**Part 3, why flat R has no such check.** Condition the prior draws on
+|ρ₁| < ε and let ε shrink from 0.1 to 0.005. Under flat partial r the density
+of ρ₁ near 0 stays at ½ (0.50 → 0.49 at *k* = 3 and 8) and the other
+predictors keep their R²; under flat R-squared it settles too (0.74 → 0.78 at
+*k* = 3): fixing ρ₁ = 0 gives a proper restricted model (P6). Under flat R the
+density keeps growing (1.51 → 2.99 at *k* = 3, 2.23 → 5.20 at *k* = 8) and the
+others' median R² falls to 0.001 and 0.003 (P7): fixing ρ₁ = 0 drags every
+coefficient to 0, so the restricted model is the intercept-only model, and no
+joint model corresponds to testing one coefficient.
 
 ```{r}
 checks_of("10_calibration")
@@ -351,6 +366,6 @@ checks_of("11_factor_terms")
   Bayesian hypothesis testing for psychologists: A tutorial on the
   Savage–Dickey method. *Cognitive Psychology*.
 
-Full details per study: [`docs/5_validation.md`](../docs/5_validation.md);
+Full details per study: [`docs/4_validation.md`](../docs/4_validation.md);
 the comparison per criterion and the recommendation:
-[`docs/4_comparison.md`](../docs/4_comparison.md).
+[`docs/3_comparison.md`](../docs/3_comparison.md).
