@@ -18,13 +18,27 @@
 ## uniform direction), so they differ only in the shape a of R-squared ~
 ## Beta(a, 1). On R that is the density 2a R^(2a - 1); with one predictor,
 ## flat_partial_r and flat_r are both flat on r.
-## There is no default: every function asks for the prior by name.
+## The default is flat_partial_r, the prior the validation recommends
+## (docs/3_comparison.md, section 8). A function that uses it because no prior
+## was given says so, once per session, so the choice stays visible.
 
-prior_names <- c("flat_partial_r", "flat_r", "flat_r_squared")
+prior_names   <- c("flat_partial_r", "flat_r", "flat_r_squared")
+default_prior <- "flat_partial_r"
+default_prior_announced <- new.env()
 
-## Stops unless prior is one of the three names.
-check_prior <- function(prior) {
-  if (missing(prior) || is.null(prior))
+## The prior to use: the default (with a one-time message) when none was
+## given, otherwise prior itself, which must be one of the three names.
+check_prior <- function(prior, defaulted = FALSE) {
+  if (defaulted) {
+    if (is.null(default_prior_announced$done)) {
+      message("Using the default prior flat_partial_r (each partial correlation flat; ",
+              "R-squared ~ Beta(k/2, 1)). Set prior = \"flat_r\" or \"flat_r_squared\" ",
+              "for the others.")
+      default_prior_announced$done <- TRUE
+    }
+    return(default_prior)
+  }
+  if (is.null(prior))
     stop("Choose a prior: prior = \"", paste(prior_names, collapse = "\", \""), "\".",
          call. = FALSE)
   if (length(prior) != 1 || !prior %in% prior_names)

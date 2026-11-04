@@ -8,7 +8,7 @@ log_bayes_factor_conditional(
   partial_r,
   sample_size,
   number_of_predictors,
-  prior,
+  prior = "flat_partial_r",
   number_of_columns = 1,
   points_f = 600,
   points_share = 1500
@@ -22,8 +22,8 @@ block, the square root of the block's sample partial R-squared.}
 
 \item{number_of_predictors}{Number of predictor columns in the model, k.}
 
-\item{prior}{\code{"flat_partial_r"}, \code{"flat_r"} or
-\code{"flat_r_squared"}; there is no default.}
+\item{prior}{\code{"flat_partial_r"} (the default), \code{"flat_r"} or
+\code{"flat_r_squared"}.}
 
 \item{number_of_columns}{Number of columns tested together, q (1 for one
 coefficient).}

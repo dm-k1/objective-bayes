@@ -11,7 +11,9 @@
 #'   \item \code{"flat_r"}: the multiple correlation R flat for every k (a = 1/2).
 #'   \item \code{"flat_r_squared"}: R-squared flat for every k (a = 1).
 #' }
-#' There is no default: every function asks for \code{prior =}. All three divide
+#' The default is \code{"flat_partial_r"}, the prior the validation recommends
+#' (\code{docs/3_comparison.md}); a function that uses it because no prior was
+#' given says so once per session. All three divide
 #' the total over the predictors with no preference:
 #' P(total) x P(this combination | total) x unit conversion.
 #'

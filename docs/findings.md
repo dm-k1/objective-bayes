@@ -165,5 +165,5 @@ papers that still need a full reading.
 ---
 
 **Recommendation** ([`3_comparison.md`](3_comparison.md), section 8): flat
-partial r, with the costs in section 5 stated whenever it is used. The
-package has no default prior; every function requires `prior =`.
+partial r, with the costs in section 5 stated whenever it is used. It is
+the package's default; `prior =` selects the others.

@@ -202,16 +202,16 @@ log_bayes_factor_shape_vs_intercept_only <- function(explained_share, sample_siz
 #' @param explained_share Sample R-squared of the model.
 #' @param sample_size Number of observations, n.
 #' @param number_of_predictors Number of predictor columns, k.
-#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
-#'   \code{"flat_r_squared"}; there is no default.
+#' @param prior \code{"flat_partial_r"} (the default), \code{"flat_r"} or
+#'   \code{"flat_r_squared"}.
 #' @return The log Bayes factor.
 #' @examples
 #' log_bayes_factor_vs_intercept_only(0.2, 50, 3, prior = "flat_partial_r")
 #' log_bayes_factor_vs_intercept_only(0.2, 50, 3, prior = "flat_r_squared")
 #' @export
 log_bayes_factor_vs_intercept_only <- function(explained_share, sample_size, number_of_predictors,
-                                               prior) {
-  switch(check_prior(prior),
+                                               prior = "flat_partial_r") {
+  switch(check_prior(prior, defaulted = missing(prior)),
     flat_r         = log_bayes_factor_flat_r_vs_intercept_only(explained_share, sample_size,
                                                                number_of_predictors),
     flat_partial_r = log_bayes_factor_flat_partial_r_vs_intercept_only(
@@ -220,12 +220,26 @@ log_bayes_factor_vs_intercept_only <- function(explained_share, sample_size, num
       explained_share, sample_size, number_of_predictors))
 }
 
+## lm() and model.frame() drop every row with a missing value in a variable of
+## the formula. The sample size n enters every Bayes factor, so say so.
+warn_dropped_rows <- function(data, rows_used) {
+  rows_dropped <- nrow(data) - rows_used
+  if (rows_dropped > 0)
+    warning(sprintf(paste("%d of %d rows have a missing value in a variable of the formula",
+                          "and were left out; the analysis uses n = %d."),
+                    rows_dropped, nrow(data), rows_used), call. = FALSE)
+}
+
 ## Pull predictors and outcome out of a flatcor_fit or lm fit
 extract_predictors_and_outcome <- function(model) {
   if (inherits(model, "flatcor_fit")) {
     predictors <- model$predictors
     outcome    <- model$outcome
   } else {
+    if (!is.null(model$na.action))
+      warning(sprintf("%d rows with a missing value were left out of %s; it uses n = %d.",
+                      length(model$na.action), deparse(formula(model)), nobs(model)),
+              call. = FALSE)
     predictors <- model.matrix(model)[, -1, drop = FALSE]
     outcome    <- as.numeric(model.response(model.frame(model)))
   }
@@ -239,8 +253,9 @@ extract_predictors_and_outcome <- function(model) {
 #' @param prior \code{"flat_partial_r"} (every correlation matrix equally
 #'   likely, R-squared ~ Beta(k/2, 1)), \code{"flat_r"} (R-squared ~
 #'   Beta(1/2, 1) for every k) or \code{"flat_r_squared"} (R-squared ~
-#'   Beta(1, 1) for every k); there is no default. The comparison, and the
-#'   recommendation (flat partial r), are in \code{docs/3_comparison.md}.
+#'   Beta(1, 1) for every k). The default is \code{"flat_partial_r"}, the
+#'   prior the validation recommends; the comparison is in
+#'   \code{docs/3_comparison.md}.
 #' @return The Bayes factor of model A against model B.
 #' @examples
 #' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
@@ -248,8 +263,8 @@ extract_predictors_and_outcome <- function(model) {
 #' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
 #'                     prior = "flat_r")
 #' @export
-bayes_factor_models <- function(model_a, model_b, prior) {
-  prior <- check_prior(prior)
+bayes_factor_models <- function(model_a, model_b, prior = "flat_partial_r") {
+  prior <- check_prior(prior, defaulted = missing(prior))
   parts_a <- extract_predictors_and_outcome(model_a)
   parts_b <- extract_predictors_and_outcome(model_b)
   if (!isTRUE(all.equal(parts_a$outcome, parts_b$outcome)))
@@ -274,17 +289,20 @@ bayes_factor_models <- function(model_a, model_b, prior) {
 #' @param data A data frame.
 #' @param test \code{"conditional"} (default) or \code{"joint"} (compare the
 #'   models with and without each term, for every term).
-#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
-#'   \code{"flat_r_squared"}; there is no default. See \code{bayes_factor_models()}.
+#' @param prior \code{"flat_partial_r"} (the default), \code{"flat_r"} or
+#'   \code{"flat_r_squared"}. See \code{bayes_factor_models()}.
 #' @return A data frame with BF10 (evidence for an effect), BF01, and the test used.
 #' @examples
 #' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_partial_r")
 #' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_r")
 #' @export
-bayes_factor_per_term <- function(formula, data, prior, test = c("conditional", "joint")) {
-  prior <- check_prior(prior)
+bayes_factor_per_term <- function(formula, data, prior = "flat_partial_r",
+                                  test = c("conditional", "joint")) {
+  prior <- check_prior(prior, defaulted = missing(prior))
   test  <- match.arg(test)
   full_model  <- lm(formula, data)
+  warn_dropped_rows(data, nobs(full_model))
+  full_model$na.action <- NULL   # warned once here, not again per term
   ## an aliased column (e.g. x3 = x1 + x2) gets no coefficient and would still
   ## count in k
   aliased_columns <- names(which(is.na(coef(full_model))))

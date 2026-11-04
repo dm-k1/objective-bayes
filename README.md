@@ -36,8 +36,10 @@ three options:
 | **flat R** (`prior = "flat_r"`) | the multiple correlation $R$ | Beta(½, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 | **flat R²** (`prior = "flat_r_squared"`) | $R^2$ | Beta(1, 1), for every $k$ | its share of the flat total; narrows as $k$ grows |
 
-All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1. The package has
-**no default**: every function requires `prior =`.
+All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1. The default is
+**flat partial r**, the prior the validation recommends; a function that uses
+it because no prior was given says so once per session, and `prior =`
+selects the others.
 
 All three divide the total over the predictors without preference. As a
 density on the coefficients:
@@ -69,18 +71,19 @@ Install once, from the project folder (or from GitHub once it is public):
 devtools::install()                    # or: remotes::install_github("dm-k1/objective-bayes")
 ```
 
-Then:
+Rows with a missing value in a variable of the formula are left out, with a
+warning that gives the sample size actually used. Then:
 
 ```r
 library(flatcor)
 
-## every function asks for the prior: "flat_partial_r", "flat_r" or "flat_r_squared"
-fit <- fit_regression(y ~ x1 + x2 + x3, my_data, prior = "flat_partial_r")   # estimation (Stan)
-fit                                                                         # estimates and diagnostics
+## the default prior is flat_partial_r; prior = "flat_r" or "flat_r_squared" for the others
+fit <- fit_regression(y ~ x1 + x2 + x3, my_data)              # estimation (Stan)
+fit                                                          # estimates and diagnostics
 loo(fit); pp_check(fit)
 
-bayes_factor_per_term(y ~ x1 + x2 + x3, my_data, prior = "flat_partial_r")   # BF per term (conditional test)
-bayes_factor_models(fit, lm(y ~ x2 + x3, my_data), prior = "flat_partial_r") # any two models
+bayes_factor_per_term(y ~ x1 + x2 + x3, my_data)              # BF per term (conditional test)
+bayes_factor_models(fit, lm(y ~ x2 + x3, my_data))            # any two models
 bayes_factor_models(lm(y ~ x1 + x2, my_data), lm(y ~ x3, my_data),           # no Stan needed
                     prior = "flat_r")
 
@@ -150,8 +153,8 @@ described in [`docs/0_overview.md`](docs/0_overview.md).
   flat R as the default, then with uniform correlations (now flat partial r).
 - **v3 (November 2026)**: study 00 showed that not everything can stay flat,
   so the three options (flat partial r, flat R, flat R²) are built and
-  validated as equals, with no default. The results recommend flat partial r
-  (`docs/3_comparison.md`, section 8). The superseded scripts (by-hand
+  validated as equals. The results recommend flat partial r
+  (`docs/3_comparison.md`, section 8), which is now the default. The superseded scripts (by-hand
   tutorials, the brms version of the prior, earlier approaches) were in
   `archive/` and remain in the git history up to commit a2886a7.
 

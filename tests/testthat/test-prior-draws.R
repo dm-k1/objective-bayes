@@ -48,8 +48,9 @@ test_that("flat R-squared: implied R-squared is flat for every k, correlated or 
   }
 })
 
-test_that("every function asks for the prior", {
-  expect_error(draw_coefficients_from_prior(10, diag(2)), "Choose a prior")
+test_that("the default is flat_partial_r, and an unknown prior is refused", {
+  set.seed(1); by_default <- suppressMessages(draw_coefficients_from_prior(10, diag(2)))
+  set.seed(1); expect_equal(by_default, draw_coefficients_from_prior(10, diag(2), prior = "flat_partial_r"))
   expect_error(draw_coefficients_from_prior(10, diag(2), prior = "uniform_correlations"),
                "Unknown prior")
 })

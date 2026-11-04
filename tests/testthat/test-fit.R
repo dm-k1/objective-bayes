@@ -18,5 +18,5 @@ test_that("fit_regression() runs and works with print, loo and pp_check", {
                             iter_sampling = 500, seed = 1, prior = prior)
     expect_output(print(other), paste(prior, "prior"))
   }
-  expect_error(fit_regression(y ~ x1 + x2, data), "Choose a prior")
+  expect_error(fit_regression(y ~ x1 + x2, data, prior = "flat"), "Unknown prior")
 })

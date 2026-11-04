@@ -182,8 +182,8 @@ log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_
 #'   block, the square root of the block's sample partial R-squared.
 #' @param sample_size Number of observations, n.
 #' @param number_of_predictors Number of predictor columns in the model, k.
-#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
-#'   \code{"flat_r_squared"}; there is no default.
+#' @param prior \code{"flat_partial_r"} (the default), \code{"flat_r"} or
+#'   \code{"flat_r_squared"}.
 #' @param number_of_columns Number of columns tested together, q (1 for one
 #'   coefficient).
 #' @param points_f,points_share Grid sizes: for f, around the peak of the
@@ -197,12 +197,14 @@ log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_
 #' log_bayes_factor_conditional(0.2, sample_size = 100, number_of_predictors = 3,
 #'                              prior = "flat_r_squared")
 #' @export
-log_bayes_factor_conditional <- function(partial_r, sample_size, number_of_predictors, prior,
+log_bayes_factor_conditional <- function(partial_r, sample_size, number_of_predictors,
+                                         prior = "flat_partial_r",
                                          number_of_columns = 1, points_f = 600,
                                          points_share = 1500) {
+  prior <- check_prior(prior, defaulted = missing(prior))
   if (sample_size < number_of_predictors + 2)
     stop("Need at least two more observations than predictors.")
-  prior_cdf <- if (check_prior(prior) == "flat_partial_r") {
+  prior_cdf <- if (prior == "flat_partial_r") {
     ## the share mixture with a = k/2, in closed form: a flat partial correlation
     ## (for a block, partial R^2 ~ Beta(q/2, 1)), whatever k is
     function(f_values) (f_values^2 / (1 + f_values^2))^(number_of_columns / 2)

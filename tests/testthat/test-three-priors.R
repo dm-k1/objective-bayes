@@ -2,13 +2,30 @@
 ## direction (R/priors.R): fast versions of the family checks in validation/02
 ## and validation/05
 
-test_that("each prior has its shape, and there is no default", {
+test_that("each prior has its shape, and flat_partial_r is the default", {
   expect_equal(prior_shape("flat_partial_r", 6), 3)
   expect_equal(prior_shape("flat_r", 6), 1 / 2)
   expect_equal(prior_shape("flat_r_squared", 6), 1)
   expect_error(prior_shape(NULL, 3), "Choose a prior")
-  expect_error(log_bayes_factor_vs_intercept_only(0.2, 50, 3), "Choose a prior")
-  expect_error(log_bayes_factor_conditional(0.2, 50, 3), "Choose a prior")
+  expect_error(log_bayes_factor_vs_intercept_only(0.2, 50, 3, prior = "flat"), "Unknown prior")
+  ## without a prior, the default is used and announced once per session
+  default_prior_announced$done <- NULL
+  expect_message(by_default <- log_bayes_factor_vs_intercept_only(0.2, 50, 3), "default prior")
+  expect_equal(by_default, log_bayes_factor_vs_intercept_only(0.2, 50, 3, prior = "flat_partial_r"))
+  expect_silent(log_bayes_factor_conditional(0.2, 50, 3))
+  expect_equal(log_bayes_factor_conditional(0.2, 50, 3),
+               log_bayes_factor_conditional(0.2, 50, 3, prior = "flat_partial_r"))
+})
+
+test_that("rows dropped for missing values are reported", {
+  with_missing <- mtcars
+  with_missing$hp[c(2, 5)] <- NA
+  expect_warning(bayes_factor_per_term(mpg ~ wt + hp, with_missing, prior = "flat_partial_r"),
+                 "2 of 32 rows")
+  expect_warning(bayes_factor_models(lm(mpg ~ wt + hp, with_missing),
+                                     lm(mpg ~ wt, with_missing[-c(2, 5), ]),
+                                     prior = "flat_partial_r"), "2 rows with a missing value")
+  expect_silent(bayes_factor_per_term(mpg ~ wt + hp, mtcars, prior = "flat_partial_r"))
 })
 
 test_that("the block route reproduces the closed forms of flat R and flat partial r", {

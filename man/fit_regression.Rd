@@ -7,7 +7,7 @@
 fit_regression(
   formula,
   data,
-  prior,
+  prior = "flat_partial_r",
   chains = 4,
   iter_warmup = 1000,
   iter_sampling = 1000,
@@ -21,9 +21,9 @@ fit_regression(
 
 \item{data}{A data frame.}
 
-\item{prior}{\code{"flat_partial_r"} (R-squared ~ Beta(k/2, 1)),
-\code{"flat_r"} (R flat) or \code{"flat_r_squared"} (R-squared flat); there
-is no default. See \code{bayes_factor_models()}.}
+\item{prior}{\code{"flat_partial_r"} (the default; R-squared ~ Beta(k/2, 1)),
+\code{"flat_r"} (R flat) or \code{"flat_r_squared"} (R-squared flat). See
+\code{bayes_factor_models()}.}
 
 \item{chains, iter_warmup, iter_sampling, adapt_delta, seed}{Sampler settings.}
 

@@ -77,8 +77,9 @@ They differ only in the shape $a$:
 | flat R | `"flat_r"` | ½ | Jeffreys | share ~ Beta(½, (k−1)/2) of the total | [`1_from_behaviour.md`](1_from_behaviour.md), step 4 |
 | flat R-squared | `"flat_r_squared"` | 1 | flat on $r^2$, not on $r$ | share ~ Beta(½, (k−1)/2) of the total | [`2_how_it_calculates.md`](2_how_it_calculates.md), section 2 |
 
-The package has **no default prior**: every function requires `prior =`. The
-comparison in [`3_comparison.md`](3_comparison.md), based on the validation
+The default prior is **flat partial r**; a function that uses it because no
+prior was given says so once per session, and `prior =` selects the others.
+The comparison in [`3_comparison.md`](3_comparison.md), based on the validation
 run of 4 November 2026, recommends flat partial r (section 8) and lists its
 costs; flat R and flat R-squared remain available.
 
@@ -184,8 +185,8 @@ P4; see [`3_comparison.md`](3_comparison.md), section 5).
 
 ## What to watch out for when using the package
 
-- **Choosing the prior.** There is no default, so `prior =` must be given.
-  What each prior assumes is described in "The three branches"; the
+- **Choosing the prior.** Without `prior =`, the functions use flat partial
+  r and say so once per session. What each prior assumes is described in "The three branches"; the
   recommendation (flat partial r) and its costs are in
   [`3_comparison.md`](3_comparison.md), section 8.
 - **Shrinkage at small $n$.** With several predictors and a small sample, the

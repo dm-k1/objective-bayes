@@ -136,7 +136,10 @@ test_that("an aliased column stops with a clear message", {
 test_that("a term with missing values: the model without it uses the same rows", {
   with_missing <- transform(example_data, x3 = replace(x3, c(3, 8), NA))
   complete_rows <- with_missing[-c(3, 8), ]
-  expect_equal(bayes_factor_per_term(y ~ x1 + x2 + x3, with_missing, prior = "flat_r", test = "joint"),
+  expect_warning(with_rows_dropped <- bayes_factor_per_term(y ~ x1 + x2 + x3, with_missing,
+                                                             prior = "flat_r", test = "joint"),
+                 "2 of 60 rows")
+  expect_equal(with_rows_dropped,
                bayes_factor_per_term(y ~ x1 + x2 + x3, complete_rows, prior = "flat_r", test = "joint"))
 })
 

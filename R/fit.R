@@ -34,9 +34,9 @@ compile_stan_model <- function(backend) {
 #' @param data A data frame.
 #' @param chains,iter_warmup,iter_sampling,adapt_delta,seed Sampler settings.
 #' @param backend \code{"cmdstanr"} (default when installed) or \code{"rstan"}.
-#' @param prior \code{"flat_partial_r"} (R-squared ~ Beta(k/2, 1)),
-#'   \code{"flat_r"} (R flat) or \code{"flat_r_squared"} (R-squared flat); there
-#'   is no default. See \code{bayes_factor_models()}.
+#' @param prior \code{"flat_partial_r"} (the default; R-squared ~ Beta(k/2, 1)),
+#'   \code{"flat_r"} (R flat) or \code{"flat_r_squared"} (R-squared flat). See
+#'   \code{bayes_factor_models()}.
 #' @return A \code{flatcor_fit}: \code{print()} shows estimates and diagnostics,
 #'   \code{loo()} and \code{pp_check()} work as usual, and \code{$draws}
 #'   holds all posterior draws as a \code{posterior::draws_df}.
@@ -47,12 +47,13 @@ compile_stan_model <- function(backend) {
 #' loo(fit)
 #' }
 #' @export
-fit_regression <- function(formula, data, prior, chains = 4, iter_warmup = 1000,
+fit_regression <- function(formula, data, prior = "flat_partial_r", chains = 4, iter_warmup = 1000,
                        iter_sampling = 1000, adapt_delta = 0.95, seed = NULL,
                        backend = if (requireNamespace("cmdstanr", quietly = TRUE))
                                    "cmdstanr" else "rstan") {
-  prior <- check_prior(prior)
+  prior <- check_prior(prior, defaulted = missing(prior))
   model_frame <- model.frame(formula, data)
+  warn_dropped_rows(data, nrow(model_frame))
   design      <- model.matrix(formula, model_frame)
   if (!"(Intercept)" %in% colnames(design))
     stop("fit_regression() needs a model with an intercept.")

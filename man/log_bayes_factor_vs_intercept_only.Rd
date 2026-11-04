@@ -8,7 +8,7 @@ log_bayes_factor_vs_intercept_only(
   explained_share,
   sample_size,
   number_of_predictors,
-  prior
+  prior = "flat_partial_r"
 )
 }
 \arguments{
@@ -18,8 +18,8 @@ log_bayes_factor_vs_intercept_only(
 
 \item{number_of_predictors}{Number of predictor columns, k.}
 
-\item{prior}{\code{"flat_partial_r"}, \code{"flat_r"} or
-\code{"flat_r_squared"}; there is no default.}
+\item{prior}{\code{"flat_partial_r"} (the default), \code{"flat_r"} or
+\code{"flat_r_squared"}.}
 }
 \value{
 The log Bayes factor.

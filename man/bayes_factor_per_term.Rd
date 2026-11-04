@@ -4,15 +4,20 @@
 \alias{bayes_factor_per_term}
 \title{Bayes factor for every term of a model}
 \usage{
-bayes_factor_per_term(formula, data, prior, test = c("conditional", "joint"))
+bayes_factor_per_term(
+  formula,
+  data,
+  prior = "flat_partial_r",
+  test = c("conditional", "joint")
+)
 }
 \arguments{
 \item{formula}{A model formula.}
 
 \item{data}{A data frame.}
 
-\item{prior}{\code{"flat_partial_r"}, \code{"flat_r"} or
-\code{"flat_r_squared"}; there is no default. See \code{bayes_factor_models()}.}
+\item{prior}{\code{"flat_partial_r"} (the default), \code{"flat_r"} or
+\code{"flat_r_squared"}. See \code{bayes_factor_models()}.}
 
 \item{test}{\code{"conditional"} (default) or \code{"joint"} (compare the
 models with and without each term, for every term).}

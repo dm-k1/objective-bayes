@@ -14,15 +14,16 @@
 #' 3. Scale each direction so its f^2 is exactly the drawn amount.
 #' @param number_of_draws Number of coefficient sets.
 #' @param predictor_covariance Covariance matrix of the predictors.
-#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
-#'   \code{"flat_r_squared"}; there is no default.
+#' @param prior \code{"flat_partial_r"} (the default), \code{"flat_r"} or
+#'   \code{"flat_r_squared"}.
 #' @return A matrix with one coefficient set per row.
 #' @examples
 #' draws <- draw_coefficients_from_prior(1000, diag(3), prior = "flat_partial_r")
 #' r_squared <- rowSums(draws^2) / (1 + rowSums(draws^2))   # ~ Beta(3/2, 1)
 #' @export
 draw_coefficients_from_prior <- function(number_of_draws, predictor_covariance,
-                                         prior) {
+                                         prior = "flat_partial_r") {
+  prior <- check_prior(prior, defaulted = missing(prior))
   number_of_predictors <- ncol(predictor_covariance)
   shape <- prior_shape(prior, number_of_predictors)
   overall_correlation <- runif(number_of_draws, min = 0, max = 1)^(1 / (2 * shape))

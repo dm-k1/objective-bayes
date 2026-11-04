@@ -291,7 +291,8 @@ This is an argument, not a result of the studies.
 
 ### What stays the same
 
-The package keeps no default prior: every function requires `prior =`, so
-the choice is stated in every analysis. Flat R and flat R-squared remain
+Following this recommendation, flat partial r is the package's default; a
+function that uses it because no prior was given says so once per session,
+so the choice stays visible. Flat R and flat R-squared remain
 available for uses where their trade-off fits, such as prediction with many
 predictors and a small sample.

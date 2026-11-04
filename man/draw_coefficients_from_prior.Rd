@@ -4,15 +4,19 @@
 \alias{draw_coefficients_from_prior}
 \title{Draw coefficient sets from one of the three priors}
 \usage{
-draw_coefficients_from_prior(number_of_draws, predictor_covariance, prior)
+draw_coefficients_from_prior(
+  number_of_draws,
+  predictor_covariance,
+  prior = "flat_partial_r"
+)
 }
 \arguments{
 \item{number_of_draws}{Number of coefficient sets.}
 
 \item{predictor_covariance}{Covariance matrix of the predictors.}
 
-\item{prior}{\code{"flat_partial_r"}, \code{"flat_r"} or
-\code{"flat_r_squared"}; there is no default.}
+\item{prior}{\code{"flat_partial_r"} (the default), \code{"flat_r"} or
+\code{"flat_r_squared"}.}
 }
 \value{
 A matrix with one coefficient set per row.
