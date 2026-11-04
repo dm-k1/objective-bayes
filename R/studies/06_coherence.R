@@ -16,9 +16,10 @@
 ##  of fit_regression() (logspline density at 0, a kernel estimate as a
 ##  cross-check). Flat R is covered by part 2 only: its prior density of one
 ##  partial correlation at 0 is infinite, so the ratio cannot be formed.
-##  Performance. The mean difference with its MCSE (SD / sqrt(estimable
-##  datasets)); a dataset is estimable when the Monte Carlo SE of its
-##  Savage-Dickey estimate, from its four chains, is below 0.1.
+##  Performance. The mean difference and the mean absolute difference, each
+##  with its MCSE (SD / sqrt(estimable datasets)); a dataset is estimable when
+##  the Monte Carlo SE of its Savage-Dickey estimate, from its four chains, is
+##  below 0.1.
 ##  n_sim. Part 1: 50 datasets per prior, k and n (precision.R,
 ##  coherence_mean: 36 estimable needed for MCSE 0.05 at SD 0.30). Part 2:
 ##  400,000 prior draws per prior and k.
@@ -28,10 +29,15 @@
 ##        on every estimable dataset.
 ##    6.2 (old P4, flat partial r) The mean difference is within 2 MCSE of zero
 ##        at k = 3 and at k = 8.
-##    6.3 (old P4, flat R-squared) The same. Expected to fail at k = 8: under
-##        flat R-squared the partial correlations are tied together through
-##        R-squared, so the conditional test is not the joint model's Bayes
-##        factor (a finding about the prior, not an error).
+##    6.3 (old P4, flat R-squared) A predicted difference, not a test of
+##        coherence: under flat R-squared the partial correlations are tied
+##        together through R-squared, so the conditional test is not the joint
+##        model's Bayes factor. At k = 8 its mean absolute difference from
+##        Savage-Dickey exceeds that of flat partial r (coherent by
+##        construction, so its difference is Monte Carlo error alone) by more
+##        than 2 MCSE; k = 3 is reported. (The old P4 applied the coherence
+##        test to flat R-squared as well, and failed: that failure is this
+##        prediction.)
 ##    6.4 (old P5) On the datasets that are not estimable, the conditional test
 ##        lies within 3 Monte Carlo SE of Savage-Dickey.
 ##    6.5 (old P6) Under flat partial r and flat R-squared, x1's partial
@@ -140,7 +146,10 @@ coherence <- per_dataset |>
   filter(estimable) |>
   group_by(prior, k) |>
   summarise(estimable = n(), mean_difference = mean(difference),
-            mcse = sd(difference) / sqrt(n()), largest_difference = max(abs(difference)),
+            mcse = sd(difference) / sqrt(n()),
+            mean_absolute_difference = mean(abs(difference)),
+            mean_absolute_difference_mcse = sd(abs(difference)) / sqrt(n()),
+            largest_difference = max(abs(difference)),
             .groups = "drop")
 cat("\nConditional test minus Savage-Dickey (log scale), estimable datasets, per prior and k:\n")
 print(as.data.frame(coherence), digits = 3, row.names = FALSE)
@@ -156,11 +165,23 @@ coherent_at <- function(prior_name) {
        details = paste(sprintf("k = %d: %.3f (MCSE %.3f, %d estimable)", rows$k, rows$mean_difference,
                                rows$mcse, rows$estimable), collapse = "; "))
 }
-for (case in list(list("6.2", "flat_partial_r"), list("6.3", "flat_r_squared"))) {
-  result <- coherent_at(case[[2]])
-  record_check(sprintf("%s %s: conditional test within 2 MCSE of Savage-Dickey", case[[1]], case[[2]]),
-               result$passed, result$details)
+result <- coherent_at("flat_partial_r")
+record_check("6.2 flat_partial_r: conditional test within 2 MCSE of Savage-Dickey",
+             result$passed, result$details)
+## 6.3: flat R-squared is predicted to differ; flat partial r (coherent) gives
+## the size of a difference that is Monte Carlo error alone
+excess_over_coherent <- function(k_value) {
+  rows <- filter(coherence, k == k_value)
+  r2 <- filter(rows, prior == "flat_r_squared"); pr <- filter(rows, prior == "flat_partial_r")
+  if (nrow(r2) == 0 || nrow(pr) == 0) return(c(excess = NA, mcse = NA))
+  c(excess = r2$mean_absolute_difference - pr$mean_absolute_difference,
+    mcse = sqrt(r2$mean_absolute_difference_mcse^2 + pr$mean_absolute_difference_mcse^2))
 }
+excess <- lapply(c(3, 8), excess_over_coherent)
+record_check("6.3 flat_r_squared: conditional test differs from Savage-Dickey at k = 8 (predicted)",
+             isTRUE(excess[[2]][["excess"]] > 2 * excess[[2]][["mcse"]]),
+             sprintf("mean |difference| above flat partial r: k = 8: %.3f (MCSE %.3f); k = 3: %.3f (MCSE %.3f)",
+                     excess[[2]][["excess"]], excess[[2]][["mcse"]], excess[[1]][["excess"]], excess[[1]][["mcse"]]))
 not_estimable <- filter(per_dataset, !estimable)
 record_check("6.4 not estimable: conditional within 3 Monte Carlo SE of Savage-Dickey",
              all(abs(not_estimable$difference) < 3 * not_estimable$savage_dickey_se),

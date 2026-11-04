@@ -124,6 +124,13 @@ run, and results and figures go to `cache/`).
 | 9 | `09_estimation.R` | yes | about 6 h on 7 cores; a cluster job |
 | 10 | `10_variable_selection.R` | yes | |
 
+**Check 6.3 reframed** (5 November 2026): flat R-squared's conditional test
+is predicted to differ from Savage–Dickey, so 6.3 no longer applies the
+coherence test of 6.2 and expects it to fail. It passes when, at k = 8, flat
+R-squared's mean absolute difference from Savage–Dickey exceeds flat partial
+r's (Monte Carlo error alone, since flat partial r is coherent by
+construction) by more than 2 MCSE; k = 3 is reported.
+
 **Open after the full run of study 2** (decisions for the author):
 
 - *2.6, bridge sampling:* 8 of 9 cases pass. Flat R-squared at k = 1, n = 80

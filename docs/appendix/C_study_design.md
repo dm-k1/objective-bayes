@@ -164,16 +164,24 @@ judged against the KS critical value for its *n*<sub>sim</sub>.
   restriction, prior draws only.
 - **Estimands.**
   - The mean log difference between the conditional test and Savage–Dickey,
-    per prior and *k*.
+    and the mean absolute difference, per prior and *k*.
   - The density of the partial correlation near zero, and the other
     predictors' *R*² given it.
 - **Methods.** flatcor's conditional test; Savage–Dickey from the Stan
   posterior (logspline, with a kernel estimate as a cross-check). Flat R is
   covered by the restriction check only: its prior density at zero is infinite.
 - **Performance.**
-  - The mean log difference with its MCSE. The check passes when it is within
-    2 MCSE of zero; this replaces the current P4, which used the largest
-    difference over about 10 datasets.
+  - Flat partial r: the mean log difference with its MCSE. The check passes
+    when it is within 2 MCSE of zero; this replaces the current P4, which used
+    the largest difference over about 10 datasets.
+  - Flat R-squared: a predicted difference, not a test of coherence. Its
+    partial correlations are tied together through *R*², so its conditional
+    test is not the joint model's Bayes factor. The check passes when, at
+    *k* = 8, its mean absolute difference from Savage–Dickey exceeds that of
+    flat partial r by more than 2 MCSE; flat partial r is coherent by
+    construction, so its difference is Monte Carlo error alone. *k* = 3 is
+    reported. (The current P4 applied the coherence test to flat R-squared
+    too, and failed; that failure is this prediction.)
   - The restriction: the distribution of the others' *R*² against its
     predicted form (for flat partial r, Beta((*k*−1)/2, 3/2)), by KS distance.
 - ***n*<sub>sim</sub>.**

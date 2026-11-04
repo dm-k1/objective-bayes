@@ -715,8 +715,10 @@ datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
   absolute difference 0.30 at $n$ = 50 and 0.37 at $n$ = 200) but not at
   $k$ = 8 (mean −0.48 at $n$ = 50 and −0.34 at $n$ = 200; largest 0.87 on the
   log scale, a factor 2.4; 19 of 20 datasets estimable, mean absolute
-  difference 0.28). This was check P4 of the old study 10, the one failure of that run; it is now
-  check 6.3, where the failure is expected.
+  difference 0.28). This was check P4 of the old study 10, the one failure of that run, because
+  it tested flat R-squared for coherence too. It is now check 6.3, which
+  predicts the difference: at $k = 8$, flat R-squared's mean absolute
+  difference from Savage–Dickey exceeds flat partial r's.
   It is a property of the prior; the code is correct. Savage–Dickey equals the conditional test only when the null's
   prior for the other parameters is the joint prior given a zero partial
   correlation. Under flat partial r (the LKJ vine) the partial correlations
