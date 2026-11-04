@@ -316,6 +316,30 @@ round(rbind(flat_r = summarise_correlation(correlation_flat_r),
             r2d2   = summarise_correlation(correlation_r2d2)), 3)
 ```
 
+## How fast evidence for a true null grows
+
+Study 02 (B3b) measures the rate at which the evidence for a true null grows
+with the sample size: against the intercept-only model, log BF₀₁ grows like
+$a \log n$, so BF₀₁ grows like $n^{a}$. That is the polynomial rate of every
+*local* prior (= a prior on the effect whose density is positive at zero), and
+Johnson and Rossell (2010) show it is unavoidable for such priors: the
+evidence for a true null grows much more slowly than the evidence against a
+false one. Their remedy is *non-local* priors (= alternatives with zero
+density at the null), which require choosing an effect size of interest; in
+psychology, Pramanik and Johnson (2024) argue for the same reason that default
+tests confirm true nulls too slowly, and Datta and Johnson (2026) build the
+non-local version for partial correlations.
+
+Within the local priors the three branches sit at different points on this
+scale. A model with $k$ predictors under a standard local prior such as a
+fixed *g*-prior reaches the rate $n^{k/2}$; flat partial r matches it
+($a = k/2$), while flat R ($a = ½$) and flat R-squared ($a = 1$) stay at the
+rate of a single parameter whatever $k$ is. This is the same behaviour that
+study 06 shows for one coefficient: with many predictors, flat R and flat
+R-squared rarely confirm a true null. Flat partial r is as fast as a local
+prior can be without choosing an effect size; a non-local prior would be
+faster, at the cost of that choice.
+
 ## What is new here, and what is not
 
 This section is based on a literature search of November 2026. It is not a
@@ -330,7 +354,7 @@ The following points are not new, and are cited as such:
   differs in one assumption, fixed instead of random predictors
   (`validation/05`, C8). Other default tests for one partial correlation are
   Wetzels and Wagenmakers (2012) and the Bayes factor functions for partial
-  correlations (arXiv 2503.10787; *Journal of Mathematical Psychology*, 2026).
+  correlations of Datta and Johnson (2026), which use non-local alternatives.
 - **Flat partial r as a joint prior.** It is LKJ(1), uniform over correlation
   matrices (Lewandowski et al., 2009), and `stan_lm`'s $R^2 \sim$
   Beta($k/2$, 1) (Gabry & Goodrich). That each partial correlation given all
@@ -377,7 +401,11 @@ Liseo and Ntzoufras (2018), whose model-selection part surveys the priors
 compared here (*g*-priors and their mixtures, the robust and intrinsic priors)
 and is the most likely place for a prior statement of the drift with *k* or
 of coherence between priors across nested models. Not yet read: the journal
-site requires a browser check that could not be passed here.
+site requires a browser check that could not be passed here. Of lower
+priority: Steel (2020), a review of Bayesian model averaging whose discussion
+of *g*-priors and priors over model size bears on study 09; and Pramanik and
+Johnson (2024), for how a psychology audience is likely to read the slow
+growth of evidence for nulls.
 
 ## Closest relatives
 
@@ -404,13 +432,17 @@ site requires a browser check that could not be passed here.
   to shrinkage. *Statistica Sinica*.
 - Bayarri, M. J., Berger, J. O., Forte, A., & García-Donato, G. (2012). Criteria
   for Bayesian model choice with application to variable selection. *Annals of Statistics*.
-- Bayes factor functions for testing partial correlation coefficients (2026).
-  *Journal of Mathematical Psychology*; arXiv 2503.10787.
 - Consonni, G., Fouskakis, D., Liseo, B., & Ntzoufras, I. (2018). Prior
   distributions for objective Bayesian analysis. *Bayesian Analysis*, *13*(2),
   627–679. https://doi.org/10.1214/18-BA1103
+- Datta, S., & Johnson, V. E. (2026). Bayes factor functions for testing
+  partial correlation coefficients. *Journal of Mathematical Psychology*.
+  arXiv:2503.10787.
 - Gabry, J., & Goodrich, B. Estimating regularized linear models with
   rstanarm (`stan_lm` vignette). https://mc-stan.org/rstanarm/articles/lm.html
+- Johnson, V. E., & Rossell, D. (2010). On the use of non-local prior
+  densities in Bayesian hypothesis tests. *Journal of the Royal Statistical
+  Society: Series B*, *72*(2), 143–170. https://doi.org/10.1111/j.1467-9868.2009.00730.x
 - Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
   Analytic posterior distribution and Bayes factor for Pearson partial
   correlations. *TEST*.
@@ -428,8 +460,13 @@ site requires a browser check that could not be passed here.
   prevalence of information inconsistency in normal linear models. *TEST*.
 - Porwal, A., & Rodríguez, A. (2024). Dirichlet process mixtures of block g
   priors for model selection and prediction in linear models. arXiv 2411.00471.
+- Pramanik, S., & Johnson, V. E. (2024). Efficient alternatives for Bayesian
+  hypothesis tests in psychology. *Psychological Methods*, *29*(2), 243–261.
+  https://doi.org/10.1037/met0000482
 - Som, A., Hans, C. M., & MacEachern, S. N. (2016). A conditional Lindley paradox
   in Bayesian linear models. *Biometrika*.
+- Steel, M. F. J. (2020). Model averaging and its use in economics. *Journal
+  of Economic Literature*, *58*(3), 644–719. https://doi.org/10.1257/jel.20191385
 - Wetzels, R., & Wagenmakers, E.-J. (2012). A default Bayesian hypothesis test
   for correlations and partial correlations. *Psychonomic Bulletin & Review*.
 - Zhang, Y. D., Naughton, B. P., Bondell, H. D., & Reich, B. J. (2022).
