@@ -231,12 +231,18 @@ averaged_over_q <- cell_summaries |>
   summarise(across(c(auc_null_vs_small, null_found, small_called_null), mean), .groups = "drop")
 
 save_figure(
-  ggplot(averaged_over_q, aes(sample_size, auc_null_vs_small, colour = method, linetype = method)) +
+  ggplot(averaged_over_q |>
+           group_by(sample_size, other_predictors, explained_by_others) |>
+           mutate(auc_minus_jzs = auc_null_vs_small - auc_null_vs_small[method == "JZS (lmBF)"]) |>
+           ungroup() |> filter(method != "JZS (lmBF)"),
+         aes(sample_size, auc_minus_jzs, colour = method, linetype = method)) +
+    geom_hline(yintercept = 0, colour = "grey40") +
     geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
-    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(factor_methods) +
+    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(setdiff(factor_methods, "JZS (lmBF)")) +
     by_others +
-    labs(x = "sample size (log scale)", y = "AUC: null vs small factor (f-squared = 0.02)", colour = NULL,
-         title = "Testing a factor: separating nulls from small effects (averaged over q = 2-5)"),
+    labs(x = "sample size (log scale)", y = "AUC (null vs small factor) minus JZS", colour = NULL,
+         title = "Testing a factor: separating nulls from small effects, against JZS (averaged over q = 2-5)",
+         subtitle = "above 0: separates better than JZS"),
   "11_auc", width = 12, height = 7)
 
 save_figure(

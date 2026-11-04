@@ -1,0 +1,351 @@
+---
+title: "flatcor: validation report"
+subtitle: "Three priors, every test, what each score means"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    embed-resources: true
+    fig-align: center
+    df-print: kable
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r setup}
+## Render from the project folder after a run of validation/run_all.R:
+##   quarto render validation/report.qmd
+## The checks are read from the run's logs (cache/logs/) and the outcome
+## table from study 06's cache; the figures are validation/results/figures/.
+library(knitr)
+project <- if (file.exists("DESCRIPTION")) normalizePath(".") else normalizePath("..")
+figure <- function(name) include_graphics(file.path(project, "validation", "results", "figures",
+                                                    paste0(name, ".png")))
+checks_of <- function(study) {
+  log_file <- file.path(project, "cache", "logs", paste0(study, ".log"))
+  if (!file.exists(log_file)) return(data.frame(Note = "log not found: run validation/run_all.R"))
+  lines <- grep("^\\[(PASS|FAIL)\\]", readLines(log_file, warn = FALSE), value = TRUE)
+  if (!length(lines)) return(data.frame(Note = "this study has no pass/fail checks"))
+  data.frame(Result = sub("^\\[(PASS|FAIL)\\].*", "\\1", lines),
+             Check = trimws(gsub("\\s{2,}", " | ", sub("^\\[(PASS|FAIL)\\] ", "", lines))))
+}
+summary_lines <- readLines(file.path(project, "validation", "results", "run_summary.md"))
+```
+
+## How to read this report
+
+The package offers three priors for linear regression. All three put
+R² ~ Beta(*a*, 1) with a uniform direction, and differ only in *a*:
+
+| Prior | `prior =` | *a* | What stays flat as predictors are added |
+|---|---|---|---|
+| flat partial r | `"flat_partial_r"` | *k*/2 | each partial correlation |
+| flat R | `"flat_r"` | ½ | the multiple correlation *R* |
+| flat R-squared | `"flat_r_squared"` | 1 | *R*² |
+
+JZS (the BayesFactor/JASP default, Cauchy scale 0.354) and Zellner–Siow
+(scale 1) are shown as references, not contenders. In the figures each prior
+has one colour (blue, orange, green; references grey). For a single
+coefficient, the **conditional test** (its partial correlation against zero,
+solid line) and the **joint test** (model with against without it, dashed)
+share that colour.
+
+There are two kinds of study. **Checks** (00, 01, 02, 05, 08, 10, 11) end in
+PASS or FAIL against a criterion from the literature; their tables below are
+read from the run's logs. **Comparisons** (03, 04, 06, 07, 09) show how the
+priors behave, and the text says what to look at; 03 and 09 also carry a few
+checks of their own.
+
+```{r run-table, results = "asis"}
+## the run's setup and its per-study table, as run_all.R wrote them
+cat(paste(summary_lines[seq_len(grep("^## 00", summary_lines)[1] - 1)][-1], collapse = "\n"))
+```
+
+**In one line:** all three are computed correctly and meet the formal
+criteria; they differ in behaviour. Flat partial r gives the same answer about
+one coefficient whatever the number of other predictors; flat R and flat
+R-squared drift with *k*. The one failed check (10, P4) is a property of flat
+R-squared, not a bug.
+
+---
+
+## 00 · The first result: what valid correlation matrices force
+
+**Question.** Draw valid correlation matrices of (y, x₁ … x*k*). Can each
+partial correlation, the total *R* and *R*² all stay flat as *k* grows?
+
+**How to read.** Each column is one quantity, each colour one version: keep
+each partial *r* flat (blue), keep *R* flat (orange), keep *R*² flat (green).
+
+```{r}
+figure("00_partial_r_R_R2_by_k")
+figure("00_three_versions_against_k")
+```
+
+**Result.** They cannot all stay flat. Keep each partial *r* flat and *R*²
+grows with *k* (P(*R*² > 0.5) from 0.29 at *k* = 1 to 0.97 at *k* = 10); keep
+*R* or *R*² flat and each partial *r* shrinks (P(|partial *r*| > 0.3) from 0.70
+to 0.22, or 0.91 to 0.36). This fork is why there are three priors.
+
+```{r}
+checks_of("00_initial_simulation")
+```
+
+## 01 · Does Stan sample the prior and the posterior correctly?
+
+**Criterion.** Draws from the Stan model match the prior (Kolmogorov–Smirnov
+distance below 0.03), and simulation-based calibration (Talts et al., 2018):
+the rank of the true value among posterior draws is uniform (χ² p > 0.01).
+
+**Result.** All pass for all three priors (KS ≤ 0.012; SBC χ² p ≥ 0.43 at
+*k* = 8, *n* = 60).
+
+```{r}
+checks_of("01_prior_and_posterior")
+```
+
+## 02 · Is the whole-model Bayes factor right, and does it meet the criteria?
+
+**Criteria.** Correctness against independent routes (A1 `integrate()`, A3
+brute-force sampling, A4 a second derivation; A2 units and recoding) and the
+criteria of Bayarri, Berger, Forte & García-Donato (2012): predictive
+matching (B1: BF = 1 at *n* = *k* + 1), information consistency (B2: BF → ∞
+as *R*² → 1, from *n* = *k* + 3), model-selection consistency (B3, B4: the
+evidence for the truth grows with *n*) and intrinsic consistency (B5).
+
+**How to read B3b.** Against the intercept-only model, evidence for a true
+null grows like *a*·log *n*: ½ log *n* for flat R, log *n* for flat
+R-squared, *k*/2 log *n* for flat partial r. All are consistent; the rate
+differs.
+
+```{r}
+checks_of("02_bayes_factor")
+```
+
+## 03 · Testing one coefficient: how often is the evidence right?
+
+**Design.** Four correlated predictors; the slope of x₁ varies; 200 datasets
+per cell. A comparison, no pass/fail.
+
+**How to read.** Top figure: the share with BF > 3 for the true hypothesis.
+In the left column (slope 0) that means evidence *for the null*. Slopes 0.3
+and 0.5 are left out: there every test finds the effect.
+
+```{r}
+figure("03_correct_evidence_x1")
+figure("03_misleading_evidence_x1")
+figure("03_trade_off")
+```
+
+**Result.** The tests differ almost only for a true null and small effects.
+Flat partial r's conditional test (solid blue) confirms nulls most often,
+already at *n* = 20; it also calls more small effects null. The trade-off
+figure puts both on one picture: top left is best.
+
+```{r}
+checks_of("03_simulations")
+```
+
+## 04 · Is that difference accuracy, or only where the test decides?
+
+**Criterion.** The AUC: the chance that a null dataset gets a higher
+BF₀₁ than a dataset with slope 0.1. It ignores the threshold 3, so it
+measures separation only. Shown as the difference from JZS, with a paired
+bootstrap 95% interval.
+
+```{r}
+figure("04_discrimination")
+```
+
+**Result.** The three conditional tests coincide exactly: they rank datasets
+the same way, so none is more accurate than another. With correlated
+predictors they separate better than JZS (+0.03 to +0.05); the joint tests of
+flat R and flat R-squared separate worse. Differences in study 03 are
+therefore differences in *where* each test decides.
+
+## 05 · Is the conditional test computed correctly?
+
+**Criteria.** The test for one coefficient against `integrate()` (C1–C5), the
+share mixture for flat partial r is free of *k* (C4b), why η = 1 (C7), against
+the exact Bayes factor of Kucharský et al. (2026) (C8), and the block test
+for several columns (C9–C11).
+
+```{r}
+checks_of("05_conditional_test")
+```
+
+## 06 · Across 216 designs: what does each test say?
+
+**Design.** *k* = 2–20, *n* = 50–1000, correlation 0–0.7, sparse or dense
+other coefficients; 200 datasets per cell.
+
+**How to read the outcome bars.** Each bar is one test, split into what it
+says at BF 3: *says null* (purple), *undecided* (grey), *says effect*
+(brown). Top row: the truth is null, so purple is correct. Lower rows: a real
+effect, so brown is correct.
+
+```{r}
+figure("06_outcomes")
+```
+
+```{r}
+outcomes_file <- file.path(project, "cache", "sim_broad.rds")
+if (file.exists(outcomes_file)) {
+  runs <- readRDS(outcomes_file)
+  runs <- runs[runs$number_of_predictors == 20 & grepl("conditional|JZS", runs$method), ]
+  runs$outcome <- ifelse(runs$log_BF10 < -log(3), "says null",
+                         ifelse(runs$log_BF10 > log(3), "says effect", "undecided"))
+  shares <- as.data.frame.matrix(prop.table(
+    table(paste(runs$method, "| slope", runs$slope_of_x1),
+          factor(runs$outcome, levels = c("says null", "undecided", "says effect"))), 1))
+  kable(data.frame(Test = sub(" \\|.*", "", rownames(shares)),
+                   Truth = sub(".*\\| ", "", rownames(shares)), round(shares, 3),
+                   check.names = FALSE, row.names = NULL),
+        caption = "k = 20: share of datasets per answer (read from study 06's cache)")
+}
+```
+
+**Result.** At *k* = 20 the three conditional tests have the same AUC (0.701),
+yet different bars. Flat R leaves 92% of true nulls undecided: its low rate
+of calling small effects null comes from rarely saying anything, not from
+seeing effects better. Flat partial r decides on most datasets and finds 88%
+of true nulls, but calls 60% of 0.1 effects null: with a small effect and
+little data it leans to the null.
+
+```{r}
+figure("06_auc_sparse")
+figure("06_auc_dense")
+```
+
+The AUC figures show the same as study 04 over all designs: the three
+conditional tests coincide, above JZS when predictors are correlated.
+
+## 07 · How good are the estimates?
+
+**Design.** 24 designs, 100 datasets each, *k* = 3 and 8, *n* = 30–200;
+Stan fits for the three priors, BayesFactor draws for JZS and Zellner–Siow,
+`lm()` as the baseline. A comparison.
+
+**How to read.** Below 1: closer to the truth than ordinary regression.
+Coverage: the dotted line is 0.95.
+
+```{r}
+figure("07_prediction_error")
+figure("07_relative_error")
+figure("07_coverage")
+figure("07_bias")
+```
+
+**Result.** Flat R and flat R-squared shrink more: lowest prediction error at
+small *n* with many predictors (0.37–0.77 of OLS at *k* = 8, *n* = 30), at the
+cost of bias in real effects (−29% and −21% of the effect) and coverage down
+to 0.76 and 0.82. Flat partial r shrinks less (−8%), is better than OLS in
+every cell, and keeps coverage at 0.92 or above.
+
+## 08 · Consistency when the number of predictors grows with *n*
+
+**Criterion.** Model-selection consistency with *k* = *n*/4 and *k* = √*n*:
+the median evidence for the truth keeps rising (slope against log *n* above
+0.1). The y-axis is on a pseudo-log scale, so values near 0 stay visible.
+
+```{r}
+figure("08_growing_k")
+```
+
+**Result.** All three pass, but at very different speeds: with 500 null
+predictors at *n* = 2000 the median log BF₀₁ is 408 for flat partial r, 3.7
+for flat R-squared and 1.9 for flat R (JZS 149, Zellner–Siow 411).
+
+```{r}
+checks_of("08_growing_k")
+```
+
+## 09 · Variable selection
+
+**Design.** 12 candidates, 4 real (0.3, 0.2, 0.15, 0.1); all 4,096 subsets;
+uniform and beta-binomial priors over models; BIC as an extra reference.
+
+```{r}
+figure("09_variable_selection")
+figure("09_inclusion")
+figure("09_trade_off_curves")
+```
+
+**Result.** Ranking predictors is nearly identical for all methods (the
+trade-off curves coincide). Where they sit on that curve differs: flat partial
+r, like Zellner–Siow, includes few null predictors and misses more real ones;
+flat R and flat R-squared include more of both.
+
+```{r}
+checks_of("09_variable_selection")
+```
+
+## 10 · Calibration and coherence
+
+**Criteria.** Calibration of the Bayes factor (Schad et al., 2023): with data
+drawn from the prior, the share of true nulls among datasets with a given
+BF₁₀ is 1/(1 + BF₁₀) (P1), and it is off for data from another prior (P2).
+Coherence: the conditional test against the Savage–Dickey ratio of the joint
+model (Wagenmakers et al., 2010) (P3–P5).
+
+```{r}
+figure("10_calibration")
+figure("10_coherence")
+```
+
+**Result.** Each prior is calibrated on its own data. Only flat partial r's
+conditional test equals its joint model's Bayes factor (within a factor 1.10).
+Flat R-squared's drifts from it at *k* = 8 (a factor 2.40): the one failed
+check, a property of that prior, whose partial correlations are dependent
+through *R*². For flat R the ratio is not defined.
+
+```{r}
+checks_of("10_calibration")
+```
+
+## 11 · Testing a factor (several columns)
+
+**Design.** A factor of 2–5 columns, with 2 or 10 other predictors that
+explain 0, 0.5 or 0.9 of the variance.
+
+**How to read.** If the conditional (block) test works, its line does not
+move along a row: what the other predictors explain should not change the
+evidence about the factor. The joint tests and JZS do move (the conditional
+Lindley paradox; Som, Hans & MacEachern, 2016).
+
+```{r}
+figure("11_calibration")
+figure("11_auc")
+```
+
+```{r}
+checks_of("11_factor_terms")
+```
+
+---
+
+## References
+
+- Bayarri, M. J., Berger, J. O., Forte, A., & García-Donato, G. (2012).
+  Criteria for Bayesian model choice with application to variable selection.
+  *Annals of Statistics*.
+- Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
+  Analytic posterior distribution and Bayes factor for Pearson partial
+  correlations. *TEST*.
+- Schad, D. J., Nicenboim, B., Bürkner, P.-C., Betancourt, M., & Vasishth, S.
+  (2023). Workflow techniques for the robust use of Bayes factors.
+  *Psychological Methods*.
+- Som, A., Hans, C. M., & MacEachern, S. N. (2016). A conditional Lindley
+  paradox in Bayesian linear models. *Biometrika*.
+- Talts, S., Betancourt, M., Simpson, D., Vehtari, A., & Gelman, A. (2018).
+  Validating Bayesian inference algorithms with simulation-based calibration.
+  arXiv:1804.06788.
+- Wagenmakers, E.-J., Lodewyckx, T., Kuriyal, H., & Grasman, R. (2010).
+  Bayesian hypothesis testing for psychologists: A tutorial on the
+  Savage–Dickey method. *Cognitive Psychology*.
+
+Full details per study: [`docs/5_validation.md`](../docs/5_validation.md);
+the comparison per criterion and the recommendation:
+[`docs/4_comparison.md`](../docs/4_comparison.md).

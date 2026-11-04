@@ -108,6 +108,7 @@ running the validation anywhere: `docs/5_validation.md`.
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; flat partial r as `stan_lm`'s prior; why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
 | `validation/` | Study 00 (the first result: the fork), then for each prior: does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `docs/5_validation.md` |
+| `validation/report.qmd`, `report.html` | The validation report: every figure and check, with what each score means (open `report.html` in a browser; rebuild with `quarto render validation/report.qmd`) |
 | `renv.lock`, `Dockerfile` | The pinned environment: R packages, and R + packages + CmdStan as a container |
 
 ## Scope

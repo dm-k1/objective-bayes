@@ -126,39 +126,54 @@ by_k_and_correlation <- facet_grid(
   labeller = labeller(number_of_predictors  = function(v) paste("k =", v),
                       predictor_correlation = function(v) paste("correlation =", v)))
 
-save_figure(
-  ggplot(filter(cell_summaries, other_coefficients == "sparse"),
-         aes(sample_size, auc_null_vs_0.1, colour = method, linetype = method)) +
-    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
-    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(one_coefficient_methods) +
-    by_k_and_correlation + theme(legend.position = "bottom") +
-    labs(x = "sample size (log scale)", y = "AUC: null vs slope 0.1", colour = NULL,
-         title = "Discrimination across designs (other coefficients sparse)"),
-  "06_auc_sparse", width = 12, height = 8)
+## AUC minus JZS per cell: the AUC curves themselves lie on top of each other
+auc_minus_jzs_per_cell <- cell_summaries |>
+  group_by(number_of_predictors, sample_size, predictor_correlation, other_coefficients) |>
+  mutate(auc_minus_jzs = auc_null_vs_0.1 - auc_null_vs_0.1[method == "JZS default"]) |>
+  ungroup() |> filter(method != "JZS default")
+for (pattern in c("sparse", "dense"))
+  save_figure(
+    ggplot(filter(auc_minus_jzs_per_cell, other_coefficients == pattern),
+           aes(sample_size, auc_minus_jzs, colour = method, linetype = method)) +
+      geom_hline(yintercept = 0, colour = "grey40") +
+      geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+      scale_x_log10(breaks = c(50, 200, 1000)) +
+      method_scales(setdiff(one_coefficient_methods, "JZS default")) +
+      by_k_and_correlation +
+      labs(x = "sample size (log scale)", y = "AUC (null vs slope 0.1) minus JZS",
+           title = sprintf("Discrimination against JZS (other coefficients %s)",
+                           if (pattern == "sparse") "sparse" else "dense, all 0.1"),
+           subtitle = "above 0: separates nulls from small effects better than JZS; the three conditional tests coincide"),
+    paste0("06_auc_", pattern), width = 12, height = 8)
 
+## What each test says, as one bar per test: the share that says null, stays
+## undecided or says effect (at 3), by k and the true slope of x1, averaged
+## over n, correlation and pattern. Equal AUC, different bars: the tests
+## differ in where they decide, not in how well they separate.
+outcomes <- runs |>
+  filter(grepl("conditional|JZS", method)) |>
+  mutate(test = factor(sub(" conditional", "", method),
+                       levels = c("flat partial r", "flat R", "flat R-squared", "JZS default")),
+         outcome = factor(case_when(log_BF10 < -log(3) ~ "says null", log_BF10 > log(3) ~ "says effect",
+                                    TRUE ~ "undecided"),
+                          levels = c("says effect", "undecided", "says null")),
+         truth = factor(paste("true slope", slope_of_x1),
+                        levels = paste("true slope", c(0, 0.1, 0.2)))) |>
+  count(test, number_of_predictors, truth, outcome) |>
+  group_by(test, number_of_predictors, truth) |> mutate(share = n / sum(n)) |> ungroup()
 save_figure(
-  ggplot(filter(cell_summaries, other_coefficients == "dense"),
-         aes(sample_size, auc_null_vs_0.1, colour = method, linetype = method)) +
-    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
-    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(one_coefficient_methods) +
-    by_k_and_correlation + theme(legend.position = "bottom") +
-    labs(x = "sample size (log scale)", y = "AUC: null vs slope 0.1", colour = NULL,
-         title = "Discrimination across designs (other coefficients dense, all 0.1)"),
-  "06_auc_dense", width = 12, height = 8)
-
-save_figure(
-  ggplot(cell_summaries |>
-           pivot_longer(c(null_found, small_called_null), names_to = "rate", values_to = "value") |>
-           mutate(rate = recode(rate, null_found = "true null found (BF01 > 3)",
-                                small_called_null = "slope 0.1 called null (BF01 > 3)")) |>
-           group_by(method, number_of_predictors, sample_size, rate) |>
-           summarise(value = mean(value), .groups = "drop"),
-         aes(sample_size, value, colour = method, linetype = method)) +
-    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
-    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(one_coefficient_methods) +
-    facet_grid(rate ~ number_of_predictors,
+  ggplot(outcomes, aes(test, share, fill = outcome)) +
+    geom_col(width = 0.75) +
+    geom_text(data = filter(outcomes, share >= 0.08),
+              aes(label = sprintf("%.2f", share)), position = position_stack(vjust = 0.5),
+              size = 2.7, colour = "white") +
+    scale_fill_manual(values = c(`says null` = "#542788", undecided = "grey70", `says effect` = "#B35806"),
+                      breaks = c("says null", "undecided", "says effect"), name = "at BF 3:") +
+    facet_grid(truth ~ number_of_predictors,
                labeller = labeller(number_of_predictors = function(v) paste("k =", v))) +
-    theme(legend.position = "bottom") +
-    labs(x = "sample size (log scale)", y = "proportion of datasets", colour = NULL,
-         title = "Calibration at 3, averaged over correlation and pattern"),
-  "06_calibration", width = 12, height = 7)
+    scale_y_continuous(breaks = c(0, 0.5, 1)) +
+    theme(axis.text.x = element_text(angle = 30, hjust = 1), legend.position = "bottom") +
+    labs(x = NULL, y = "share of datasets",
+         title = "What each conditional test (and JZS) says about x1, as k grows",
+         subtitle = "averaged over n, correlation and pattern; correct: says null in the top row, says effect below"),
+  "06_outcomes", width = 11, height = 8)

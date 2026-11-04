@@ -25,7 +25,9 @@ The scripts (in `validation/`) load the package from the project folder with `pk
 **All at once:** `Rscript validation/run_all.R` runs every study, 00 to 11,
 each in its own R process, and writes `validation/results/run_summary.md` (the commit, R
 and CmdStan versions, cores, study 00's table, and every PASS/FAIL check) plus
-a log per study in `cache/logs/`. `run_all.R quick` runs 00 and the
+a log per study in `cache/logs/`. `quarto render validation/report.qmd` then builds
+`validation/report.html`: every figure and check of the run, with a short
+explanation of how to read each. `run_all.R quick` runs 00 and the
 correctness checks 01, 02 and 05; `run_all.R 03 04 09` runs a selection.
 `VALIDATION_CORES=32` sets the cores.
 

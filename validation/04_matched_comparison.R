@@ -52,18 +52,6 @@ discrimination <- x1_runs |>
     .groups = "drop")
 print(as.data.frame(discrimination), digits = 3)
 
-save_figure(
-  ggplot(discrimination, aes(sample_size, auc_null_vs_0.1, colour = method, linetype = method)) +
-    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
-    scale_x_log10(breaks = c(20, 100, 500)) +
-    method_scales(one_coefficient_methods) +
-    facet_wrap(~ predictor_correlation,
-               labeller = labeller(predictor_correlation = function(v) paste("predictor correlation =", v))) +
-    labs(x = "sample size (log scale)", y = "AUC: null vs slope 0.1", colour = NULL,
-         title = "Separating nulls from small effects, at any threshold",
-         subtitle = "0.5 = no better than chance; equal curves = equal discrimination") +
-    theme(legend.position = "bottom"),
-  "04_discrimination", width = 10, height = 5)
 
 
 ## ---- M2: each method minus JZS, paired bootstrap --------------------------
@@ -91,6 +79,24 @@ paired_differences <- do.call(rbind, lapply(c(0, 0.5), function(correlation)
   }))))
 cat("\nAUC (null vs 0.1) minus JZS, paired bootstrap 95% interval:\n")
 print(paired_differences, digits = 3)
+
+## The curves of AUC itself lie on top of each other; the difference from JZS,
+## with its paired bootstrap interval, shows where they part
+save_figure(
+  ggplot(paired_differences, aes(sample_size, auc_minus_jzs, colour = method, linetype = method)) +
+    geom_hline(yintercept = 0, colour = "grey40") +
+    geom_line(linewidth = 0.8, alpha = 0.8,
+              position = position_dodge(width = 0.06)) +
+    geom_pointrange(aes(ymin = lower_95, ymax = upper_95), size = 0.25, alpha = 0.8,
+                    position = position_dodge(width = 0.06)) +
+    scale_x_log10(breaks = c(100, 200, 500)) +
+    method_scales(setdiff(one_coefficient_methods, "JZS default")) +
+    facet_wrap(~ predictor_correlation,
+               labeller = labeller(predictor_correlation = function(v) paste("predictor correlation =", v))) +
+    labs(x = "sample size (log scale)", y = "AUC (null vs slope 0.1) minus JZS",
+         title = "Separating nulls from small effects, at any threshold: each test against JZS",
+         subtitle = "above 0: separates better than JZS; bars: paired bootstrap 95% interval; the three conditional tests coincide"),
+  "04_discrimination", width = 10, height = 5)
 
 
 ## ---- M4: why: dependence on what the other predictors explain ------------

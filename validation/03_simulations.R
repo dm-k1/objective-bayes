@@ -155,22 +155,22 @@ bottom_legend    <- theme(legend.position = "bottom")
 method_scale     <- method_scales(one_coefficient_methods)
 
 save_figure(
-  ggplot(x1_summaries, aes(sample_size, correct_3, colour = method, linetype = method)) +
+  ggplot(filter(x1_summaries, slope_of_x1 <= 0.2), aes(sample_size, correct_3, colour = method, linetype = method)) +
     geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     sample_size_axis + method_scale + facets_by_cell + bottom_legend +
     labs(x = "sample size (log scale)", y = "P(BF > 3 for the true hypothesis)", colour = NULL,
          title = "x1: correct evidence",
-         subtitle = "slope 0: evidence for no effect; slope > 0: evidence for an effect"),
-  "03_correct_evidence_x1", width = 12, height = 6)
+         subtitle = "slope 0: evidence for no effect; slope > 0: evidence for an effect (slopes 0.3 and 0.5: all methods agree, not shown)"),
+  "03_correct_evidence_x1", width = 10, height = 6)
 
 save_figure(
-  ggplot(x1_summaries, aes(sample_size, misleading_3, colour = method, linetype = method)) +
+  ggplot(filter(x1_summaries, slope_of_x1 <= 0.2), aes(sample_size, misleading_3, colour = method, linetype = method)) +
     geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     sample_size_axis + method_scale + facets_by_cell + bottom_legend +
     labs(x = "sample size (log scale)", y = "P(BF > 3 for the wrong hypothesis)", colour = NULL,
          title = "x1: misleading evidence",
-         subtitle = "slope 0: a false effect; slope > 0: a real effect called null"),
-  "03_misleading_evidence_x1", width = 12, height = 6)
+         subtitle = "slope 0: a false effect; slope > 0: a real effect called null (slopes 0.3 and 0.5 not shown)"),
+  "03_misleading_evidence_x1", width = 10, height = 6)
 
 ## The trade-off in one picture: how often each method finds the true null
 ## (x3) against how often it calls a small real effect (x1 = 0.1) null

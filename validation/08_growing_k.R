@@ -107,9 +107,11 @@ save_figure(
     geom_hline(yintercept = 0, linetype = "dotted") +
     geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     scale_x_log10(breaks = sample_sizes) +
+    scale_y_continuous(trans = scales::pseudo_log_trans(base = 10),
+                       breaks = c(0, 1, 3, 10, 30, 100, 300)) +
     method_scales(model_methods, linetype = FALSE) +
-    facet_grid(question ~ growth, scales = "free_y") + theme(legend.position = "bottom") +
-    labs(x = "n (log scale)", y = "median log Bayes factor for the truth", colour = NULL,
+    facet_grid(question ~ growth) + theme(legend.position = "bottom") +
+    labs(x = "n (log scale)", y = "median log Bayes factor for the truth (pseudo-log scale)", colour = NULL,
          title = "Consistency when the number of predictors grows with n",
          subtitle = "consistent: keeps rising; below 0: favours the wrong model"),
   "08_growing_k", width = 11, height = 7)
