@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 2: are the Bayes factors computed correctly?
-##  (docs/ADEMP.md, study 2; replaces part A of the old study 02 and
+##  (docs/appendix/C_study_design.md, study 2; replaces part A of the old study 02 and
 ##  the old study 05)
 ##
 ##  Aims. Every Bayes factor flatcor reports equals the integral it stands
@@ -107,7 +107,7 @@ cached <- function(name, expression) {
 ##                   mixture of normals, averaged over every direction)
 ##   flat_partial_r  over g: a g-prior mixture with g ~ Inverse-Gamma(1, n/2)
 ##   flat_r_squared  k >= 3: a g-prior mixture, g/n = B W, B ~ Beta(1, k/2 - 1),
-##                   W ~ Inverse-Gamma(1, 1/2) (docs/2_how_it_calculates.md,
+##                   W ~ Inverse-Gamma(1, 1/2) (docs/appendix/A_derivations.md,
 ##                   section 8); k = 2: the same prior as flat_partial_r
 ##                   (a = k/2 = 1); k = 1: over the effect f directly
 ## Everything on the log scale, scaled by the largest value.

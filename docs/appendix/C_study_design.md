@@ -1,7 +1,7 @@
-# ADEMP plan for the validation
+# Appendix C. The design of the validation studies (ADEMP)
 
 **Draft for review.** One description per study of the redesigned validation
-(see [`REDESIGN.md`](REDESIGN.md) for the structure and the decisions), in the
+(see [`REDESIGN.md`](../working/REDESIGN.md) for the structure and the decisions), in the
 ADEMP form of Morris, White and Crowther (2019) as adapted for psychology by
 Siepe et al. (2024): **A**ims, **D**ata-generating mechanisms, **E**stimands,
 **M**ethods and **P**erformance measures. Every number of simulated datasets
@@ -62,7 +62,7 @@ their seed, not stored.
 
 ## The motivating simulation (outside the validation)
 
-`docs/motivating_simulation.R`. Not a study: it shows why there are three
+`R/docs/motivating_simulation.R`. Not a study: it shows why there are three
 priors. Kept as it is (200,000 matrices per *k*), with its checks F1–F3 now
 judged against the KS critical value for its *n*<sub>sim</sub>.
 

@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 9: how good are the estimates?
-##  (docs/ADEMP.md, study 9; replaces old study 07_estimation)
+##  (docs/appendix/C_study_design.md, study 9; replaces old study 07_estimation)
 ##
 ##  Aims. Bias, interval coverage and prediction error of the Stan posterior
 ##  under each prior, against ordinary least squares and the BayesFactor

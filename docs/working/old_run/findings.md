@@ -11,7 +11,7 @@ identically, and the drifting ones simply leave more of them undecided.
 
 The numbers below come from the validation run of 4 November 2026 (commit
 21d42dc), in which 137 of 138 checks passed. Each number names the study
-that produced it; full results are in [`4_validation.md`](4_validation.md)
+that produced it; full results are in [`validation_report.md`](validation_report.md)
 and in the report of that run (`validation/report.html` on the `main` branch).
 
 ---
@@ -46,7 +46,7 @@ The simulated matrices follow these distributions for every *k*
 (Kolmogorov–Smirnov distance at most .0026, .0024 and .0038 for the three
 versions, with 200,000 matrices per *k*; checks F1–F3).
 
-![Study 00: what valid correlation matrices force](figures/motivation_partial_r_R_R2_by_k.png)
+![Study 00: what valid correlation matrices force](../../figures/motivation_partial_r_R_R2_by_k.png)
 
 ## 2. All three priors are computed correctly and meet the formal criteria (studies 01, 02, 05)
 
@@ -95,7 +95,7 @@ that is because it rarely calls anything null. It finds a 0.1 effect about as
 often as flat R-squared (.21) and JZS (.24), and more often than flat partial
 r (.15); what it lacks is the ability to confirm a null.
 
-![Study 06: what each test says, as k grows](../results/figures/06_outcomes.png)
+![Study 06: what each test says, as k grows](../../../results/figures/06_outcomes.png)
 
 ## 4. Only flat partial r corresponds to one coherent model (study 10)
 
@@ -123,7 +123,7 @@ model's posterior with the Savage–Dickey density ratio (Wagenmakers et al.,
   intercept-only model. Under flat partial r and flat R-squared, the same
   restriction leaves a proper model (study 10, P6).
 
-![Study 10: the conditional and joint tests against the joint model](../results/figures/10_coherence.png)
+![Study 10: the conditional and joint tests against the joint model](../../../results/figures/10_coherence.png)
 
 ## 5. What flat partial r costs
 
@@ -159,11 +159,11 @@ correlation being zero), the notion the Savage–Dickey ratio assumes; the
 literature on compatible priors also uses marginalisation and projection
 (Consonni & Veronese, 2008), under which flat R would have a proper
 restricted model. The search was not a systematic review;
-[`relation_to_others.md`](relation_to_others.md) lists the sources and the
+[appendix B](../../appendix/B_relation_to_other_priors.md) lists the sources and the
 papers that still need a full reading.
 
 ---
 
-**Recommendation** ([`3_comparison.md`](3_comparison.md), section 8): flat
+**Recommendation** ([`comparison.md`](comparison.md), section 8): flat
 partial r, with the costs in section 5 stated whenever it is used. It is
 the package's default; `prior =` selects the others.

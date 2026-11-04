@@ -58,7 +58,7 @@ but it was built study by study:
    - **C. Variable selection**: 12 candidates, 4 real.
    - **D. Growing *k***: *k* rising with *n*.
 5. **The motivating simulation (current study 00) moves out of the
-   validation**, to `docs/motivating_simulation.R`, with its figures and
+   validation**, to `R/docs/motivating_simulation.R`, with its figures and
    table in `docs/figures/`. It shows why there are three priors; it does
    not validate anything. *Done.*
 6. **Order: correctness, then formal properties, then behaviour.**
@@ -88,7 +88,7 @@ but it was built study by study:
 
 1. Install the frameworks and record them in `renv.lock`. *Done (30641ed).*
 2. Write the ADEMP description per study, with the target Monte Carlo SE and
-   the *n*<sub>sim</sub> that follows (`ADEMP.md`). *Done; approved as drafted.*
+   the *n*<sub>sim</sub> that follows (`docs/appendix/C_study_design.md`). *Done; approved as drafted.*
 3. Shared data sets and study 7 as the worked sample (`precision.R`,
    `data_sets.R`, `07_one_coefficient.R`). *Done.*
 4. Port the other studies in the new order. *Done; every port confirmed.*
@@ -169,7 +169,7 @@ validation.ipynb    the notebook (R kernel): per study, its question, a PASS/FAI
 run_all.R           the same without the notebook, one study after another
 cluster/            Dockerfile, slurm_array.sh (one study per SLURM array task)
                     and README.md (running on a cluster, the image under Apptainer)
-docs/               the documents, ADEMP.md (the study designs) and this plan
+docs/               parts 1 and 2, appendix/ (A-C, C the study designs), working/ (this plan)
 cache/              raw per-dataset results, logs, smoke results (gitignored)
 ```
 

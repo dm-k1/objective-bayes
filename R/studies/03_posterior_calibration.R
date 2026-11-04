@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 3: is the posterior calibrated?
-##  (docs/ADEMP.md, study 3; replaces the SBC part of the old study 01)
+##  (docs/appendix/C_study_design.md, study 3; replaces the SBC part of the old study 01)
 ##
 ##  Aims. Simulation-based calibration (Talts et al., 2018) of flatcor's Stan
 ##  model under each prior, with the SBC package: if the sampler is right, the

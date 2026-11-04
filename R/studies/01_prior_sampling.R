@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 1: is the prior sampled correctly?
-##  (docs/ADEMP.md, study 1; replaces checks P1-P10 of the old study 01)
+##  (docs/appendix/C_study_design.md, study 1; replaces checks P1-P10 of the old study 01)
 ##
 ##  Aims. flatcor's Stan model (inst/stan/flatcor.stan in the installed
 ##  package, used by fit_regression()) samples R, with R-squared ~ Beta(a, 1),

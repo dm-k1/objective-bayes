@@ -6,7 +6,7 @@ column per prior. The choice between them is made from these tables, not
 before them; it is given in section 8.
 
 The numbers come from the full validation run of 4 November 2026 (started
-12:24, commit 21d42dc; [`4_validation.md`](4_validation.md)). Of its 138
+12:24, commit 21d42dc; [`validation_report.md`](validation_report.md)). Of its 138
 checks, 137 pass. The one failure (study 10, check P4, flat R-squared) is a
 finding about that prior and is explained in section 5. JZS (a Cauchy prior
 with scale 0.354, the BayesFactor and JASP default) and Zellner–Siow (scale 1)
@@ -32,7 +32,7 @@ added.
 | Study 00, P($R^2$ > .50) at $k$ = 1 / 10 | .29 / .97 | .29 / .29 | .50 / .50 |
 
 A prior that spreads its weight evenly always does so on some scale, and
-which scale is the judgement ([`1_from_behaviour.md`](1_from_behaviour.md),
+which scale is the judgement ([`1_why_a_choice.md`](../../1_why_a_choice.md),
 steps 1 and 2).
 
 ---
@@ -104,7 +104,7 @@ over $n$, correlation and pattern.
 These rows count only the correct and the wrong answers. A test can also stay
 undecided, and that third answer is where the priors differ most. At $k = 20$
 (conditional tests, share of datasets; full table in
-[`4_validation.md`](4_validation.md), study 06):
+[`validation_report.md`](validation_report.md), study 06):
 
 | Truth | | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|

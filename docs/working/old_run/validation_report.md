@@ -194,7 +194,7 @@ test does not correspond to one prior for the whole model.
 ## Summary of what the studies show about the three priors
 
 The comparison criterion by criterion is in
-[`docs/3_comparison.md`](3_comparison.md).
+[`docs/3_comparison.md`](comparison.md).
 
 - **Correctness and the Bayarri et al. (2012) criteria** (studies 01, 02,
   05). All three priors pass every check: the sampler, simulation-based
@@ -630,7 +630,7 @@ Figures: `validation/results/figures/11_auc.png`, `11_calibration.png`.
 ## Not yet done
 
 The list of open work for the whole project is in
-[`docs/0_overview.md`](0_overview.md), section "Open".
+[`docs/0_overview.md`](../../../README.md), section "Open".
 
 ## References
 

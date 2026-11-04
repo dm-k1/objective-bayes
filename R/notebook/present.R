@@ -16,7 +16,7 @@ if (!isTRUE(l10n_info()$`UTF-8`))
   for (locale in c("C.UTF-8", "en_US.UTF-8", "en_GB.UTF-8"))
     if (nzchar(suppressWarnings(Sys.setlocale("LC_CTYPE", locale)))) break
 
-## The ten studies, in the order of docs/ADEMP.md
+## The ten studies, in the order of docs/appendix/C_study_design.md
 study_files <- c("01" = "01_prior_sampling", "02" = "02_bayes_factors",
                  "03" = "03_posterior_calibration", "04" = "04_bayes_factor_calibration",
                  "05" = "05_default_prior_criteria", "06" = "06_coherence",

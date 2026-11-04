@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  Precision targets: how many simulated datasets each study needs
 ##
-##  Fixed before anything is run (docs/ADEMP.md; Morris, White &
+##  Fixed before anything is run (docs/appendix/C_study_design.md; Morris, White &
 ##  Crowther, 2019, Table 6). For a proportion p the Monte Carlo standard
 ##  error is sqrt(p (1 - p) / n_sim), so n_sim = p (1 - p) / MCSE^2, taken at
 ##  the worst case p = .5 when p is not known in advance.
@@ -25,7 +25,7 @@ n_sim_for_mean <- function(target_mcse, sd) ceiling((sd / target_mcse)^2)
 ## distance at the .01 level (1.63 / sqrt(n)) is at most a given distance
 n_sim_for_ks <- function(critical_distance) ceiling((1.63 / critical_distance)^2)
 
-## The targets of docs/ADEMP.md, and the numbers of datasets that follow.
+## The targets of docs/appendix/C_study_design.md, and the numbers of datasets that follow.
 ## n_sim is what the studies run; where it exceeds the formula, the reason is
 ## given.
 precision_targets <- list(

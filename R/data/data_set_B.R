@@ -1,5 +1,5 @@
 ## =====================================================================
-##  Data set B: data drawn from each prior (docs/ADEMP.md)
+##  Data set B: data drawn from each prior (docs/appendix/C_study_design.md)
 ##
 ##  Used by study 3 (calibration of the posterior), study 4 (calibration of
 ##  the Bayes factor) and study 6 (coherence with the joint model). Needs

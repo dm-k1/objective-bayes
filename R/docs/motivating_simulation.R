@@ -38,7 +38,7 @@
 ##    M3. R^2 is Beta(k/2, 1)
 ##    M4. R is flat in the "R flat" version, R^2 in the "R-squared flat" one
 ##
-##  Run from the project folder: Rscript docs/motivating_simulation.R
+##  Run from the project folder: Rscript R/docs/motivating_simulation.R
 ##  About 8 minutes on 8 cores; no Stan needed. Writes its figures and its
 ##  table to docs/figures/ (motivation_*.png, motivation_table.md).
 ## =====================================================================

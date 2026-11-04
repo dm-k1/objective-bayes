@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 6: is the test of one coefficient coherent with one model?
-##  (docs/ADEMP.md, study 6; replaces parts 2 and 3 of the old study 10)
+##  (docs/appendix/C_study_design.md, study 6; replaces parts 2 and 3 of the old study 10)
 ##
 ##  Aims. For each prior: does the conditional test of x1 equal the Bayes
 ##  factor of the full model against its restriction by conditioning on x1's

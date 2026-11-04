@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 5: does each prior meet the default-prior criteria?
-##  (docs/ADEMP.md, study 5; replaces checks B1-B5 of the old study 02
+##  (docs/appendix/C_study_design.md, study 5; replaces checks B1-B5 of the old study 02
 ##  and the old study 08, growing k)
 ##
 ##  Aims. The criteria of Bayarri, Berger, Forte and Garcia-Donato (2012) for

@@ -1,5 +1,5 @@
 ## =====================================================================
-##  Data set C: variable selection (docs/ADEMP.md)
+##  Data set C: variable selection (docs/appendix/C_study_design.md)
 ##
 ##  Twelve candidate predictors, of which four matter (slopes 0.3, 0.2, 0.15
 ##  and 0.1); the other eight are null. Predictors are multivariate normal with

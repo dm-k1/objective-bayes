@@ -1,10 +1,10 @@
 ## =====================================================================
-##  Figures for docs/1_from_behaviour.md and docs/2_how_it_calculates.md
+##  Figures for docs/1_why_a_choice.md, docs/2_the_three_priors.md and docs/appendix/
 ##  Every figure is a simulation compared with a formula, so each claim in
 ##  the docs can be checked by running this file. The three priors keep the
 ##  colours of the motivating simulation: flat partial r blue, flat R orange, flat
 ##  R-squared green.
-##  Run from the project folder: Rscript docs/figures/make_figures.R
+##  Run from the project folder: Rscript R/docs/make_figures.R
 ## =====================================================================
 library(ggplot2)
 library(flatcor)   # the package under test, at the version in renv.lock
@@ -245,7 +245,7 @@ for (k in c(2, 3, 5, 10)) {
               mean(share), 1 / k))
 }
 
-## ---- Check printed for relation_to_others.md (Barnard et al.'s prior) -------
+## ---- Check printed for appendix B (Barnard et al.'s prior) -------
 ## The marginally uniform prior of Barnard, McCulloch & Meng (2000): the
 ## correlations of an inverse-Wishart(identity, dimension + 1). Each single
 ## correlation is flat (their result); that R^2 of y on the k predictors is

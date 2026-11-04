@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 7: how does the test of one coefficient behave?
-##  (docs/ADEMP.md, study 7; replaces studies 03, 04 and 06)
+##  (docs/appendix/C_study_design.md, study 7; replaces studies 03, 04 and 06)
 ##
 ##  Aims. How often each test supports the null (BF01 > 3), supports an
 ##  effect (BF10 > 3) or stays undecided about one coefficient (x1); how that

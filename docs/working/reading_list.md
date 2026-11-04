@@ -6,7 +6,7 @@ priority. Each entry says why it matters here and what to look for. Status:
 citations were checked against the publisher or a library record.
 
 The project makes two claims that look new (see
-[`relation_to_others.md`](relation_to_others.md), "What is new here, and what
+[appendix B](../appendix/B_relation_to_other_priors.md), "What is new here, and what
 is not"):
 
 - **Claim A.** Under defaults that keep the total (*R* or *R*²) flat, the

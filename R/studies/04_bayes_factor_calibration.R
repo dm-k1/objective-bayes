@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 4: is the Bayes factor calibrated?
-##  (docs/ADEMP.md, study 4; replaces part 1 of the old study 10)
+##  (docs/appendix/C_study_design.md, study 4; replaces part 1 of the old study 10)
 ##
 ##  Aims. On data drawn from each prior, the share of true nulls among
 ##  datasets with a given BF10 equals the posterior probability of the null,

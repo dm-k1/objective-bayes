@@ -9,7 +9,7 @@
 ##  Run from the project folder:
 ##    Rscript run_all.R            all studies, 01 to 10 (hours: 07, 09)
 ##    Rscript run_all.R quick      the correctness checks 01 and 02
-##  (The motivating simulation is docs/motivating_simulation.R; it is not part
+##  (The motivating simulation is R/docs/motivating_simulation.R; it is not part
 ##  of the validation.)
 ##    Rscript run_all.R 03 04 09   a selection
 ##  Cores: all but one by default; set VALIDATION_CORES to choose
@@ -28,7 +28,7 @@
 ##  The exit status is 1 if any study failed.
 ## =====================================================================
 
-## In the order of docs/ADEMP.md: correctness (01-04), formal
+## In the order of docs/appendix/C_study_design.md: correctness (01-04), formal
 ## properties (05-06), behaviour (07-10)
 all_studies <- c("01_prior_sampling", "02_bayes_factors", "03_posterior_calibration",
                  "04_bayes_factor_calibration", "05_default_prior_criteria", "06_coherence",
@@ -108,7 +108,7 @@ summary_lines <- c(
   vapply(outcomes, function(o) sprintf("| %s | %s | %.1f | %d | %d |", o$study, study_status(o),
                                        o$minutes, o$passed, length(o$failed)), character(1)),
   "",
-  "Every check is judged relative to its Monte Carlo error (docs/ADEMP.md).",
+  "Every check is judged relative to its Monte Carlo error (docs/appendix/C_study_design.md).",
   "Full output: `cache/logs/`.")
 all_failed <- unlist(lapply(outcomes, function(o) if (length(o$failed)) paste0(o$study, ": ", o$failed)))
 if (length(all_failed) > 0)

@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Data set D: the number of predictors k grows with the sample size n
-##  (docs/ADEMP.md; used by study 5)
+##  (docs/appendix/C_study_design.md; used by study 5)
 ##
 ##  Two growth rates, k = n / 4 and k = sqrt(n), at n = 50 ... 2,000.
 ##    Under the null (no predictor matters) only R-squared is needed, and it

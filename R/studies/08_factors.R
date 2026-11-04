@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 8: how does the test behave for factors?
-##  (docs/ADEMP.md, study 8; replaces study 11)
+##  (docs/appendix/C_study_design.md, study 8; replaces study 11)
 ##
 ##  Aims. The block conditional test (a term of q columns, a factor with
 ##  q + 1 levels) against the joint test and JZS: how often each supports the

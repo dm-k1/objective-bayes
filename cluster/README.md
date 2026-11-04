@@ -10,7 +10,7 @@ it is meant for a cluster. Two pieces make that work:
   task the same environment as a run anywhere else.
 
 The results do not depend on the number of cores: every simulated dataset has
-its own random stream, derived from its ID (`docs/ADEMP.md`).
+its own random stream, derived from its ID (`docs/appendix/C_study_design.md`).
 
 ## 1. The Apptainer image
 

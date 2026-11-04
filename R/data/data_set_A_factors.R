@@ -1,5 +1,5 @@
 ## =====================================================================
-##  Data set A, extended with a factor (docs/ADEMP.md, study 8)
+##  Data set A, extended with a factor (docs/appendix/C_study_design.md, study 8)
 ##
 ##  A factor with q + 1 equal-sized levels (q columns in the model), equally
 ##  spaced level means with Cohen's f^2 = 0 (null), .02 (small) or .15

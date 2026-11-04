@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 10: how does each prior select variables?
-##  (docs/ADEMP.md, study 10; replaces old study 09)
+##  (docs/appendix/C_study_design.md, study 10; replaces old study 09)
 ##
 ##  Aims. Variable selection over all 2^12 = 4,096 subsets of twelve
 ##  candidate predictors, of which four matter: how many real predictors each
