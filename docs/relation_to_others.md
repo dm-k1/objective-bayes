@@ -420,7 +420,7 @@ The following points were not found in the literature searched:
   $a = k/2$, ½ or 1, compared side by side on the Bayarri et al. criteria
   ([`3_comparison.md`](3_comparison.md)).
 
-Still to be read in full: Kucharský et al. (2026), on whether $k$ is
+The ranked list of what to read is in [`reading_list.md`](reading_list.md). Still to be read in full: Kucharský et al. (2026), on whether $k$ is
 discussed beyond its role in the formula; Som et al. (2016), for its theorems
 on tests of single coefficients; Mulder et al. (2021); the Bayes factor
 functions paper; and, most relevant to the coherence claim, Consonni and
