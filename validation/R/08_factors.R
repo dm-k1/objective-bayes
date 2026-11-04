@@ -39,20 +39,21 @@
 ##        what the others explain is within 2 MCSE of zero for each
 ##        conditional test.
 ##
-##  Run from the project folder:  Rscript validation/08_factors.R
+##  Run from the project folder:  Rscript validation/R/08_factors.R
 ##  Smoke test (one corner, 10 datasets per cell):
-##    VALIDATION_SMOKE=1 Rscript validation/08_factors.R
-##  Results are cached in cache/study_08/ (delete them to rerun).
+##    VALIDATION_SMOKE=1 Rscript validation/R/08_factors.R
+##  Raw results are cached in cache/study_08/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_08.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # contenders, log_bayes_factor_model(), method_scales()
-source("validation/precision.R")            # n_sim_of(), mcse_of_proportion()
-source("validation/data_sets.R")            # with_stream_of()
-source("validation/data_set_A_factors.R")   # design_A_factors(), generate_A_factors()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # contenders, log_bayes_factor_model(), method_scales()
+source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion()
+source("validation/R/data_sets.R")            # with_stream_of()
+source("validation/R/data_set_A_factors.R")   # design_A_factors(), generate_A_factors()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_08_smoke" else "study_08")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -313,6 +314,6 @@ save_figure(
          subtitle = "The conditional tests do not change along a row; the joint tests and JZS do (the conditional Lindley paradox)"),
   "study_08_calibration", width = 12, height = 11)
 
-saveRDS(list(shares_per_cell = shares_per_cell, shares_over_q = shares_over_q, auc = auc,
-             paradox = paradox), file.path(study_folder, "summaries.rds"))
+save_study_results("08", list(shares_per_cell = shares_per_cell, shares_over_q = shares_over_q, auc = auc,
+                              paradox = paradox))
 report_checks()

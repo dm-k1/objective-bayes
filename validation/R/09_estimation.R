@@ -36,10 +36,11 @@
 ##  reported (flat partial r's coverage of at least .916, better than OLS in
 ##  every cell), 9.3 its count of divergent transitions.
 ##
-##  Run from the project folder:  Rscript validation/09_estimation.R
+##  Run from the project folder:  Rscript validation/R/09_estimation.R
 ##  Smoke test (2 cells, 10 datasets, short chains):
-##    VALIDATION_SMOKE=1 Rscript validation/09_estimation.R
-##  Results are cached in cache/study_09/ (delete them to rerun). Each fit of
+##    VALIDATION_SMOKE=1 Rscript validation/R/09_estimation.R
+##  Raw results are cached in cache/study_09/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_09.rds. Each fit of
 ##  fit_regression() runs its 4 chains in parallel, so SimDesign uses one
 ##  worker per 4 cores.
 ## =====================================================================
@@ -48,10 +49,10 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(rsimsum)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # contenders, method_scales()
-source("validation/precision.R")            # n_sim_of()
-source("validation/data_sets.R")            # generate_A(), cell_id_A(), slopes_A(), with_stream_of()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # contenders, method_scales()
+source("validation/R/precision.R")            # n_sim_of()
+source("validation/R/data_sets.R")            # generate_A(), cell_id_A(), slopes_A(), with_stream_of()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_09_smoke" else "study_09")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -258,7 +259,6 @@ save_figure(
          subtitle = "below 1: predicts new observations better than ordinary regression; bars: 2 Monte Carlo SE"),
   "study_09_prediction_error", width = 9, height = 10)
 
-saveRDS(list(bias_and_coverage = bias_and_coverage, prediction_ratio = prediction_ratio,
-             divergent = sum(per_dataset$divergent)),
-        file.path(study_folder, "summaries.rds"))
+save_study_results("09", list(bias_and_coverage = bias_and_coverage, prediction_ratio = prediction_ratio,
+                              divergent = sum(per_dataset$divergent)))
 report_checks()

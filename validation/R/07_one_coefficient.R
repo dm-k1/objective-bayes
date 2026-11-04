@@ -28,19 +28,20 @@
 ##    7.3 Flat R confirms fewer true nulls at k = 20 than at k = 2: the drop
 ##        exceeds .05, judged by its 95% Monte Carlo interval.
 ##
-##  Run from the project folder:  Rscript validation/07_one_coefficient.R
+##  Run from the project folder:  Rscript validation/R/07_one_coefficient.R
 ##  Smoke test (a corner of the design, 10 datasets per cell, about a minute):
-##    VALIDATION_SMOKE=1 Rscript validation/07_one_coefficient.R
-##  Results are cached in cache/study_07/ (delete them to rerun).
+##    VALIDATION_SMOKE=1 Rscript validation/R/07_one_coefficient.R
+##  Raw results are cached in cache/study_07/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_07.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # the methods, log_bayes_factors_one_coefficient()
-source("validation/precision.R")            # n_sim_of(), mcse_of_proportion()
-source("validation/data_sets.R")            # design_A(), generate_A()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # the methods, log_bayes_factors_one_coefficient()
+source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion()
+source("validation/R/data_sets.R")            # design_A(), generate_A()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_07_smoke" else "study_07")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -215,6 +216,5 @@ save_figure(
                             n_sim)),
   "study_07_outcomes", width = 11, height = 8)
 
-saveRDS(list(shares_per_cell = shares_per_cell, shares_per_k = shares_per_k, auc = auc),
-        file.path(study_folder, "summaries.rds"))
+save_study_results("07", list(shares_per_cell = shares_per_cell, shares_per_k = shares_per_k, auc = auc))
 report_checks()

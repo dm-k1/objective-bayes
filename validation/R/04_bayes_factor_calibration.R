@@ -29,19 +29,20 @@
 ##        the logistic slope is within 3 SE of 1, in every cell.
 ##    4.2 (old P2) On JZS data, each test's miscalibration shows (p < .001).
 ##
-##  Run from the project folder:  Rscript validation/04_bayes_factor_calibration.R
-##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/04_bayes_factor_calibration.R
-##  Results are cached in cache/study_04/ (delete them to rerun).
+##  Run from the project folder:  Rscript validation/R/04_bayes_factor_calibration.R
+##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/R/04_bayes_factor_calibration.R
+##  Raw results are cached in cache/study_04/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_04.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # contenders
-source("validation/precision.R")            # n_sim_of(), mcse_of_proportion()
-source("validation/data_sets.R")            # with_stream_of()
-source("validation/data_set_B.R")           # generate_B(), sample_partial_r()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # contenders
+source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion()
+source("validation/R/data_sets.R")            # with_stream_of()
+source("validation/R/data_set_B.R")           # generate_B(), sample_partial_r()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_04_smoke" else "study_04")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -177,6 +178,6 @@ save_figure(
          subtitle = sprintf("%d datasets per cell; rows: the prior whose conditional test is used", n_sim)),
   "study_04_calibration", width = 12, height = 10)
 
-saveRDS(list(calibration_bins = calibration_bins, calibration_tests = calibration_tests,
-             called_null = called_null), file.path(study_folder, "summaries.rds"))
+save_study_results("04", list(calibration_bins = calibration_bins, calibration_tests = calibration_tests,
+                              called_null = called_null))
 report_checks()

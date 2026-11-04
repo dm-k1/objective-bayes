@@ -4,7 +4,7 @@
 ##               or VALIDATION_CORES if set
 ##   - caching:  simulation results and Stan fits are saved in cache/
 ##               (gitignored) and reused when nothing changed
-##   - figures:  saved to validation/results/figures/ (tracked)
+##   - figures:  saved to validation/figures/ (tracked)
 ##   - checks:   record_check() and report_checks() for pass/fail summaries
 ## =====================================================================
 
@@ -77,24 +77,31 @@ parallel_map <- function(items, work) {
 }
 
 ## ---- Folders -------------------------------------------------------------------
-## validation/results/ holds only what is tracked (the run summary, the first
-## result, the figures); everything that can be recomputed goes to cache/
-results_folder <- file.path("validation", "results")
-figures_folder <- file.path(results_folder, "figures")
+## Tracked: validation/results/ (one study_NN.rds per study, the run summary)
+## and validation/figures/. Everything that can be recomputed goes to cache/.
+## Smoke mode (VALIDATION_SMOKE=1, see validation/R/precision.R) writes its
+## results and figures to cache/ as well: they are tests of the code, not
+## results.
+smoke_mode     <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
 cache_folder   <- "cache"
 fits_folder    <- file.path(cache_folder, "fits")
-dir.create(fits_folder,    recursive = TRUE, showWarnings = FALSE)
-dir.create(figures_folder, recursive = TRUE, showWarnings = FALSE)
+results_folder <- if (smoke_mode) file.path(cache_folder, "smoke_results") else file.path("validation", "results")
+figures_folder <- if (smoke_mode) file.path(cache_folder, "smoke_figures") else file.path("validation", "figures")
+for (folder in c(fits_folder, results_folder, figures_folder))
+  dir.create(folder, recursive = TRUE, showWarnings = FALSE)
 
 ## ---- Figures -------------------------------------------------------------------
 ## A white background with a light grid, for every study's figures
 ggplot2::theme_set(ggplot2::theme_bw())
-## Saves a ggplot to validation/results/figures/<name>.png, and also shows it
-## when running interactively. (Under Rscript a printed plot would otherwise
-## end up in Rplots.pdf in the project folder.)
+## Saves a ggplot to <figures_folder>/<name>.png, and also shows it when
+## running interactively. (Under Rscript a printed plot would otherwise end up
+## in Rplots.pdf in the project folder.) The names are kept for the study's
+## results file.
+saved_figures <- character()
 save_figure <- function(figure, name, width = 10, height = 6) {
-  ggplot2::ggsave(file.path(figures_folder, paste0(name, ".png")), figure,
-                  width = width, height = height, dpi = 150)
+  file <- file.path(figures_folder, paste0(name, ".png"))
+  ggplot2::ggsave(file, figure, width = width, height = height, dpi = 150)
+  saved_figures <<- union(saved_figures, file)
   if (interactive()) print(figure)
   invisible(figure)
 }
@@ -158,4 +165,20 @@ report_checks <- function() {
   }
   if (number_failed > 0) stop(sprintf("%d of %d checks FAILED.", number_failed, nrow(check_results)))
   cat(sprintf("\nAll %d checks passed.\n", nrow(check_results)))
+}
+
+## ---- The study's results file ----------------------------------------------------
+## save_study_results("07", list(...)) writes validation/results/study_07.rds:
+## the study's tables, its checks, the figures it saved and the setup of the
+## run. The notebook (validation/validation.ipynb) presents only these files.
+save_study_results <- function(study, tables) {
+  git_commit <- tryCatch(system2("git", c("rev-parse", "--short", "HEAD"), stdout = TRUE, stderr = FALSE),
+                         error = function(e) NA_character_, warning = function(w) NA_character_)
+  saveRDS(list(study = study, tables = tables, checks = check_results, figures = saved_figures,
+               setup = list(finished = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
+                            commit = if (length(git_commit) == 1) git_commit else NA_character_,
+                            R = R.version.string,
+                            flatcor = as.character(utils::packageVersion("flatcor")),
+                            cores = number_of_cores, smoke = smoke_mode)),
+          file.path(results_folder, sprintf("study_%s.rds", study)))
 }

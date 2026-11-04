@@ -42,21 +42,22 @@
 ##         Beta(k/2, 1).
 ##    10.5 (old V5) W ~ Inverse-Gamma(b, 1/2) implies R-squared ~ Beta(1/2, b).
 ##
-##  Run from the project folder:  Rscript validation/10_variable_selection.R
+##  Run from the project folder:  Rscript validation/R/10_variable_selection.R
 ##  Smoke test (n = 50, correlation 0, 10 datasets):
-##    VALIDATION_SMOKE=1 Rscript validation/10_variable_selection.R
-##  Results are cached in cache/study_10/ (delete them to rerun).
+##    VALIDATION_SMOKE=1 Rscript validation/R/10_variable_selection.R
+##  Raw results are cached in cache/study_10/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_10.rds.
 ## =====================================================================
 library(SimDesign)
 library(BAS)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # log_bayes_factor_model(), draw_lkj_correlation_matrix()
-source("validation/precision.R")            # n_sim_of(), mcse_of_proportion(), smoke_mode
-source("validation/data_sets.R")            # with_stream_of()
-source("validation/data_set_C.R")           # design_C(), generate_C(), true_slopes_C
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # log_bayes_factor_model(), draw_lkj_correlation_matrix()
+source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion(), smoke_mode
+source("validation/R/data_sets.R")            # with_stream_of()
+source("validation/R/data_set_C.R")           # design_C(), generate_C(), true_slopes_C
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_10_smoke" else "study_10")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -349,5 +350,5 @@ save_figure(
          title = "Inclusion probability of each real predictor (beta-binomial prior over models)"),
   "study_10_inclusion", width = 12, height = 5)
 
-saveRDS(list(summaries = summaries, auc = auc_table), file.path(study_folder, "summaries.rds"))
+save_study_results("10", list(summaries = summaries, auc = auc_table))
 report_checks()

@@ -44,19 +44,20 @@
 ##        R^2 ~ Beta((k - 1)/2, 3/2) (stan_lm's prior with eta = 3/2 on k - 1
 ##        predictors): KS distance below its .01 critical value.
 ##
-##  Run from the project folder:  Rscript validation/06_coherence.R
-##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/06_coherence.R
-##  Results are cached in cache/study_06/ (delete them to rerun).
+##  Run from the project folder:  Rscript validation/R/06_coherence.R
+##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/R/06_coherence.R
+##  Raw results are cached in cache/study_06/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_06.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # contenders
-source("validation/precision.R")            # n_sim_of()
-source("validation/data_sets.R")            # with_stream_of()
-source("validation/data_set_B.R")           # generate_B(), sample_partial_r(), sd_given_others()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # contenders
+source("validation/R/precision.R")            # n_sim_of()
+source("validation/R/data_sets.R")            # with_stream_of()
+source("validation/R/data_set_B.R")           # generate_B(), sample_partial_r(), sd_given_others()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_06_smoke" else "study_06")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -225,6 +226,5 @@ save_figure(
          colour = "n", title = "The conditional test against one prior for the whole model"),
   "study_06_coherence", width = 10, height = 8)
 
-saveRDS(list(per_dataset = per_dataset, coherence = coherence, near_zero = near_zero),
-        file.path(study_folder, "summaries.rds"))
+save_study_results("06", list(per_dataset = per_dataset, coherence = coherence, near_zero = near_zero))
 report_checks()

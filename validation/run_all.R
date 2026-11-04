@@ -15,12 +15,16 @@
 ##  Cores: all but one by default; set VALIDATION_CORES to choose
 ##  (e.g. VALIDATION_CORES=32 on a cloud machine).
 ##
-##  Writes the full output of each study to cache/logs/<study>.log
+##  The studies are validation/R/NN_*.R; each saves its tables and checks to
+##  validation/results/study_NN.rds and its figures to validation/figures/.
+##  This script writes the full output of each study to cache/logs/<study>.log
 ##  (gitignored), and to validation/results/:
 ##    run_summary.md      the setup, one row per study, and every failed check
 ##    session_info.txt    R and package versions of this run
+##  The notebook validation/validation.ipynb presents the same results.
 ##  A study that fails does not stop the others. VALIDATION_SMOKE=1 runs every
-##  study on a corner of its design and 10 datasets, to test the code.
+##  study on a corner of its design and 10 datasets, to test the code; its
+##  results, figures and summary then go to cache/ instead.
 ##  The exit status is 1 if any study failed.
 ## =====================================================================
 
@@ -43,14 +47,15 @@ studies <- if (length(requested) == 0) all_studies else
     chosen
   }
 
-results_folder <- file.path("validation", "results")
+smoke_mode     <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
+results_folder <- if (smoke_mode) file.path("cache", "smoke_results") else file.path("validation", "results")
 logs_folder    <- file.path("cache", "logs")
-dir.create(logs_folder, recursive = TRUE, showWarnings = FALSE)
+for (folder in c(results_folder, logs_folder)) dir.create(folder, recursive = TRUE, showWarnings = FALSE)
 
 ## ---- The setup of this run ----------------------------------------------------
 git_commit <- tryCatch(system2("git", c("rev-parse", "--short", "HEAD"), stdout = TRUE, stderr = FALSE),
                        error = function(e) character(0), warning = function(w) character(0))
-git_dirty  <- tryCatch(length(system2("git", c("status", "--porcelain", "--", "R", "inst", "validation/*.R"),
+git_dirty  <- tryCatch(length(system2("git", c("status", "--porcelain", "--", "validation/R"),
                                       stdout = TRUE, stderr = FALSE)) > 0,
                        error = function(e) NA, warning = function(w) NA)
 cmdstan_version <- if (requireNamespace("cmdstanr", quietly = TRUE))
@@ -64,7 +69,8 @@ setup <- c(
   CmdStan  = cmdstan_version,
   machine  = paste(Sys.info()[["sysname"]], Sys.info()[["machine"]]),
   cores    = cores,
-  studies  = paste(substr(studies, 1, 2), collapse = " "))
+  studies  = paste(substr(studies, 1, 2), collapse = " "),
+  smoke    = if (smoke_mode) "yes (results are not results)" else "no")
 writeLines(capture.output(sessionInfo()), file.path(results_folder, "session_info.txt"))
 
 ## ---- Run each study in its own process -----------------------------------------
@@ -73,7 +79,7 @@ run_study <- function(study) {
   log_file <- file.path(logs_folder, paste0(study, ".log"))
   message(sprintf("[%s] %s ...", format(Sys.time(), "%H:%M"), study))
   started <- Sys.time()
-  status  <- system2(file.path(R.home("bin"), "Rscript"), file.path("validation", paste0(study, ".R")),
+  status  <- system2(file.path(R.home("bin"), "Rscript"), file.path("validation", "R", paste0(study, ".R")),
                      stdout = log_file, stderr = log_file,
                      env = paste0("VALIDATION_CORES=", cores))
   minutes <- as.numeric(difftime(Sys.time(), started, units = "mins"))
@@ -86,16 +92,7 @@ run_study <- function(study) {
 }
 
 outcomes <- list()
-for (study in studies) {
-  if (study == "04_matched_comparison" && "03_simulations" %in% names(outcomes) &&
-      outcomes[["03_simulations"]]$exit_status != 0) {
-    message("Skipping 04: it needs the results of 03, which failed.")
-    outcomes[[study]] <- list(study = study, exit_status = NA, minutes = 0, passed = 0,
-                              failed = "skipped: 03 failed")
-    next
-  }
-  outcomes[[study]] <- run_study(study)
-}
+for (study in studies) outcomes[[study]] <- run_study(study)
 
 ## ---- Summary --------------------------------------------------------------------
 study_status <- function(outcome)

@@ -41,15 +41,16 @@
 ##  The old threshold was a fixed KS distance of 0.03; each check now passes
 ##  when the distance is below the critical value for its ESS.
 ##
-##  Run from the project folder:  Rscript validation/01_prior_sampling.R
+##  Run from the project folder:  Rscript validation/R/01_prior_sampling.R
 ##  Smoke test (ESS target 500, about a minute):
-##    VALIDATION_SMOKE=1 Rscript validation/01_prior_sampling.R
-##  Results are cached in cache/study_01/ (delete them to rerun).
+##    VALIDATION_SMOKE=1 Rscript validation/R/01_prior_sampling.R
+##  Raw results are cached in cache/study_01/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_01.rds.
 ## =====================================================================
 library(posterior)
-source("validation/settings.R")             # flatcor, cores, record_check()
-source("validation/precision.R")            # n_sim_of(), smoke_mode
-source("validation/data_sets.R")            # with_stream_of()
+source("validation/R/settings.R")             # flatcor, cores, record_check()
+source("validation/R/precision.R")            # n_sim_of(), smoke_mode
+source("validation/R/data_sets.R")            # with_stream_of()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_01_smoke" else "study_01")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -178,7 +179,7 @@ samples <- setNames(lapply(settings, sample_setting), vapply(settings, `[[`, "",
 cat("\nIterations per chain and smallest ESS per setting (target", target_ess, "):\n")
 print(data.frame(setting = names(samples),
                  iterations_per_chain = vapply(samples, `[[`, numeric(1), "iter_sampling"),
-                 smallest_ess = round(vapply(samples, `[[`, numeric(1), "smallest_ess"))),
+                              smallest_ess = round(vapply(samples, `[[`, numeric(1), "smallest_ess"))),
       row.names = FALSE)
 
 
@@ -258,8 +259,6 @@ record_ks("1.9 flat_r_squared, k = 8: R-squared flat",
 record_ks("1.10 flat_r_squared, k = 1: r^2 flat (|r| has density 2|r|)",
           ks_against(correlation_one(samples[["flat_r_squared-one"]]$draws, covariance$one)^2, punif))
 
-saveRDS(list(check_results = check_results,
-             iterations = vapply(samples, `[[`, numeric(1), "iter_sampling"),
-             smallest_ess = vapply(samples, `[[`, numeric(1), "smallest_ess")),
-        file.path(study_folder, "summaries.rds"))
+save_study_results("01", list(iterations = vapply(samples, `[[`, numeric(1), "iter_sampling"),
+                              smallest_ess = vapply(samples, `[[`, numeric(1), "smallest_ess")))
 report_checks()

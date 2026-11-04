@@ -23,19 +23,20 @@
 ##        sigma are uniform: chi-square over 20 bins, p > .01.
 ##    The coefficient-coordinates contrast is reported, not checked.
 ##
-##  Run from the project folder:  Rscript validation/03_posterior_calibration.R
-##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/03_posterior_calibration.R
-##  Results are cached in cache/study_03/ (delete them to rerun).
+##  Run from the project folder:  Rscript validation/R/03_posterior_calibration.R
+##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/R/03_posterior_calibration.R
+##  Raw results are cached in cache/study_03/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_03.rds.
 ## =====================================================================
 library(SBC)
 library(patchwork)
 library(dplyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # contenders
-source("validation/precision.R")            # n_sim_of()
-source("validation/data_sets.R")            # with_stream_of()
-source("validation/data_set_B.R")           # generate_B()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # contenders
+source("validation/R/precision.R")            # n_sim_of()
+source("validation/R/data_sets.R")            # with_stream_of()
+source("validation/R/data_set_B.R")           # generate_B()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_03_smoke" else "study_03")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -144,5 +145,5 @@ save_figure(
       settings$k[1], settings$n[1])),
   "study_03_ecdf_difference", width = 10, height = 14)
 
-saveRDS(list(stats = stats, uniformity = uniformity), file.path(study_folder, "summaries.rds"))
+save_study_results("03", list(stats = stats, uniformity = uniformity))
 report_checks()

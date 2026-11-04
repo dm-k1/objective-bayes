@@ -52,12 +52,8 @@ precision_targets <- list(
   ## cost of the k = 500 regressions at n = 2,000)
   growing_k_data    = list(mcse = NA, n_sim = 400))
 
-## Smoke mode (VALIDATION_SMOKE=1): every study runs end to end on a handful
-## of datasets and a corner of its design, to show the code works before the
-## full run. Results in smoke mode are not results.
-smoke_mode <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
-if (smoke_mode) {   # smoke-test figures stay out of the tracked results
-  figures_folder <- file.path(cache_folder, "smoke_figures")
-  dir.create(figures_folder, recursive = TRUE, showWarnings = FALSE)
-}
+## Smoke mode (VALIDATION_SMOKE=1; smoke_mode is set in validation/R/settings.R):
+## every study runs end to end on a handful of datasets and a corner of its
+## design, to show the code works before the full run. Results in smoke mode
+## are not results, and go to cache/.
 n_sim_of <- function(target) if (smoke_mode) 10L else precision_targets[[target]]$n_sim

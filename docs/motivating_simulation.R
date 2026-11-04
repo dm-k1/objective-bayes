@@ -38,8 +38,8 @@
 ## =====================================================================
 library(ggplot2)
 library(patchwork)
-source("validation/settings.R")   # parallel_map(), save_figure(), record_check()
-source("validation/comparison_methods.R")   # draw_lkj_correlation_matrix()
+source("validation/R/settings.R")   # parallel_map(), save_figure(), record_check()
+source("validation/R/comparison_methods.R")   # draw_lkj_correlation_matrix()
 figures_folder <- file.path("docs", "figures")   # save_figure() writes here, next to the docs' figures
 
 set.seed(2026)
@@ -50,7 +50,7 @@ version_colours <- setNames(c("#0072B2", "#D55E00", "#009E73"), versions)
 
 
 ## ---- Random valid correlation matrices --------------------------------------
-## draw_lkj_correlation_matrix() (validation/comparison_methods.R) with eta = 1:
+## draw_lkj_correlation_matrix() (validation/R/comparison_methods.R) with eta = 1:
 ## the vine method of Lewandowski, Kurowicka and Joe (2009), every valid
 ## correlation matrix equally likely, every result positive definite.
 

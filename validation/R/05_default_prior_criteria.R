@@ -51,19 +51,20 @@
 ##    5.10 growing k, small model true: evidence for it grows; 95% lower
 ##        bound of the slope above 0.1 (old G2)
 ##
-##  Run from the project folder:  Rscript validation/05_default_prior_criteria.R
-##  Smoke test:  VALIDATION_SMOKE=1 Rscript validation/05_default_prior_criteria.R
-##  Results are cached in cache/study_05/ (delete them to rerun).
+##  Run from the project folder:  Rscript validation/R/05_default_prior_criteria.R
+##  Smoke test:  VALIDATION_SMOKE=1 Rscript validation/R/05_default_prior_criteria.R
+##  Raw results are cached in cache/study_05/ (delete them to rerun); the
+##  tables and checks are saved to validation/results/study_05.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/comparison_methods.R")   # contenders, model_methods, log_bayes_factor_model()
-source("validation/precision.R")            # n_sim_of(), smoke_mode
-source("validation/data_sets.R")            # with_stream_of()
-source("validation/data_set_D.R")           # design_D(), generate_D_null(), generate_D_true()
+source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("validation/R/comparison_methods.R")   # contenders, model_methods, log_bayes_factor_model()
+source("validation/R/precision.R")            # n_sim_of(), smoke_mode
+source("validation/R/data_sets.R")            # with_stream_of()
+source("validation/R/data_set_D.R")           # design_D(), generate_D_null(), generate_D_true()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_05_smoke" else "study_05")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
@@ -346,7 +347,6 @@ save_figure(
                             n_sim_of("rate_draws"), n_sim_of("growing_k_data"))),
   "study_05_growing_k", width = 11, height = 7)
 
-saveRDS(list(rate_slopes = rate_slopes, alternative_medians = alternative_medians,
-             growing_slopes = growing_slopes, growing_medians = growing_medians),
-        file.path(study_folder, "summaries.rds"))
+save_study_results("05", list(rate_slopes = rate_slopes, alternative_medians = alternative_medians,
+                              growing_slopes = growing_slopes, growing_medians = growing_medians))
 report_checks()
