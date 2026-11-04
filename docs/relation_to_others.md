@@ -196,7 +196,7 @@ What flat partial r adds is: the fixed-X version of their test, that this
 test follows from one prior on the whole model, and that the same prior gives
 Bayes factors between whole models and estimates (`stan_lm` with η = 1).
 
-**In variable selection** (`validation/README.md`, 09) the three are compared
+**In variable selection** ([`5_validation.md`](5_validation.md), 09) the three are compared
 with JZS, Zellner–Siow and BIC. They rank real above null predictors almost
 equally (flat partial r and flat R-squared within 0.025 of flat R in AUC in
 every cell; +0.003 and −0.002 on average). They differ in where they draw the line: at

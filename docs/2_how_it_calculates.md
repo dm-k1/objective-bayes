@@ -521,7 +521,7 @@ When the others explain 5%, the joint flat R Bayes factor for x1 is 2.25; when t
 explain 60%, it is 0.70, with the same evidence about x1. This is the
 **conditional Lindley paradox** of Som, Hans and MacEachern (2016): every prior
 with one scale shared by all coefficients has it, including the JZS default
-(weaker; `validation/README.md`, study 04). Its cause is the shared scale.
+(weaker; [`5_validation.md`](5_validation.md), study 04). Its cause is the shared scale.
 
 The conditional test gives the tested coefficient its own scale: its share of
 the total ([`1_from_behaviour.md`](1_from_behaviour.md), step 4). With $f$ its effect in noise units,

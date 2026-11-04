@@ -17,12 +17,13 @@ Rscript validation/07_estimation.R            # hours; resumes if interrupted
 Rscript validation/08_growing_k.R
 Rscript validation/09_variable_selection.R
 Rscript validation/10_calibration.R           # needs cmdstanr (or rstan)
+Rscript validation/11_factor_terms.R
 ```
 
-The scripts load the package from this folder with `pkgload::load_all()`.
+The scripts (in `validation/`) load the package from the project folder with `pkgload::load_all()`.
 
-**All at once:** `Rscript validation/run_all.R` runs every study, 00 to 10,
-each in its own R process, and writes `results/run_summary.md` (the commit, R
+**All at once:** `Rscript validation/run_all.R` runs every study, 00 to 11,
+each in its own R process, and writes `validation/results/run_summary.md` (the commit, R
 and CmdStan versions, cores, study 00's table, and every PASS/FAIL check) plus
 a log per study in `cache/logs/`. `run_all.R quick` runs 00 and the
 correctness checks 01, 02 and 05; `run_all.R 03 04 09` runs a selection.
@@ -47,7 +48,7 @@ the image small).
 
 | Script | Question | How | Run time |
 |---|---|---|---|
-| `00_initial_simulation.R` | The first result: what happens to partial r, R and R² as k grows, in valid correlation matrices? | 200,000 matrices per k = 1–10; three versions (partial r flat, R flat, R² flat); F1–F3: each version flat where it should be; writes `results/00_first_result.md` | about a minute |
+| `00_initial_simulation.R` | The first result: what happens to partial r, R and R² as k grows, in valid correlation matrices? | 200,000 matrices per k = 1–10; three versions (partial r flat, R flat, R² flat); F1–F3: each version flat where it should be; writes `validation/results/00_first_result.md` | about a minute |
 | `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flatcor.stan`) get the prior and the posterior right, for each prior? | P1–P4 (flat R), P5–P7 (flat partial r), P8–P10 (flat R-squared): sample the prior alone and compare with its distribution. S: simulation-based calibration, k = 8, n = 60, 400 datasets, all three. Contrast: flat R sampled in coefficient coordinates | about 10 minutes |
 | `02_bayes_factor.R` | Is the whole-model Bayes factor right, for each prior? | One loop over the three priors: A1 against `integrate()` by a route that is not the package's; A2 invariance; A3 against a brute-force Bayes factor; A4 a second derivation; B1–B4 predictive matching, information and model-selection consistency | a few minutes |
 | `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below) | 5–10 minutes |
@@ -124,7 +125,7 @@ the contrast.
 ## Last results
 
 The run of 4 November 2026 at commit e221561, all studies (00–11), 7 cores
-(`results/run_summary.md`, logs in `cache/logs/`): **175 of 176 checks
+(`validation/results/run_summary.md`, logs in `cache/logs/`): **175 of 176 checks
 pass**. The one failure is 10 P4 for flat R-squared, a finding rather than a
 bug (below and in section 10).
 
@@ -168,7 +169,7 @@ test is not "one prior for everything".
 
 ## In short: what the studies say about the three priors
 
-The per-criterion comparison is [`docs/4_comparison.md`](../docs/4_comparison.md).
+The per-criterion comparison is [`docs/4_comparison.md`](4_comparison.md).
 
 - **Correctness and the Bayarri et al. (2012) criteria** (01, 02, 05): all
   three pass every check: the sampler, SBC, the Bayes factors against
@@ -231,7 +232,7 @@ flat and R² grows with k; keep R or R² flat and each partial r shrinks with k.
 
 - At k = 1 partial r flat and R flat are the same prior (Jeffreys); R² flat is
   not flat on r even then.
-- Figures: `results/figures/00_partial_r_R_R2_by_k.png` (the three
+- Figures: `validation/results/figures/00_partial_r_R_R2_by_k.png` (the three
   distributions overlaid per k) and `00_three_versions_against_k.png`.
 - This is why every later study compares three priors.
 
@@ -451,12 +452,12 @@ at k = 8, n = 50 and 200), so P4 (within a factor 2) fails: its partial
 correlations are dependent through R², and the joint posterior of x1's
 partial correlation also uses the other coefficients (section Last results).
 
-Figures: `results/figures/10_calibration.png`, `10_coherence.png`.
+Figures: `validation/results/figures/10_calibration.png`, `10_coherence.png`.
 
 ## Not yet done
 
 The list of open work, for the whole project, is in
-[`docs/0_overview.md`](../docs/0_overview.md) ("Open").
+[`docs/0_overview.md`](0_overview.md) ("Open").
 
 ## References
 

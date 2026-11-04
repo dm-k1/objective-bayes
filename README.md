@@ -20,7 +20,7 @@ three options that leave:
 
 All three are $R^2$ ~ Beta($a$, 1) with $a$ = $k/2$, ½ or 1. There is **no
 default**: every function asks for `prior =`. The studies in
-[`validation/`](validation/README.md) test the three against the criteria
+[`validation/`](docs/5_validation.md) test the three against the criteria
 from the literature (Bayarri et al., 2012; simulation-based calibration;
 error rates and calibration), with the JZS default and Zellner–Siow as
 references; the comparison and what it means for the choice are in
@@ -80,7 +80,7 @@ the package. For estimation also cmdstanr with CmdStan (or rstan). Optional:
 BayesFactor (JZS comparison), ggplot2, dplyr, purrr, tidyr (vignette, figures
 and validation). Run the tests with `devtools::test()`. The exact package
 versions are in `renv.lock`, and `Dockerfile` builds the whole environment;
-running the validation anywhere: `validation/README.md`.
+running the validation anywhere: `docs/5_validation.md`.
 
 ## What's where
 
@@ -101,9 +101,10 @@ running the validation anywhere: `validation/README.md`.
 | `docs/2_how_it_calculates.md` | How it calculates: the density factor by factor, and the Bayes factor |
 | `docs/3_consistency.md` | Proofs and sketches for the consistency criteria |
 | `docs/4_comparison.md` | The three priors compared, criterion by criterion, with the JZS default and Zellner–Siow as references |
+| `docs/5_validation.md` | The validation report: how to run the studies, the criteria from the literature and where each is checked, every result, references |
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; flat partial r as `stan_lm`'s prior; why this is not R2-D2 |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation against a formula) |
-| `validation/` | Study 00 (the first result: the fork), then for each prior: does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `validation/README.md` |
+| `validation/` | Study 00 (the first result: the fork), then for each prior: does the Stan model get prior and posterior right, is the Bayes factor right, how does it behave; `run_all.R` runs everything; see `docs/5_validation.md` |
 | `renv.lock`, `Dockerfile` | The pinned environment: R packages, and R + packages + CmdStan as a container |
 
 ## Scope

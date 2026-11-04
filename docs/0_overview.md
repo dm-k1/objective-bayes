@@ -119,7 +119,7 @@ Two ways to test one coefficient, and why the package uses the second:
 | [`3_consistency.md`](3_consistency.md) | The proofs and sketches behind the consistency criteria, for the whole family |
 | [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors |
 | [`4_comparison.md`](4_comparison.md) | The three compared per criterion, from the validation results; the recommendation |
-| [`../validation/README.md`](../validation/README.md) | Every check and simulation study, with its numbers |
+| [`5_validation.md`](5_validation.md) | Every check and simulation study, with its numbers |
 | [`../vignette.R`](../vignette.R) | Use it on one dataset, start to finish |
 
 ---
@@ -147,7 +147,7 @@ Two ways to test one coefficient, and why the package uses the second:
 **proven** = a complete proof in doc 3; **checked** = a numerical check that
 passes on the current code; **sketch** = the steps of a proof, with a check;
 **run** = a simulation study run on the current code, with its result; details
-in [`../validation/README.md`](../validation/README.md). All from the full run of
+in [`5_validation.md`](5_validation.md). All from the full run of
 4 November 2026 (commit e221561): 175 of 176 checks pass; the one failure is a
 finding about flat R-squared (validation 10, P4; see
 [`4_comparison.md`](4_comparison.md), section 5).
