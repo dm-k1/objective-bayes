@@ -32,7 +32,7 @@
 ##    Rscript validation/07_estimation.R
 ##  Roughly 1.5 hours on 8 cores (the last two-prior run took 56 minutes).
 ##  Each design cell is saved when it finishes
-##  (validation/results/estimation_three_priors/), so an interrupted run
+##  (cache/estimation_three_priors/), so an interrupted run
 ##  resumes where it stopped; a saved cell is reused only if it holds exactly
 ##  the current method set.
 ## =====================================================================
@@ -43,7 +43,7 @@ source("validation/settings.R")   # results folder, save_figure()
 pkgload::load_all(".", quiet = TRUE)
 source("validation/comparison_methods.R")   # contenders, method_colours
 
-cell_folder <- file.path(results_folder, "estimation_three_priors")
+cell_folder <- file.path(cache_folder, "estimation_three_priors")
 estimation_methods <- c(names(contenders), "JZS default", "Zellner-Siow", "ordinary (lm)")
 dir.create(cell_folder, recursive = TRUE, showWarnings = FALSE)
 
@@ -154,7 +154,7 @@ per_cell <- results |>
             rmse     = sqrt(mean(error^2)),
             coverage = mean(covered),
             width    = mean(interval_width), .groups = "drop")
-saveRDS(per_cell, file.path(results_folder, "estimation_summaries.rds"))
+saveRDS(per_cell, file.path(cache_folder, "estimation_summaries.rds"))
 
 ## Total squared error over all coefficients, relative to ordinary least squares
 ## (below 1: the method estimates the whole coefficient vector better)

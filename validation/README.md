@@ -24,7 +24,7 @@ The scripts load the package from this folder with `pkgload::load_all()`.
 **All at once:** `Rscript validation/run_all.R` runs every study, 00 to 10,
 each in its own R process, and writes `results/run_summary.md` (the commit, R
 and CmdStan versions, cores, study 00's table, and every PASS/FAIL check) plus
-a log per study in `results/logs/`. `run_all.R quick` runs 00 and the
+a log per study in `cache/logs/`. `run_all.R quick` runs 00 and the
 correctness checks 01, 02 and 05; `run_all.R 03 04 09` runs a selection.
 `VALIDATION_CORES=32` sets the cores.
 
@@ -104,8 +104,9 @@ joint); the references are grey.
   as a full member (the code is in git history).
 
 Each check prints PASS/FAIL with its criterion; 00, 01, 02 and 05 stop with an
-error if anything failed. Simulation results and figures are cached in
-`validation/results/` (not tracked by git).
+error if anything failed. Simulation results, Stan fits and logs are cached in
+`cache/` at the project root (not tracked by git); `validation/results/` holds
+only what is tracked: the run summary, the first result and the figures.
 
 **Simulation-based calibration** (01, S): draw the true parameters from the
 prior, simulate a dataset, fit it, and record where the true value falls among
@@ -123,7 +124,7 @@ the contrast.
 ## Last results
 
 The run of 4 November 2026 at commit e221561, all studies (00–11), 7 cores
-(`results/run_summary.md`, logs in `results/logs/`): **175 of 176 checks
+(`results/run_summary.md`, logs in `cache/logs/`): **175 of 176 checks
 pass**. The one failure is 10 P4 for flat R-squared, a finding rather than a
 bug (below and in section 10).
 

@@ -14,8 +14,8 @@
 ##  Cores: all but one by default; set VALIDATION_CORES to choose
 ##  (e.g. VALIDATION_CORES=32 on a cloud machine).
 ##
-##  Writes to validation/results/:
-##    logs/<study>.log    the full output of each study
+##  Writes the full output of each study to cache/logs/<study>.log
+##  (gitignored), and to validation/results/:
 ##    run_summary.md      the setup, the first result (study 00), one row per
 ##                        study, and every failed check
 ##    session_info.txt    R and package versions of this run
@@ -43,7 +43,7 @@ studies <- if (length(requested) == 0) all_studies else
   }
 
 results_folder <- file.path("validation", "results")
-logs_folder    <- file.path(results_folder, "logs")
+logs_folder    <- file.path("cache", "logs")
 dir.create(logs_folder, recursive = TRUE, showWarnings = FALSE)
 
 ## ---- The setup of this run ----------------------------------------------------

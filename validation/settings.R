@@ -2,9 +2,9 @@
 ##  Shared settings for the validation scripts
 ##   - parallel: use all cores but one (leaves one free for the computer),
 ##               or VALIDATION_CORES if set
-##   - caching:  simulation results are saved in
-##               validation/results/ and reused when nothing changed
-##   - figures:  saved to validation/results/figures/
+##   - caching:  simulation results and Stan fits are saved in cache/
+##               (gitignored) and reused when nothing changed
+##   - figures:  saved to validation/results/figures/ (tracked)
 ##   - checks:   record_check() and report_checks() for pass/fail summaries
 ## =====================================================================
 
@@ -40,10 +40,13 @@ parallel_map <- function(items, work) {
   parallel::parLapply(cluster, items, work)
 }
 
-## ---- Cache folders -------------------------------------------------------------
+## ---- Folders -------------------------------------------------------------------
+## validation/results/ holds only what is tracked (the run summary, the first
+## result, the figures); everything that can be recomputed goes to cache/
 results_folder <- file.path("validation", "results")
-fits_folder    <- file.path(results_folder, "fits")
 figures_folder <- file.path(results_folder, "figures")
+cache_folder   <- "cache"
+fits_folder    <- file.path(cache_folder, "fits")
 dir.create(fits_folder,    recursive = TRUE, showWarnings = FALSE)
 dir.create(figures_folder, recursive = TRUE, showWarnings = FALSE)
 

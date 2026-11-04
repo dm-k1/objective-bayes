@@ -182,7 +182,7 @@ analyse_dataset <- function(n, correlation, seed) {
 
 runs <- run_simulation_grid(
   design,
-  results_file = file.path(results_folder, "sim_variable_selection.rds"),
+  results_file = file.path(cache_folder, "sim_variable_selection.rds"),
   settings = list(replications_per_cell = replications_per_cell, true_slopes = true_slopes,
                   methods = methods, version = 6),
   simulate_cell = function(cell)
@@ -205,7 +205,7 @@ summaries <- runs |>
             inclusion_null       = mean(inclusion_null_mean),
             inclusion_x4         = mean(inclusion_x4), .groups = "drop")
 print(as.data.frame(summaries), digits = 3)
-saveRDS(summaries, file.path(results_folder, "variable_selection_summaries.rds"))
+saveRDS(summaries, file.path(cache_folder, "variable_selection_summaries.rds"))
 
 method_colours <- method_colours[methods]
 long <- summaries |>
@@ -273,7 +273,7 @@ rownames(auc_table) <- NULL
 cat("\nAUC of inclusion probabilities, real vs null predictors (difference from flat R, 95% bootstrap):\n")
 print(auc_table |> mutate(across(c(auc, difference_from_flat_r, lower, upper), \(v) round(v, 3))) |>
         arrange(model_prior, predictor_correlation, sample_size, method), row.names = FALSE)
-saveRDS(auc_table, file.path(results_folder, "variable_selection_auc.rds"))
+saveRDS(auc_table, file.path(cache_folder, "variable_selection_auc.rds"))
 
 ## the curves themselves: mean misses (of 4) against mean false inclusions (of 8) per cutoff
 cutoffs <- c(seq(0.01, 0.99, by = 0.01))

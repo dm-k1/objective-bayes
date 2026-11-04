@@ -125,7 +125,7 @@ one_dataset <- function(q, n, other_predictors, f_squared) {
 
 runs <- run_simulation_grid(
   design,
-  results_file = file.path(results_folder, "sim_factor_terms.rds"),
+  results_file = file.path(cache_folder, "sim_factor_terms.rds"),
   settings = list(replications_per_cell = replications_per_cell, explained_by_others = explained_by_others,
                   cohen_f_squared = cohen_f_squared, methods = factor_methods, version = 2),
   simulate_cell = function(cell)
@@ -161,7 +161,7 @@ cell_summaries <- runs |>
     small_found        = mean(log_BF10[factor_effect == "small"]  >  log(3)),
     medium_found       = mean(log_BF10[factor_effect == "medium"] >  log(3)),
     .groups = "drop")
-saveRDS(cell_summaries, file.path(results_folder, "sim_factor_terms_summaries.rds"))
+saveRDS(cell_summaries, file.path(cache_folder, "sim_factor_terms_summaries.rds"))
 
 conditional_auc_difference <- cell_summaries |>
   filter(grepl("conditional", method)) |>

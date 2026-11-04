@@ -5,10 +5,8 @@
 .Ruserdata
 .Rproj.user/
 
-# Simulation output (re-create with the validation scripts)
-validation/results/*.rds
-validation/results/**/*.rds
-validation/results/fits/
+# Simulation caches, Stan fits and run logs (re-create with the validation scripts)
+cache/
 
 # Stan / brms build files
 *.exe
@@ -22,19 +20,11 @@ validation/results/fits/
 .DS_Store
 .vscode/
 
-# Local backup of the original Untitled scripts (kept out of git)
-_backup_original_files_*/
-
 # Stray R graphics output
 Rplots.pdf
-
-# Figures written by the validation scripts
-validation/results/figures/
 
 # Compiled Stan models and package check output
 inst/stan/*.rds
 inst/stan/flat_r
 *.Rcheck/
 flatcor_*.tar.gz
-validation/results_before_*/
-validation/results/logs/

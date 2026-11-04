@@ -43,7 +43,7 @@
 ##
 ##  Run from the project folder: Rscript validation/10_calibration.R
 ##  Part 1 about 20 minutes on 7 cores (cached); part 2 about 20-40 minutes
-##  (each fit cached in validation/results/coherence_three_priors/). Needs
+##  (each fit cached in cache/coherence_three_priors/). Needs
 ##  cmdstanr (or rstan) and logspline.
 ## =====================================================================
 library(dplyr)
@@ -102,7 +102,7 @@ datasets_per_chunk <- 2000   # 20,000 per cell, half nulls
 ## data from JZS with each of the three.
 calibration_runs <- run_simulation_grid(
   calibration_design,
-  results_file = file.path(results_folder, "calibration.rds"),
+  results_file = file.path(cache_folder, "calibration.rds"),
   settings = list(datasets_per_chunk = datasets_per_chunk, jzs_scale = jzs_scale,
                   contenders = contenders, version = 2),
   base_seed = 1010,
@@ -217,7 +217,7 @@ save_figure(
 ## =====================================================================
 ##  Part 2: coherence with the joint model (Savage-Dickey)
 ## =====================================================================
-coherence_folder <- file.path(results_folder, "coherence_three_priors")
+coherence_folder <- file.path(cache_folder, "coherence_three_priors")
 dir.create(coherence_folder, recursive = TRUE, showWarnings = FALSE)
 coherence_priors <- c("flat partial r", "flat R-squared")   # flat R: see the header
 coherence_design <- expand_grid(prior = coherence_priors, number_of_predictors = c(3, 8),

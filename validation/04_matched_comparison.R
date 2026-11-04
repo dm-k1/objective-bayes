@@ -20,7 +20,7 @@
 ##    M4. why: how strongly each method's evidence for x1 depends on how much
 ##        the OTHER predictors explain, at a fixed t-statistic for x1.
 ##
-##  Needs the results of study 03 (validation/results/sim_one_coefficient.rds).
+##  Needs the results of study 03 (cache/sim_one_coefficient.rds).
 ##  Run from the project folder: Rscript validation/04_matched_comparison.R
 ##  About 3 minutes.
 ## =====================================================================
@@ -30,7 +30,7 @@ source("validation/settings.R")   # results folder, save_figure()
 pkgload::load_all(".", quiet = TRUE)
 source("validation/comparison_methods.R")
 
-simulation_runs <- readRDS(file.path(results_folder, "sim_one_coefficient.rds"))
+simulation_runs <- readRDS(file.path(cache_folder, "sim_one_coefficient.rds"))
 
 ## P(a value from `higher` exceeds a value from `lower`), ties count half
 area_under_curve <- function(higher, lower)

@@ -28,7 +28,7 @@ pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
 source("validation/settings.R")        # parallel cores, cached simulation runner, record_check()
 source("validation/comparison_methods.R")
 
-results_file     <- file.path(results_folder, "sim_one_coefficient.rds")
+results_file     <- file.path(cache_folder, "sim_one_coefficient.rds")
 rerun_simulation <- FALSE   # TRUE forces a rerun even if cached results match
 
 ## ---- Settings ------------------------------------------------------------

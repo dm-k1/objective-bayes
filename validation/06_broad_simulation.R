@@ -53,7 +53,7 @@ one_dataset <- function(k, n, correlation, pattern, slope_of_x1) {
 
 runs <- run_simulation_grid(
   design,
-  results_file = file.path(results_folder, "sim_broad.rds"),
+  results_file = file.path(cache_folder, "sim_broad.rds"),
   settings = list(replications_per_cell = replications_per_cell,
                   methods = one_coefficient_methods, version = 2),
   simulate_cell = function(cell)
@@ -79,7 +79,7 @@ cell_summaries <- runs |>
     small_called_null = mean(log_BF10[slope_of_x1 == 0.1] < -log(3)),
     effect_0.2_found  = mean(log_BF10[slope_of_x1 == 0.2] >  log(3)),
     .groups = "drop")
-saveRDS(cell_summaries, file.path(results_folder, "sim_broad_summaries.rds"))
+saveRDS(cell_summaries, file.path(cache_folder, "sim_broad_summaries.rds"))
 
 ## Each method against JZS, averaged over the cells with the same k and
 ## correlation (positive = better than JZS)
