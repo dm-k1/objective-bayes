@@ -147,30 +147,32 @@ Two ways to test one coefficient, and why the package uses the second:
 **proven** = a complete proof in doc 3; **checked** = a numerical check that
 passes on the current code; **sketch** = the steps of a proof, with a check;
 **run** = a simulation study run on the current code, with its result; details
-in [`../validation/README.md`](../validation/README.md). "(rerun pending)" =
-the study has been rewritten for three priors and its rerun is not yet in.
+in [`../validation/README.md`](../validation/README.md). All from the full run of
+4 November 2026 (commit e221561): 175 of 176 checks pass; the one failure is a
+finding about flat R-squared (validation 10, P4; see
+[`4_comparison.md`](4_comparison.md), section 5).
 
 | Claim | Flat partial r | Flat R | Flat R-squared | Where |
 |---|---|---|---|---|
 | Valid correlation matrices give the three versions | checked (F1) | checked (F2) | checked (F3) | validation 00 |
-| The Stan model samples the prior correctly | (rerun pending) | (rerun pending) | (rerun pending) | validation 01, P1–P10 |
-| The Stan posterior is calibrated ($k = 8$) | (rerun pending) | (rerun pending) | (rerun pending) | validation 01, S |
-| The whole-model Bayes factor is exact | checked (A1–A4) | checked (A1–A4) | (rerun pending) | validation 02 |
-| Units and recoding don't change the answer | checked (A2) | checked (A2) | (rerun pending) | validation 02 |
-| Predictive matching (BF = 1 at $n = k + 1$) | checked (B1) | checked (B1) | (rerun pending) | validation 02 |
-| Information consistency, for $n \ge k + 3$ | proven, checked | proven, checked | proven, (rerun pending) | doc 3; validation 02, B2b |
+| The Stan model samples the prior correctly | checked (P5–P7, KS ≤ 0.012) | checked (P1–P4, KS ≤ 0.009) | checked (P8–P10, KS ≤ 0.009) | validation 01, P1–P10 |
+| The Stan posterior is calibrated ($k = 8$) | checked (SBC p ≥ 0.43) | checked (SBC p ≥ 0.61) | checked (SBC p ≥ 0.45) | validation 01, S |
+| The whole-model Bayes factor is exact | checked (A1–A4) | checked (A1–A4) | checked (A1–A4) | validation 02 |
+| Units and recoding don't change the answer | checked (A2) | checked (A2) | checked (A2) | validation 02 |
+| Predictive matching (BF = 1 at $n = k + 1$) | checked (B1) | checked (B1) | checked (B1) | validation 02 |
+| Information consistency, for $n \ge k + 3$ | proven, checked | proven, checked | proven, checked | doc 3; validation 02, B2b |
 | Intrinsic consistency | proven | proven | proven | doc 3 |
-| Model-selection consistency, fixed $k$ | sketch, checked: $\tfrac q2 \log n$ in every case | sketch, checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | sketch: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; (rerun pending) | doc 3; validation 02, B3, B3b, B4 |
-| Model-selection consistency, $k$ growing with $n$ | (rerun pending) | (rerun pending) | (rerun pending) | validation 08 |
+| Model-selection consistency, fixed $k$ | sketch, checked: $\tfrac q2 \log n$ in every case | sketch, checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | sketch: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise (slopes 0.99, 1.00, 1.01 and 0.53, 1.64, 2.88) | doc 3; validation 02, B3, B3b, B4 |
+| Model-selection consistency, $k$ growing with $n$ | checked (G1, G2): evidence grows fast (log BF₀₁ 408 at $n = 2000$, $k = n/4$) | checked, but slowly under the null (log BF₀₁ 1.9) | checked, but slowly under the null (log BF₀₁ 3.7) | validation 08 |
 | What singles the prior out | checked (C7) | checked (V5) | – | validation 05, 09 |
-| The conditional test is computed correctly | (rerun pending) | (rerun pending) | (rerun pending) | validation 05, C1–C5 |
-| The block conditional test is computed correctly | (rerun pending) | (rerun pending) | (rerun pending) | validation 05, C9–C11 |
-| Separating nulls from small effects, against JZS | (rerun pending) | (rerun pending) | (rerun pending) | validation 04, 06 |
-| Confirming a true null, one coefficient | (rerun pending) | (rerun pending) | (rerun pending) | validation 06 |
-| Calling a small effect (0.1) null | (rerun pending) | (rerun pending) | (rerun pending) | validation 06 |
-| Calibrated on its own prior | (rerun pending) | (rerun pending) | (rerun pending) | validation 10 |
-| Variable selection | (rerun pending) | (rerun pending) | (rerun pending) | validation 09 |
-| Estimation: prediction error, interval coverage | (rerun pending) | (rerun pending) | (rerun pending) | validation 07 |
+| The conditional test is computed correctly | checked (C1, C3–C5) | checked (C1, C2, C5) | checked (C1, C2, C5) | validation 05, C1–C5 |
+| The block conditional test is computed correctly | checked (C9–C11) | checked (C9–C11) | checked (C9–C11) | validation 05, C9–C11 |
+| Separating nulls from small effects, against JZS | run: equal or better (AUC +0.001 to +0.045) | run: the same as flat partial r (conditional) | run: the same as flat partial r (conditional) | validation 04, 06 |
+| Confirming a true null, one coefficient | run: 86–88%, for any $k$ | run: 55% at $k = 2$, 6% at $k = 20$ | run: 86% at $k = 2$, 26% at $k = 20$ | validation 06 |
+| Calling a small effect (0.1) null | run: 52–60% | run: 19% at $k = 2$, 0.5% at $k = 20$ | run: 52% at $k = 2$, 4% at $k = 20$ | validation 06 |
+| Calibrated on its own prior | checked (P1) | checked (P1) | checked (P1) | validation 10 |
+| Variable selection | run: fewest false inclusions of the three, misses more | run: most inclusions, fewest misses | run: close to flat R | validation 09 |
+| Estimation: prediction error, interval coverage | run: better than OLS everywhere, coverage ≥ 0.916 | run: lowest error at small $n$, coverage down to 0.76 | run: in between, coverage down to 0.82 | validation 07 |
 
 ---
 

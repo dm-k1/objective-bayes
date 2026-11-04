@@ -197,7 +197,13 @@ test follows from one prior on the whole model, and that the same prior gives
 Bayes factors between whole models and estimates (`stan_lm` with η = 1).
 
 **In variable selection** (`validation/README.md`, 09) the three are compared
-with JZS, Zellner–Siow and BIC: (rerun pending). Which extension describes real
+with JZS, Zellner–Siow and BIC. They rank real above null predictors almost
+equally (flat partial r and flat R-squared within 0.025 of flat R in AUC in
+every cell; +0.003 and −0.002 on average). They differ in where they draw the line: at
+n = 500, uncorrelated, beta-binomial model prior, flat partial r includes 0.13
+of 8 null predictors and misses 0.84 of 4 real ones, close to Zellner–Siow
+(0.12, 0.89) and BIC (0.05, 1.01); flat R (0.91, 0.45) and flat R-squared
+(0.92, 0.44) include more and miss fewer, more than JZS (0.42, 0.58). Which extension describes real
 research better is partly an empirical question: how fast explained variance
 grows with the number of predictors in published regressions. Flat partial r
 predicts a median $R^2$ of 0.76 with 5 predictors and 0.84 with 8; flat R

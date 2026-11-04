@@ -563,8 +563,12 @@ coefficient to be a small share of the total, on average $1/(3k)$ and $1/(2k)$
 of the variance.
 
 How the three tests behave across designs (separating nulls from small
-effects, confirming nulls, calling small effects null) is in studies 04 and 06:
-(rerun pending); summary in [`4_comparison.md`](4_comparison.md).
+effects, confirming nulls, calling small effects null) is in studies 04 and 06.
+The three conditional tests rank datasets identically (their AUC for null vs
+0.1 is the same, 0.001 to 0.045 above JZS), but they set the threshold
+differently: a true null gets BF₀₁ > 3 in 86–88% of datasets under flat
+partial r for every $k$, against 86% → 26% (flat R-squared) and 55% → 6%
+(flat R) from $k = 2$ to 20. Summary in [`4_comparison.md`](4_comparison.md).
 
 **In the code:** `log_bayes_factor_conditional(partial_r, n, k, prior)`, used by
 `bayes_factor_per_term()` for every one-column term.
@@ -623,33 +627,51 @@ curve averaged over the prior (`tests/testthat/test-support-curve.R`).
 
 ---
 
-**Not one coherent model space, but close to it.** The conditional test puts
-flat priors on the other coefficients, so it is not a ratio of marginal
-likelihoods under the joint prior, and a coefficient's conditional Bayes factor
-differs from `bayes_factor_models(full, without it)` (the joint test). How far
-is it from "one prior for everything"? Under the joint flat partial r
-model (the run of 26 October 2026; the rerun for all three priors is pending), the Bayes factor for a zero partial correlation of x1 is the
-Savage–Dickey ratio: the prior density of that partial correlation at 0 (1/2,
-flat on (−1, 1)) over its posterior density at 0, estimated from
-`fit_regression()` draws. On 20 datasets (k = 3, 8; n = 50, 200) the
-conditional log Bayes factor is within 0.09 of it wherever the density at 0
-can be estimated precisely (16 datasets; mean absolute difference 0.03, a few
-percent on the Bayes factor), and within Monte Carlo error for the other four
-(log BF₁₀ 2 to 9). The joint test is further away (mean absolute 0.23, up to
-0.42), because the smaller model's own prior is not the joint prior given a
-zero partial correlation. So in practice the conditional test *is* the
-Bayes factor of one model with one prior, for the hypothesis "this partial
-correlation is 0", to within a few percent.
+**One coherent model space for flat partial r, close to it for flat R-squared.**
+The conditional test puts flat priors on the other coefficients, so it is not a
+ratio of marginal likelihoods under the joint prior, and a coefficient's
+conditional Bayes factor differs from `bayes_factor_models(full, without it)`
+(the joint test). How far is it from "one prior for everything"? Under a joint
+model, the Bayes factor for a zero partial correlation of x1 is the
+Savage–Dickey ratio: the prior density of that partial correlation at 0 over
+its posterior density at 0, estimated from `fit_regression()` draws
+(`validation/10`, part 2; run of 4 November 2026). On 20 datasets per prior
+(k = 3, 8; n = 50, 200):
 
-It is also calibrated on that prior: with data drawn from the joint
-flat partial r prior (half with x1 = 0; the same earlier run), the share of nulls among
-datasets with Bayes factor BF₁₀ is 1/(1 + BF₁₀) within Monte Carlo error, at
-k = 3 and 8, n = 50 and 200 (`validation/README.md`, study 10). This justifies
-calling a slope of 0.1 null in about half the datasets (study 06): under a flat
-partial correlation an effect of 0.1 is rare, and at these n it predicts data
-much like no effect, so among datasets with BF₀₁ > 3, 83–89% are true nulls.
-Calibration is relative to the prior: with data from the JZS prior, which
-expects many tiny effects, the same Bayes factors say "null" too readily.
+- **Flat partial r** (prior density 1/2 at 0, flat on (−1, 1)): the conditional
+  log Bayes factor is within 0.09 of Savage–Dickey wherever the density at 0
+  can be estimated precisely (16 datasets; mean absolute difference 0.03, a few
+  percent on the Bayes factor), and within Monte Carlo error for the other four
+  (log BF₁₀ 2 to 9). The joint test is further away (mean absolute 0.23, up to
+  0.42), because the smaller model's own prior is not the joint prior given a
+  zero partial correlation. So the conditional test *is* the Bayes factor of
+  one model with one prior, for the hypothesis "this partial correlation is
+  0", to within a few percent.
+- **Flat R-squared** (prior density at 0 from the share mixture, π/4 at k = 3):
+  close at k = 3 (mean difference −0.04), but not at k = 8 (mean −0.48 at
+  n = 50, −0.34 at n = 200; largest 0.87 on the log scale, a factor 2.4; 19
+  estimable datasets, mean absolute 0.28). This is check P4, the one failure
+  of the run, and it is a property of the prior, not an error: Savage–Dickey
+  equals the conditional test only when the null's prior for the other
+  parameters is the joint prior given a zero partial correlation. Under flat
+  partial r (the LKJ vine) the partial correlations are independent, so that
+  holds; under flat R-squared they are tied together through the total
+  $R^2$, so what the other coefficients explain moves the posterior of x1's
+  partial correlation, and the gap grows with $k$. The joint test is further
+  still (mean absolute 1.0, up to 2.4).
+- **Flat R**: not defined; its implied prior for one partial correlation has
+  an infinite density at 0 for $k \ge 2$.
+
+Each prior is also calibrated on itself: with data drawn from the joint prior
+(half with x1 = 0), the share of nulls among datasets with Bayes factor BF₁₀ is
+1/(1 + BF₁₀) within Monte Carlo error, at k = 3 and 8, n = 50 and 200, for all
+three (`validation/10`, P1). This justifies calling a slope of 0.1 null in
+about half the datasets under flat partial r (study 06): under a flat partial
+correlation an effect of 0.1 is rare, and at these n it predicts data much like
+no effect, so among datasets with BF₀₁ > 3, 83–89% are true nulls (78–86% for
+flat R-squared, 78% for flat R). Calibration is relative to the prior: with
+data from the JZS prior, which expects many tiny effects, the same Bayes
+factors are miscalibrated (P2).
 
 Use the conditional test to ask "is there evidence for this coefficient?", and
 the joint Bayes factors to compare or average over whole models.
@@ -667,11 +689,11 @@ runs every check for each prior), "proof" and "sketch" refer to
 | # | Criterion | Meaning | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|---|
 | 1 | Basic | the prior on the tested coefficients is proper, and not arbitrarily vague | **met**, by construction | **met** | **met** |
-| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **sketch**, checked (B3, B3b, B4): null rate $\tfrac q2 \log n$ in every case | **sketch**, checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | **sketch**: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; (rerun pending) |
-| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: proof, checked (B2, B2b) | **met for $n \ge k + 3$**: proof, checked | **met for $n \ge k + 3$**: proof (through $f$ for $k = 1$); (rerun pending) |
+| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | **sketch**, checked (B3, B3b, B4): null rate $\tfrac q2 \log n$ in every case | **sketch**, checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | **sketch**: $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; checked (B3, B3b, B4): slopes 0.99, 1.00, 1.01 and 0.53, 1.64, 2.88 |
+| 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: proof, checked (B2, B2b) | **met for $n \ge k + 3$**: proof, checked | **met for $n \ge k + 3$**: proof (through $f$ for $k = 1$), checked (B2, B2b) |
 | 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **met**: proof | **met**: proof | **met**: proof |
-| 5 | Predictive matching | on minimal samples ($n = k + 1$) BF = 1 with the null and between models of equal size | **met**: checked (B1) | **met**: checked (B1) | **met**: by the general argument, checked against the ground truth for $k \ge 2$ (B1); (rerun pending) |
-| 6 | Measurement invariance | units of the data do not change the answer | **met**, by construction, checked (A2) | **met**, checked (A2) | **met**, checked (A2); (rerun pending) |
+| 5 | Predictive matching | on minimal samples ($n = k + 1$) BF = 1 with the null and between models of equal size | **met**: checked (B1) | **met**: checked (B1) | **met**: by the general argument, checked against the ground truth for $k \ge 2$ (B1) |
+| 6 | Measurement invariance | units of the data do not change the answer | **met**, by construction, checked (A2) | **met**, checked (A2) | **met**, checked (A2) |
 | 7 | Group invariance | the common parameters get the right-Haar prior, and the prior respects the invariance | **met** | **met** | **met** |
 
 Dimensional matching follows from predictive matching for all three: the Bayes

@@ -85,8 +85,8 @@ The same tail in one line: $p_a(f) \approx 2a f^{-3}$ for large $f$, for every $
 
 Checked in `validation/02_bayes_factor.R` (B2b): at $n = k + 2$ the log Bayes
 factor levels off (flat R: 0.91 for $k = 1$, 0.63 for $k = 3$), at $n = k + 3$
-it keeps rising. Flat partial r passes the same check; flat R-squared:
-(rerun pending).
+it keeps rising. Flat partial r and flat R-squared pass the same check
+(run of 4 November 2026).
 
 ---
 
@@ -209,15 +209,15 @@ within 30% of $a$ when it is the intercept-only model):
 
 | $q$ null predictors added to | prior | expected | $q = 1$ | $q = 3$ | $q = 6$ |
 |---|---|---|---|---|---|
-| intercept only | flat R | ½, ½, ½ | 0.50 | 0.49 | 0.51 |
-| intercept only | flat partial r | ½, 3/2, 3 | 0.50 | 1.47 | 2.81 |
-| intercept only | flat R-squared | 1, 1, 1 | (rerun pending) | (rerun pending) | (rerun pending) |
-| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | flat R | $\tfrac q2$ | 0.54 | 1.55 | 2.91 |
-| $x_1$ | flat partial r | $\tfrac q2$ | 0.47 | 1.49 | 2.93 |
-| $x_1$ | flat R-squared | $\tfrac q2$ | (rerun pending) | (rerun pending) | (rerun pending) |
+| intercept only | flat R | ½, ½, ½ | 0.47 | 0.50 | 0.48 |
+| intercept only | flat partial r | ½, 3/2, 3 | 0.51 | 1.46 | 2.86 |
+| intercept only | flat R-squared | 1, 1, 1 | 0.99 | 1.00 | 1.01 |
+| $x_1$, with $y = 0.5\,x_1 + \varepsilon$ | flat R | $\tfrac q2$ | 0.54 | 1.56 | 2.98 |
+| $x_1$ | flat partial r | $\tfrac q2$ | 0.47 | 1.48 | 2.91 |
+| $x_1$ | flat R-squared | $\tfrac q2$ | 0.53 | 1.64 | 2.88 |
 
 Check B3 ($x_1, x_2$ real, $x_3$ null: $q = 1$) gives slope 0.53 for flat R and
-0.49 for flat partial r; flat R-squared: (rerun pending).
+0.49 for flat partial r and 0.51 for flat R-squared.
 
 *The larger model is true.* Then $R^2_{\text{large}} \to \rho_1^2 > \rho_0^2 \leftarrow R^2_{\text{small}}$,
 and for $t$ bounded away from 0 the ratio of the two integrands behaves like
@@ -225,7 +225,7 @@ $\bigl((1-R^2_{\text{small}})/(1-R^2_{\text{large}})\bigr)^{(n-1)/2}$, which gro
 exponentially; the prior contributes only polynomial factors in $n$. So
 $\log \mathrm{BF}_{10}$ grows linearly in $n$ (`validation/02`, B4, median
 $\log\mathrm{BF}_{10}$ at $n$ = 200, 1000, 5000: flat R 0.9, 9.3, 54.1; flat
-partial r −0.0, 8.5, 53.3; flat R-squared (rerun pending)).
+partial r −0.0, 8.5, 53.3; flat R-squared 1.1, 9.5, 54.3).
 
 **What a full proof still needs:** the dominated-convergence steps written out
 with explicit bounds, the non-nested case, and the null rate of flat R-squared
@@ -244,21 +244,24 @@ $\log\mathrm{BF}_{01}$ of the null model against the full model):
 
 | | $n$ = 50 | 200 | 1000 | 2000 |
 |---|---|---|---|---|
-| flat R, $k = n/4$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
-| flat R, $k = \sqrt n$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
-| flat R-squared, $k = n/4$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
-| flat R-squared, $k = \sqrt n$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
-| flat partial r, $k = n/4$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
-| flat partial r, $k = \sqrt n$ | (rerun pending) | (rerun pending) | (rerun pending) | (rerun pending) |
+| flat R, $k = n/4$ | 1.0 | 1.3 | 1.7 | 1.9 |
+| flat R, $k = \sqrt n$ | 1.1 | 1.7 | 2.3 | 2.5 |
+| flat R-squared, $k = n/4$ | 1.9 | 2.6 | 3.4 | 3.7 |
+| flat R-squared, $k = \sqrt n$ | 2.1 | 3.3 | 4.4 | 5.0 |
+| flat partial r, $k = n/4$ | 8.7 | 39.2 | 202.8 | 407.7 |
+| flat partial r, $k = \sqrt n$ | 6.3 | 18.1 | 52.6 | 82.6 |
 
-The earlier run (26 October 2026, the same code for flat R and flat partial r)
-gave, at $k = n/4$: flat R 1.0, 1.3, 1.7, 1.9; flat partial r 8.8, 39.2, 202.8,
-407.7. Flat R stays consistent, but its evidence for the null barely moves:
+(Run of 4 November 2026; for comparison, JZS gives 3.8, 15.1, 74.8, 149.3 and
+Zellner–Siow 10.1, 41.2, 205.6, 410.9 at $k = n/4$.) All three pass G1 and G2
+(evidence keeps rising). Flat R stays consistent, but its evidence for the null barely moves:
 with 500 null predictors at $n = 2000$, $\mathrm{BF}_{01} \approx 7$. Its
 alternative stays at "$R$ flat", which predicts data close to the null's; flat
 partial r and Zellner–Siow expect $R^2$ near 1 when $k$ is large, which the
-data easily rule out. Flat R-squared's alternative stays at "$R^2$ flat", so it
-is expected between the two, nearer flat R: (rerun pending).
+data easily rule out. Flat R-squared's alternative stays at "$R^2$ flat", and
+it sits between the two, much nearer flat R: 3.7 at $n = 2000$, $k = n/4$
+($\mathrm{BF}_{01} \approx 40$). With a small true model (G2) flat R and flat
+R-squared give nearly the same evidence for it (175.1 and 175.1 at
+$n = 2000$), flat partial r more (443.6).
 
 ---
 
