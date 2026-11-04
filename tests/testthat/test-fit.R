@@ -9,11 +9,14 @@ test_that("fit_regression() runs and works with print, loo and pp_check", {
                         iter_sampling = 500, seed = 1, prior = "flat_r")
   expect_s3_class(fit, "flatcor_fit")
   expect_setequal(posterior::variables(fit$draws), c("Intercept", "x1", "x2", "sigma", "R_squared"))
-  expect_output(print(fit), "flat-R prior")
+  expect_output(print(fit), "flat_r prior")
   expect_s3_class(loo(fit), "loo")
   expect_s3_class(pp_check(fit), "ggplot")
-  expect_error(fit_regression(y ~ 0 + x1, data), "intercept")
-  uniform <- fit_regression(y ~ x1 + x2, data, chains = 2, iter_warmup = 500,
-                            iter_sampling = 500, seed = 1)   # the default prior
-  expect_output(print(uniform), "uniform-correlations prior")
+  expect_error(fit_regression(y ~ 0 + x1, data, prior = "flat_r"), "intercept")
+  for (prior in c("flat_partial_r", "flat_r_squared")) {
+    other <- fit_regression(y ~ x1 + x2, data, chains = 2, iter_warmup = 500,
+                            iter_sampling = 500, seed = 1, prior = prior)
+    expect_output(print(other), paste(prior, "prior"))
+  }
+  expect_error(fit_regression(y ~ x1 + x2, data), "Choose a prior")
 })

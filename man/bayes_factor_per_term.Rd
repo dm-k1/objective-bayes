@@ -4,31 +4,25 @@
 \alias{bayes_factor_per_term}
 \title{Bayes factor for every term of a model}
 \usage{
-bayes_factor_per_term(
-  formula,
-  data,
-  test = c("conditional", "joint"),
-  prior = c("uniform_correlations", "flat_r")
-)
+bayes_factor_per_term(formula, data, prior, test = c("conditional", "joint"))
 }
 \arguments{
 \item{formula}{A model formula.}
 
 \item{data}{A data frame.}
 
+\item{prior}{\code{"flat_partial_r"}, \code{"flat_r"} or
+\code{"flat_r_squared"}; there is no default. See \code{bayes_factor_models()}.}
+
 \item{test}{\code{"conditional"} (default) or \code{"joint"} (compare the
 models with and without each term, for every term).}
-
-\item{prior}{\code{"uniform_correlations"} (the default) or \code{"flat_r"}; see
-\code{bayes_factor_models()}.}
 }
 \value{
 A data frame with BF10 (evidence for an effect), BF01, and the test used.
 }
 \description{
 With against without each term. By default every term gets the conditional
-test (\code{log_bayes_factor_flat_r_conditional()} or
-\code{log_bayes_factor_uniform_correlations_conditional()}): its evidence
+test (\code{log_bayes_factor_conditional()}): its evidence
 depends only on its own contribution, which avoids the conditional Lindley
 paradox. A term with one column (a continuous predictor, a two-level factor)
 is tested by its partial correlation; a term with several columns (a factor
@@ -36,6 +30,6 @@ with more levels, a multi-column interaction) as a block, by its partial
 R-squared given all the other columns.
 }
 \examples{
-bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars)
+bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_partial_r")
 bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_r")
 }

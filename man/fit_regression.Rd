@@ -2,18 +2,18 @@
 % Please edit documentation in R/fit.R
 \name{fit_regression}
 \alias{fit_regression}
-\title{Fit a linear regression with the uniform-correlations or the flat-R prior}
+\title{Fit a linear regression with one of the three priors}
 \usage{
 fit_regression(
   formula,
   data,
+  prior,
   chains = 4,
   iter_warmup = 1000,
   iter_sampling = 1000,
   adapt_delta = 0.95,
   seed = NULL,
-  backend = if (requireNamespace("cmdstanr", quietly = TRUE)) "cmdstanr" else "rstan",
-  prior = c("uniform_correlations", "flat_r")
+  backend = if (requireNamespace("cmdstanr", quietly = TRUE)) "cmdstanr" else "rstan"
 )
 }
 \arguments{
@@ -21,12 +21,13 @@ fit_regression(
 
 \item{data}{A data frame.}
 
+\item{prior}{\code{"flat_partial_r"} (R-squared ~ Beta(k/2, 1)),
+\code{"flat_r"} (R flat) or \code{"flat_r_squared"} (R-squared flat); there
+is no default. See \code{bayes_factor_models()}.}
+
 \item{chains, iter_warmup, iter_sampling, adapt_delta, seed}{Sampler settings.}
 
 \item{backend}{\code{"cmdstanr"} (default when installed) or \code{"rstan"}.}
-
-\item{prior}{\code{"uniform_correlations"} (the default: R-squared ~
-Beta(k/2, 1)) or \code{"flat_r"} (R flat); see \code{bayes_factor_models()}.}
 }
 \value{
 A \code{flatcor_fit}: \code{print()} shows estimates and diagnostics,
@@ -40,7 +41,7 @@ and a direction (uniform), with the coefficients computed from them
 }
 \examples{
 \dontrun{
-fit <- fit_regression(mpg ~ wt + hp, mtcars)
+fit <- fit_regression(mpg ~ wt + hp, mtcars, prior = "flat_partial_r")
 fit
 loo(fit)
 }

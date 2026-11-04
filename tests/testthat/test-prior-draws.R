@@ -1,6 +1,5 @@
-## The prior as a recipe gives R-squared ~ Beta(1/2, 1) for every k
-## (docs/2_how_it_calculates.md, section 5)
-test_that("implied R-squared is Beta(1/2, 1) for k = 1, 3, 10, correlated or not", {
+## The prior as a recipe gives R-squared ~ Beta(a, 1) (docs/2_how_it_calculates.md, section 5)
+test_that("flat R: implied R-squared is Beta(1/2, 1) for k = 1, 3, 10, correlated or not", {
   set.seed(1)
   correlated <- matrix(0.5, 3, 3); diag(correlated) <- 1
   for (covariance in list(matrix(1), correlated, diag(10))) {
@@ -19,11 +18,11 @@ test_that("with one predictor the correlation is flat from -1 to 1", {
   expect_lt(suppressWarnings(ks.test(correlation, "punif", -1, 1)$statistic), 0.01)
 })
 
-test_that("uniform correlations: implied R-squared is Beta(k/2, 1), correlated or not", {
+test_that("flat partial r: implied R-squared is Beta(k/2, 1), correlated or not", {
   set.seed(3)
   correlated <- matrix(0.5, 3, 3); diag(correlated) <- 1
   for (covariance in list(matrix(1), correlated, diag(10))) {
-    draws <- draw_coefficients_from_prior(50000, covariance, prior = "uniform_correlations")
+    draws <- draw_coefficients_from_prior(50000, covariance, prior = "flat_partial_r")
     f_squared <- rowSums((draws %*% covariance) * draws)
     distance <- suppressWarnings(ks.test(f_squared / (1 + f_squared), "pbeta",
                                          ncol(covariance) / 2, 1)$statistic)
@@ -31,10 +30,26 @@ test_that("uniform correlations: implied R-squared is Beta(k/2, 1), correlated o
   }
 })
 
-test_that("uniform correlations: every coefficient's partial correlation is flat, for any k", {
+test_that("flat partial r: every coefficient's partial correlation is flat, for any k", {
   set.seed(4)
   correlated <- matrix(0.5, 5, 5); diag(correlated) <- 1
-  draws <- draw_coefficients_from_prior(50000, correlated, prior = "uniform_correlations")
+  draws <- draw_coefficients_from_prior(50000, correlated, prior = "flat_partial_r")
   partial_f <- draws[, 1] * sqrt(1 / solve(correlated)[1, 1])   # effect / spread left after the others
   expect_lt(suppressWarnings(ks.test(partial_f / sqrt(1 + partial_f^2), "punif", -1, 1)$statistic), 0.01)
+})
+
+test_that("flat R-squared: implied R-squared is flat for every k, correlated or not", {
+  set.seed(5)
+  correlated <- matrix(0.5, 3, 3); diag(correlated) <- 1
+  for (covariance in list(matrix(1), correlated, diag(10))) {
+    draws <- draw_coefficients_from_prior(50000, covariance, prior = "flat_r_squared")
+    f_squared <- rowSums((draws %*% covariance) * draws)
+    expect_lt(suppressWarnings(ks.test(f_squared / (1 + f_squared), "punif")$statistic), 0.01)
+  }
+})
+
+test_that("every function asks for the prior", {
+  expect_error(draw_coefficients_from_prior(10, diag(2)), "Choose a prior")
+  expect_error(draw_coefficients_from_prior(10, diag(2), prior = "uniform_correlations"),
+               "Unknown prior")
 })

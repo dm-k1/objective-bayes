@@ -1,19 +1,21 @@
 ## =====================================================================
-##  Testing one coefficient or one term: the conditional test, for both priors
+##  Testing one coefficient or one term: the conditional test, three priors
 ## =====================================================================
 ## In one sentence: test one coefficient's partial correlation, with the prior
-## that the joint flat-R prior implies for one coefficient, so the evidence
-## depends only on that coefficient's own contribution (its sample partial
+## that the joint prior implies for one coefficient, so the evidence depends
+## only on that coefficient's own contribution (its sample partial
 ## correlation), n and k. This avoids the conditional Lindley paradox of priors
 ## with one shared scale (Som, Hans & MacEachern, 2016), which affects the
 ## joint test as it does the JZS default. docs/2_how_it_calculates.md, section 10.
 ##
-## Prior for one coefficient, in noise units f:
-##   f^2 = share * R^2 / (1 - R^2),  R flat on (0, 1),  share ~ Beta(1/2, (k-1)/2),
-## sign + or - with equal probability. It depends only on k, not on how the
-## predictors correlate. The other coefficients and the intercept get flat
-## priors and the noise 1/sigma (shared by both hypotheses). Integrating them
-## out leaves
+## Prior for one coefficient, in noise units f, under R^2 ~ Beta(a, 1) with a
+## uniform direction (R/priors.R):
+##   f^2 = share * R^2 / (1 - R^2),  share ~ Beta(1/2, (k-1)/2),
+## sign + or - with equal probability. It depends only on k and a, not on how
+## the predictors correlate. For flat_partial_r (a = k/2) the mixture is
+## exactly a flat partial correlation, P(|f| < f) = f / sqrt(1 + f^2), for any k.
+## The other coefficients and the intercept get flat priors and the noise
+## 1/sigma (shared by both hypotheses). Integrating them out leaves
 ##   p(y | f) / p(y | 0) = exp(-n f^2 / 2) * I(sqrt(n) r f) / I(0),
 ##   I(b) = integral_0^inf v^m exp(-v^2/2 + b v) dv,   m = n - k - 1,
 ## with r the sample partial correlation. The average over the prior is taken
@@ -22,13 +24,13 @@
 ##
 ## A term with q columns (a factor with q + 1 levels) is tested as a block, in
 ## the same way: f is the length of its effect in noise units, its direction
-## within the block is uniform, and r^2 is the block's sample partial R^2.
-##   flat-R                share ~ Beta(q/2, (k-q)/2)
-##   uniform correlations  partial R^2 ~ Beta(q/2, 1), for every k
-## The likelihood ratio becomes exp(-n f^2/2) E_c[I(sqrt(n) r f c)] / I(0) with
-## m = n - k + q - 2 and c the cosine between the effect and the data's
-## direction (for q = 1, c = +-1: the formula above). Checks: validation/05,
-## C9 and C10.
+## within the block is uniform, and r^2 is the block's sample partial R^2. Its
+## share is Beta(q/2, (k-q)/2); for flat_partial_r the block's partial R^2 is
+## Beta(q/2, 1) for every k. The likelihood ratio becomes
+## exp(-n f^2/2) E_c[I(sqrt(n) r f c)] / I(0) with m = n - k + q - 2 and c the
+## cosine between the effect and the data's direction (for q = 1, c = +-1: the
+## formula above). With q = k this is the whole model against the intercept
+## only (R/bayes_factor.R). Checks: validation/05, C9 and C10.
 
 ## log I(b) for a vector of b: a grid around the peak of the integrand
 log_peak_integral <- function(b, m, half_width = 12, points = 241) {
@@ -44,24 +46,25 @@ log_peak_integral <- function(b, m, half_width = 12, points = 241) {
 }
 
 ## Prior probability that |f| is below each of f_values (the prior's CDF).
-## For one share s: |f| = sqrt(s) R / sqrt(1 - R^2) with R flat, so
-## P(|f| < f | s) = f / sqrt(s + f^2) exactly. This is averaged over the share
-## ~ Beta(q/2, (k-q)/2) (q columns tested; q = 1 for one coefficient) on a grid
-## even in logit(share): it reaches down to shares far below the smallest f^2,
-## where the CDF changes fast, and up to shares near 1, where the Beta density
-## is infinite when k - q = 1. Each grid cell carries its exact Beta
-## probability (pbeta); the cells below and above the grid get share 0 and
-## share 1. (At f = 0 the CDF is 0; f / sqrt(0 + 0) is not.) For a block,
-## |f| is the length of the block's effect in noise units.
-prior_cdf_of_f <- function(f_values, number_of_predictors, points_share, number_of_columns = 1) {
-  if (number_of_predictors == number_of_columns) return(f_values / sqrt(1 + f_values^2))
+## For one share s: |f| = sqrt(s) R / sqrt(1 - R^2) with R^2 ~ Beta(a, 1), so
+## P(|f| < f | s) = P(R^2 < f^2 / (s + f^2)) = (f^2 / (s + f^2))^a exactly.
+## This is averaged over the share ~ Beta(q/2, (k-q)/2) (q columns tested; q = 1
+## for one coefficient) on a grid even in logit(share): it reaches down to
+## shares far below the smallest f^2, where the CDF changes fast, and up to
+## shares near 1, where the Beta density is infinite when k - q = 1. Each grid
+## cell carries its exact Beta probability (pbeta); the cells below and above
+## the grid get share 0 and share 1. (At f = 0 the CDF is 0; 0 / (0 + 0) is
+## not.) For a block, |f| is the length of the block's effect in noise units.
+prior_cdf_of_f <- function(f_values, number_of_predictors, points_share, number_of_columns = 1,
+                           shape = 1 / 2) {
+  if (number_of_predictors == number_of_columns) return((f_values^2 / (1 + f_values^2))^shape)
   smallest_share <- 1e-4 * min(f_values[f_values > 0])^2
   logit_edges <- seq(stats::qlogis(smallest_share), 25, length.out = points_share)
   share_probability <- diff(c(0, stats::pbeta(stats::plogis(logit_edges), number_of_columns / 2,
                                               (number_of_predictors - number_of_columns) / 2), 1))
   share_values <- c(0, stats::plogis((logit_edges[-1] + logit_edges[-points_share]) / 2), 1)
   cdf_given_share <- outer(share_values, f_values, function(share, f)
-    ifelse(f == 0, 0, f / sqrt(share + f^2)))
+    ifelse(f == 0, 0, (f^2 / (share + f^2))^shape))
   colSums(share_probability * cdf_given_share)
 }
 
@@ -145,67 +148,55 @@ log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_
   log_sum_exp(log_likelihood_ratio + log(prior_probability))
 }
 
-#' Log Bayes factor for one coefficient (conditional flat-R test)
+#' Log Bayes factor for one coefficient or one term (the conditional test)
 #'
 #' Tests one coefficient's partial correlation, with the prior that the joint
-#' flat-R prior implies for one of \code{number_of_predictors} coefficients.
-#' Depends only on the sample partial correlation, n and k. With one predictor
-#' it equals the joint test.
+#' prior implies for one of \code{number_of_predictors} coefficients. Depends
+#' only on the sample partial correlation, n and k. With one predictor it
+#' equals the joint test.
 #'
-#' A block of q columns (a factor with q + 1 levels, a multi-column
-#' interaction) is tested the same way: its share of the flat total is
-#' Beta(q/2, (k - q)/2), its direction within the block uniform, and the
-#' evidence depends only on the block's sample partial R-squared, n, k and q.
+#' Under R-squared ~ Beta(a, 1) with a uniform direction, one coefficient's
+#' f^2 is share * R^2 / (1 - R^2) with share ~ Beta(1/2, (k - 1)/2). For
+#' \code{"flat_partial_r"} that is a flat partial correlation for any k
+#' (Jeffreys' prior per coefficient); for \code{"flat_r"} and
+#' \code{"flat_r_squared"} it narrows as k grows. A block of q columns (a
+#' factor with q + 1 levels, a multi-column interaction) is tested the same
+#' way: its share is Beta(q/2, (k - q)/2), its direction within the block
+#' uniform, and the evidence depends only on the block's sample partial
+#' R-squared, n, k and q.
 #' @param partial_r Sample partial correlation of the tested predictor; for a
 #'   block, the square root of the block's sample partial R-squared.
 #' @param sample_size Number of observations, n.
 #' @param number_of_predictors Number of predictor columns in the model, k.
+#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
+#'   \code{"flat_r_squared"}; there is no default.
+#' @param number_of_columns Number of columns tested together, q (1 for one
+#'   coefficient).
 #' @param points_f,points_share Grid sizes: for f, around the peak of the
 #'   likelihood, and for the share, inside the prior. With the defaults the
 #'   error is below about 2e-4 on the log scale for n = 50 to 1e6, k = 1 to 30
-#'   (against \code{stats::integrate()}, validation/05, check C5).
-#' @param number_of_columns Number of columns tested together, q (1 for one
-#'   coefficient).
+#'   (against \code{stats::integrate()}, validation/05).
 #' @return The log Bayes factor for an effect against no effect.
 #' @examples
-#' log_bayes_factor_flat_r_conditional(0.2, sample_size = 100, number_of_predictors = 3)
+#' log_bayes_factor_conditional(0.2, sample_size = 100, number_of_predictors = 3,
+#'                              prior = "flat_partial_r")
+#' log_bayes_factor_conditional(0.2, sample_size = 100, number_of_predictors = 3,
+#'                              prior = "flat_r_squared")
 #' @export
-log_bayes_factor_flat_r_conditional <- function(partial_r, sample_size, number_of_predictors,
-                                                points_f = 600, points_share = 500,
-                                                number_of_columns = 1) {
+log_bayes_factor_conditional <- function(partial_r, sample_size, number_of_predictors, prior,
+                                         number_of_columns = 1, points_f = 600,
+                                         points_share = 500) {
   if (sample_size < number_of_predictors + 2)
     stop("Need at least two more observations than predictors.")
-  log_bayes_factor_from_prior_cdf_of_f(
-    partial_r, sample_size, number_of_predictors,
+  prior_cdf <- if (check_prior(prior) == "flat_partial_r") {
+    ## the share mixture with a = k/2, in closed form: a flat partial correlation
+    ## (for a block, partial R^2 ~ Beta(q/2, 1)), whatever k is
+    function(f_values) (f_values^2 / (1 + f_values^2))^(number_of_columns / 2)
+  } else {
+    shape <- prior_shape(prior, number_of_predictors)
     function(f_values) prior_cdf_of_f(f_values, number_of_predictors, points_share,
-                                      number_of_columns),
-    points_f, number_of_columns)
-}
-
-#' Log Bayes factor for one coefficient (conditional test, uniform correlations)
-#'
-#' Under uniform correlations (every correlation matrix of the outcome and the
-#' predictors equally likely) one coefficient's partial correlation is flat on
-#' (-1, 1) whatever the number of predictors: Jeffreys' flat correlation for
-#' every coefficient (validation/05, checks C4 and C7). So this is the
-#' conditional test with the prior P(|f| < f) = f / sqrt(1 + f^2), for any k.
-#' The other coefficients get flat priors, as in the flat-R version.
-#'
-#' For a block of q columns the block's partial R-squared is Beta(q/2, 1),
-#' again for any k (validation/05, check C9), so
-#' P(|f| < f) = (f^2 / (1 + f^2))^(q/2), with a uniform direction within the block.
-#' @inheritParams log_bayes_factor_flat_r_conditional
-#' @return The log Bayes factor for an effect against no effect.
-#' @examples
-#' log_bayes_factor_uniform_correlations_conditional(0.2, sample_size = 100, number_of_predictors = 3)
-#' @export
-log_bayes_factor_uniform_correlations_conditional <- function(partial_r, sample_size,
-                                                              number_of_predictors, points_f = 600,
-                                                              number_of_columns = 1) {
-  if (sample_size < number_of_predictors + 2)
-    stop("Need at least two more observations than predictors.")
-  log_bayes_factor_from_prior_cdf_of_f(
-    partial_r, sample_size, number_of_predictors,
-    function(f_values) (f_values^2 / (1 + f_values^2))^(number_of_columns / 2),
-    points_f, number_of_columns)
+                                      number_of_columns, shape)
+  }
+  log_bayes_factor_from_prior_cdf_of_f(partial_r, sample_size, number_of_predictors,
+                                       prior_cdf, points_f, number_of_columns)
 }

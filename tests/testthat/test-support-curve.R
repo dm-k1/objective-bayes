@@ -10,10 +10,10 @@ support_data <- local({
 support_fit <- lm(y ~ x1 + x2 + group, support_data)
 
 test_that("one column: the curve averaged over a flat partial correlation is the conditional BF", {
-  ## uniform correlations: the partial correlation is flat on (-1, 1)
+  ## flat partial r: the partial correlation is flat on (-1, 1)
   curve <- function(rho) support_per_partial_correlation(support_fit, "x2", rho)$support_vs_zero
   averaged <- integrate(curve, -1 + 1e-9, 1 - 1e-9, rel.tol = 1e-8)$value / 2
-  expect_equal(averaged, bayes_factor_per_term(y ~ x1 + x2 + group, support_data)$BF10[2],
+  expect_equal(averaged, bayes_factor_per_term(y ~ x1 + x2 + group, support_data, prior = "flat_partial_r")$BF10[2],
                tolerance = 1e-4)
 })
 
@@ -21,7 +21,7 @@ test_that("block: the curve averaged over Beta(q/2, 1) is the block conditional 
   curve <- function(r2) support_per_partial_r_squared(support_fit, "group", r2)$support_vs_zero *
     dbeta(r2, 3 / 2, 1)
   averaged <- integrate(curve, 0, 1 - 1e-9, rel.tol = 1e-8)$value
-  expect_equal(averaged, bayes_factor_per_term(y ~ x1 + x2 + group, support_data)$BF10[3],
+  expect_equal(averaged, bayes_factor_per_term(y ~ x1 + x2 + group, support_data, prior = "flat_partial_r")$BF10[3],
                tolerance = 1e-4)
 })
 

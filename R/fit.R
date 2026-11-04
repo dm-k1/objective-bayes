@@ -24,7 +24,7 @@ compile_stan_model <- function(backend) {
   compiled_models[[backend]]
 }
 
-#' Fit a linear regression with the uniform-correlations or the flat-R prior
+#' Fit a linear regression with one of the three priors
 #'
 #' Samples the prior in its own coordinates, the overall correlation R
 #' and a direction (uniform), with the coefficients computed from them
@@ -34,24 +34,24 @@ compile_stan_model <- function(backend) {
 #' @param data A data frame.
 #' @param chains,iter_warmup,iter_sampling,adapt_delta,seed Sampler settings.
 #' @param backend \code{"cmdstanr"} (default when installed) or \code{"rstan"}.
-#' @param prior \code{"uniform_correlations"} (the default: R-squared ~
-#'   Beta(k/2, 1)) or \code{"flat_r"} (R flat); see \code{bayes_factor_models()}.
+#' @param prior \code{"flat_partial_r"} (R-squared ~ Beta(k/2, 1)),
+#'   \code{"flat_r"} (R flat) or \code{"flat_r_squared"} (R-squared flat); there
+#'   is no default. See \code{bayes_factor_models()}.
 #' @return A \code{flatcor_fit}: \code{print()} shows estimates and diagnostics,
 #'   \code{loo()} and \code{pp_check()} work as usual, and \code{$draws}
 #'   holds all posterior draws as a \code{posterior::draws_df}.
 #' @examples
 #' \dontrun{
-#' fit <- fit_regression(mpg ~ wt + hp, mtcars)
+#' fit <- fit_regression(mpg ~ wt + hp, mtcars, prior = "flat_partial_r")
 #' fit
 #' loo(fit)
 #' }
 #' @export
-fit_regression <- function(formula, data, chains = 4, iter_warmup = 1000,
+fit_regression <- function(formula, data, prior, chains = 4, iter_warmup = 1000,
                        iter_sampling = 1000, adapt_delta = 0.95, seed = NULL,
                        backend = if (requireNamespace("cmdstanr", quietly = TRUE))
-                                   "cmdstanr" else "rstan",
-                       prior = c("uniform_correlations", "flat_r")) {
-  prior <- match.arg(prior)
+                                   "cmdstanr" else "rstan") {
+  prior <- check_prior(prior)
   model_frame <- model.frame(formula, data)
   design      <- model.matrix(formula, model_frame)
   if (!"(Intercept)" %in% colnames(design))
@@ -64,7 +64,7 @@ fit_regression <- function(formula, data, chains = 4, iter_warmup = 1000,
 
   stan_data <- list(N = nrow(predictors), K = ncol(predictors), X = predictors, y = outcome,
                     prior_only = 0L, proper_stand_ins = 0L,
-                    uniform_correlations = as.integer(prior == "uniform_correlations"))
+                    r_squared_shape = prior_shape(prior, ncol(predictors)))
   model <- compile_stan_model(backend)
   if (backend == "cmdstanr") {
     fit <- model$sample(data = stan_data, chains = chains, parallel_chains = chains,
@@ -106,8 +106,7 @@ fit_regression <- function(formula, data, chains = 4, iter_warmup = 1000,
 
 #' @export
 print.flatcor_fit <- function(x, digits = 3, ...) {
-  cat("Linear regression with the", switch(x$prior, flat_r = "flat-R",
-      uniform_correlations = "uniform-correlations"), "prior\n")
+  cat("Linear regression with the", x$prior, "prior\n")
   cat("Formula:", deparse(x$formula), "\n")
   cat("Observations:", length(x$outcome), "  Predictors:", ncol(x$predictors),
       "  Divergent transitions:", x$divergent, "\n\n")
@@ -117,8 +116,7 @@ print.flatcor_fit <- function(x, digits = 3, ...) {
     rhat = posterior::rhat, ess_bulk = posterior::ess_bulk)
   print(as.data.frame(estimates), digits = digits, row.names = FALSE)
   cat("\nR_squared is the population explained share; its prior is",
-      switch(x$prior, flat_r = "Beta(1/2, 1).\n",
-             uniform_correlations = sprintf("Beta(%g, 1).\n", ncol(x$predictors) / 2)))
+      sprintf("Beta(%g, 1).\n", prior_shape(x$prior, ncol(x$predictors))))
   invisible(x)
 }
 

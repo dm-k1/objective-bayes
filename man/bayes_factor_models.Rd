@@ -4,18 +4,15 @@
 \alias{bayes_factor_models}
 \title{Bayes factor between any two linear models}
 \usage{
-bayes_factor_models(
-  model_a,
-  model_b,
-  prior = c("uniform_correlations", "flat_r")
-)
+bayes_factor_models(model_a, model_b, prior)
 }
 \arguments{
 \item{model_a, model_b}{Fits from \code{fit_regression()} or \code{lm()}.}
 
-\item{prior}{\code{"uniform_correlations"} (the default: every correlation
-matrix equally likely, R-squared ~ Beta(k/2, 1)) or \code{"flat_r"}
-(R-squared ~ Beta(1/2, 1) for every k). See \code{docs/0_overview.md}.}
+\item{prior}{\code{"flat_partial_r"} (every correlation matrix equally
+likely, R-squared ~ Beta(k/2, 1)), \code{"flat_r"} (R-squared ~
+Beta(1/2, 1) for every k) or \code{"flat_r_squared"} (R-squared ~
+Beta(1, 1) for every k); there is no default. See \code{docs/0_overview.md}.}
 }
 \value{
 The Bayes factor of model A against model B.
@@ -24,7 +21,8 @@ The Bayes factor of model A against model B.
 Nested or not, as long as both use the same outcome and data rows.
 }
 \examples{
-bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars))
+bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
+                    prior = "flat_partial_r")
 bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
                     prior = "flat_r")
 }

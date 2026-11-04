@@ -1,15 +1,21 @@
 ## =====================================================================
-##  Bayes factors (closed form), for the two priors
+##  Bayes factors for whole models, for the three priors
 ## =====================================================================
-## Two ways to extend Jeffreys' flat correlation to k predictors
-## (docs/0_overview.md):
-##   flat-R                R flat for every k: R^2 ~ Beta(1/2, 1)
-##   uniform correlations  every correlation matrix of (y, x1 ... xk) equally
-##                         likely: R^2 ~ Beta(k/2, 1) (stan_lm with eta = 1)
-## Both take a uniform direction for how the total is divided. Every model
-## gets an exact Bayes factor against the intercept-only model; any two models
-## then compare by dividing. The data enter only through the sample R-squared,
-## n and k.
+## The three priors are R^2 ~ Beta(a, 1) with a uniform direction (R/priors.R):
+##   flat_partial_r   a = k/2: every correlation matrix of (y, x1 ... xk)
+##                    equally likely (stan_lm with eta = 1)
+##   flat_r           a = 1/2: R flat for every k
+##   flat_r_squared   a = 1:   R^2 flat for every k
+## Every model gets an exact Bayes factor against the intercept-only model; any
+## two models then compare by dividing. The data enter only through the sample
+## R-squared, n and k.
+##
+## One route works for every a: the model's k columns tested as one block
+## against none (R/conditional.R), with the prior P(|f| < f) = (f^2/(1+f^2))^a
+## on the length f of the effect in noise units. flat_r and flat_partial_r also
+## have a closed form through g-priors, used here because it is faster; the
+## block route reproduces both (validation/02, check A4), and is the one used
+## for flat_r_squared.
 
 log_sum_exp <- function(log_values) {
   largest <- max(log_values)
@@ -33,16 +39,8 @@ sample_r_squared <- function(predictor_columns, outcome) {
   1 - sum(residuals_left^2) / sum((outcome - mean(outcome))^2)
 }
 
-#' Log Bayes factor of a model with k predictors against the intercept-only model
-#'
-#' Closed form: the one-predictor Bayes factor averaged over every direction
-#' the effect could take. The data enter only through R-squared, n and k.
-#' @param explained_share Sample R-squared of the model.
-#' @param sample_size Number of observations, n.
-#' @param number_of_predictors Number of predictor columns, k.
-#' @param grid_points_g,grid_points_direction Grid sizes of the numerical integration.
-#' @return The log Bayes factor.
-#' @export
+## flat_r, closed form: the one-predictor Bayes factor averaged over every
+## direction the effect could take.
 log_bayes_factor_flat_r_vs_intercept_only <- function(explained_share, sample_size,
                                                       number_of_predictors,
                                                       grid_points_g = 800,
@@ -100,17 +98,12 @@ inverse_gamma_g_grid <- function(sample_size, grid_points_g) {
                      log(log_g_values[2] - log_g_values[1]))
 }
 
-#' Log Bayes factor of a model with k predictors against the intercept-only model, uniform correlations
-#'
-#' The prior with every correlation matrix of the outcome and the k predictors
-#' equally likely: R-squared ~ Beta(k/2, 1) with a uniform direction (rstanarm
-#' \code{stan_lm} with eta = 1). As a mixture of g-priors its scale is the same
-#' for every k, g ~ Inverse-Gamma(1, n/2), so the Bayes factor is the standard
-#' g-prior Bayes factor averaged over g: one integral, on a log-g grid.
-#' @inheritParams log_bayes_factor_flat_r_vs_intercept_only
-#' @return The log Bayes factor.
-#' @export
-log_bayes_factor_uniform_correlations_vs_intercept_only <- function(explained_share, sample_size,
+## flat_partial_r, closed form: R-squared ~ Beta(k/2, 1) with a uniform
+## direction (rstanarm stan_lm with eta = 1). As a mixture of g-priors its
+## scale is the same for every k, g ~ Inverse-Gamma(1, n/2), so the Bayes factor
+## is the standard g-prior Bayes factor averaged over g: one integral, on a
+## log-g grid.
+log_bayes_factor_flat_partial_r_vs_intercept_only <- function(explained_share, sample_size,
                                                                     number_of_predictors,
                                                                     grid_points_g = 800) {
   if (number_of_predictors == 0) return(0)
@@ -124,14 +117,49 @@ log_bayes_factor_uniform_correlations_vs_intercept_only <- function(explained_sh
   log_sum_exp(g_grid$log_weights + log_g_prior_bayes_factor)
 }
 
-## Either prior, by name
+## Any a, through the block route: the k columns against none, with
+## P(|f| < f) = (f^2 / (1 + f^2))^a. At n = k + 1 every model fits the data
+## exactly (sample R^2 = 1) and the data say nothing about the effect: the
+## Bayes factor is 1 for any proper prior on it (predictive matching, Bayarri
+## et al., 2012), which the closed forms give too. The grid needs n >= k + 2.
+log_bayes_factor_shape_vs_intercept_only <- function(explained_share, sample_size,
+                                                     number_of_predictors, shape) {
+  if (number_of_predictors == 0) return(0)
+  if (sample_size < number_of_predictors + 1)
+    stop("Need at least one more observation than predictors.")
+  if (sample_size == number_of_predictors + 1) return(0)
+  log_bayes_factor_from_prior_cdf_of_f(
+    sqrt(pmin(explained_share, 1 - 1e-12)), sample_size, number_of_predictors,
+    function(f_values) (f_values^2 / (1 + f_values^2))^shape,
+    number_of_columns = number_of_predictors)
+}
+
+#' Log Bayes factor of a model with k predictors against the intercept-only model
+#'
+#' The data enter only through the sample R-squared, n and k. The three priors
+#' are R-squared ~ Beta(a, 1) with a uniform direction: \code{"flat_partial_r"}
+#' (a = k/2, every correlation matrix of the outcome and predictors equally
+#' likely), \code{"flat_r"} (a = 1/2, R flat) and \code{"flat_r_squared"}
+#' (a = 1, R-squared flat).
+#' @param explained_share Sample R-squared of the model.
+#' @param sample_size Number of observations, n.
+#' @param number_of_predictors Number of predictor columns, k.
+#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
+#'   \code{"flat_r_squared"}; there is no default.
+#' @return The log Bayes factor.
+#' @examples
+#' log_bayes_factor_vs_intercept_only(0.2, 50, 3, prior = "flat_partial_r")
+#' log_bayes_factor_vs_intercept_only(0.2, 50, 3, prior = "flat_r_squared")
+#' @export
 log_bayes_factor_vs_intercept_only <- function(explained_share, sample_size, number_of_predictors,
                                                prior) {
-  switch(prior,
-    flat_r = log_bayes_factor_flat_r_vs_intercept_only(explained_share, sample_size,
-                                                       number_of_predictors),
-    uniform_correlations = log_bayes_factor_uniform_correlations_vs_intercept_only(
-      explained_share, sample_size, number_of_predictors))
+  switch(check_prior(prior),
+    flat_r         = log_bayes_factor_flat_r_vs_intercept_only(explained_share, sample_size,
+                                                               number_of_predictors),
+    flat_partial_r = log_bayes_factor_flat_partial_r_vs_intercept_only(
+      explained_share, sample_size, number_of_predictors),
+    flat_r_squared = log_bayes_factor_shape_vs_intercept_only(
+      explained_share, sample_size, number_of_predictors, shape = 1))
 }
 
 ## Pull predictors and outcome out of a flatcor_fit or lm fit
@@ -150,17 +178,19 @@ extract_predictors_and_outcome <- function(model) {
 #'
 #' Nested or not, as long as both use the same outcome and data rows.
 #' @param model_a,model_b Fits from \code{fit_regression()} or \code{lm()}.
-#' @param prior \code{"uniform_correlations"} (the default: every correlation
-#'   matrix equally likely, R-squared ~ Beta(k/2, 1)) or \code{"flat_r"}
-#'   (R-squared ~ Beta(1/2, 1) for every k). See \code{docs/0_overview.md}.
+#' @param prior \code{"flat_partial_r"} (every correlation matrix equally
+#'   likely, R-squared ~ Beta(k/2, 1)), \code{"flat_r"} (R-squared ~
+#'   Beta(1/2, 1) for every k) or \code{"flat_r_squared"} (R-squared ~
+#'   Beta(1, 1) for every k); there is no default. See \code{docs/0_overview.md}.
 #' @return The Bayes factor of model A against model B.
 #' @examples
-#' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars))
+#' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
+#'                     prior = "flat_partial_r")
 #' bayes_factor_models(lm(mpg ~ wt + hp, mtcars), lm(mpg ~ wt, mtcars),
 #'                     prior = "flat_r")
 #' @export
-bayes_factor_models <- function(model_a, model_b, prior = c("uniform_correlations", "flat_r")) {
-  prior <- match.arg(prior)
+bayes_factor_models <- function(model_a, model_b, prior) {
+  prior <- check_prior(prior)
   parts_a <- extract_predictors_and_outcome(model_a)
   parts_b <- extract_predictors_and_outcome(model_b)
   if (!isTRUE(all.equal(parts_a$outcome, parts_b$outcome)))
@@ -175,8 +205,7 @@ bayes_factor_models <- function(model_a, model_b, prior = c("uniform_correlation
 #' Bayes factor for every term of a model
 #'
 #' With against without each term. By default every term gets the conditional
-#' test (\code{log_bayes_factor_flat_r_conditional()} or
-#' \code{log_bayes_factor_uniform_correlations_conditional()}): its evidence
+#' test (\code{log_bayes_factor_conditional()}): its evidence
 #' depends only on its own contribution, which avoids the conditional Lindley
 #' paradox. A term with one column (a continuous predictor, a two-level factor)
 #' is tested by its partial correlation; a term with several columns (a factor
@@ -186,20 +215,16 @@ bayes_factor_models <- function(model_a, model_b, prior = c("uniform_correlation
 #' @param data A data frame.
 #' @param test \code{"conditional"} (default) or \code{"joint"} (compare the
 #'   models with and without each term, for every term).
-#' @param prior \code{"uniform_correlations"} (the default) or \code{"flat_r"}; see
-#'   \code{bayes_factor_models()}.
+#' @param prior \code{"flat_partial_r"}, \code{"flat_r"} or
+#'   \code{"flat_r_squared"}; there is no default. See \code{bayes_factor_models()}.
 #' @return A data frame with BF10 (evidence for an effect), BF01, and the test used.
 #' @examples
-#' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars)
+#' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_partial_r")
 #' bayes_factor_per_term(mpg ~ wt + hp + qsec, mtcars, prior = "flat_r")
 #' @export
-bayes_factor_per_term <- function(formula, data, test = c("conditional", "joint"),
-                                  prior = c("uniform_correlations", "flat_r")) {
+bayes_factor_per_term <- function(formula, data, prior, test = c("conditional", "joint")) {
+  prior <- check_prior(prior)
   test  <- match.arg(test)
-  prior <- match.arg(prior)
-  log_bayes_factor_conditional <- switch(prior,
-    flat_r               = log_bayes_factor_flat_r_conditional,
-    uniform_correlations = log_bayes_factor_uniform_correlations_conditional)
   full_model  <- lm(formula, data)
   ## an aliased column (e.g. x3 = x1 + x2) gets no coefficient and would still
   ## count in k
@@ -225,7 +250,7 @@ bayes_factor_per_term <- function(formula, data, test = c("conditional", "joint"
       residuals_without <- qr.resid(qr(design[, setdiff(colnames(design), columns), drop = FALSE]),
                                     outcome)
       partial_r <- sqrt(1 - sum(residuals(full_model)^2) / sum(residuals_without^2))
-      list(bf = exp(log_bayes_factor_conditional(partial_r, sample_size, number_of_predictors,
+      list(bf = exp(log_bayes_factor_conditional(partial_r, sample_size, number_of_predictors, prior,
                                                  number_of_columns = length(columns))),
            used = if (length(columns) == 1) "conditional" else "conditional (block)")
     } else {

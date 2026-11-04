@@ -1,7 +1,8 @@
-// The uniform-correlations (default) or the flat-R prior, sampled in its own coordinates:
-//   R          the overall correlation (factor 1): flat (flat-R), or
-//              R^2 ~ Beta(K/2, 1) (uniform correlations: every correlation
-//              matrix of (y, x1 ... xK) equally likely)
+// One of the three priors, R^2 ~ Beta(a, 1) with a uniform direction, sampled
+// in its own coordinates:
+//   R          the overall correlation (factor 1): R^2 ~ Beta(a, 1), with
+//              a = K/2 (flat_partial_r: every correlation matrix of
+//              (y, x1 ... xK) equally likely), 1/2 (flat_r) or 1 (flat_r_squared)
 //   direction  how the total is divided, uniform on the sphere (factor 2)
 // and the coefficients follow from them (factor 3 is the conversion):
 //   b = sigma * f * (direction expressed in predictor units),  f = R / sqrt(1 - R^2)
@@ -14,7 +15,7 @@ data {
   vector[N] y;
   int<lower=0, upper=1> prior_only;      // 1: ignore y (sample the prior)
   int<lower=0, upper=1> proper_stand_ins; // 1: proper priors on alpha and sigma (for checks)
-  int<lower=0, upper=1> uniform_correlations; // 0: flat-R, 1: uniform correlations
+  real<lower=0> r_squared_shape;         // a in R^2 ~ Beta(a, 1)
 }
 transformed data {
   matrix[N, K] Xc;
@@ -42,9 +43,9 @@ transformed parameters {
   vector[K] b = sigma * f * mdivide_right_tri_low(direction', root)';   // b' Sigma b = sigma^2 f^2
 }
 model {
-  // factor 1: R flat (the declared bounds), or for uniform correlations
-  // R^2 ~ Beta(K/2, 1), which is density K R^(K-1) on R (the same as flat at K = 1)
-  if (uniform_correlations && K > 1) target += (K - 1) * log(R);
+  // factor 1: R^2 ~ Beta(a, 1), which is density 2a |R|^(2a - 1) on R (flat
+  // for a = 1/2; with K = 1, flat_partial_r and flat_r both have a = 1/2)
+  if (r_squared_shape != 0.5) target += (2 * r_squared_shape - 1) * log(abs(R));
   // factor 2: direction uniform
   if (K > 1) target += -0.5 * square((norm2(z) - 1) / 0.1);
   if (proper_stand_ins) {
