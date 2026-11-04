@@ -49,7 +49,10 @@ iterations <- if (smoke_mode) c(warmup = 300, sampling = 300) else c(warmup = 10
 
 
 ## ---- The models -------------------------------------------------------------------
-direction_model <- cmdstanr::cmdstan_model(system.file("stan", "flatcor.stan", package = "flatcor"))
+## the executables go to this study's cache, never into the installed package
+## (read-only in an Apptainer image)
+direction_model <- cmdstanr::cmdstan_model(system.file("stan", "flatcor.stan", package = "flatcor"),
+                                           dir = study_folder)
 coefficients_model <- cmdstanr::cmdstan_model(cmdstanr::write_stan_file("
 functions {
   // the flat R prior as a density on the coefficients: P(total) x P(combination | total) x conversion
