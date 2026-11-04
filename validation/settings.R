@@ -23,8 +23,17 @@ options(mc.cores = number_of_cores)
 forking_allowed <- .Platform$OS.type != "windows" &&
   !inherits(try(parallel::mclapply(1:2, identity, mc.cores = 2), silent = TRUE), "try-error")
 
+## Each item gets its own seed, drawn from the caller's random stream (so a
+## set.seed() before the call fixes them all), whatever the number of cores:
+## the same script gives the same numbers on any machine.
 parallel_map <- function(items, work) {
-  if (forking_allowed) return(parallel::mclapply(items, work, mc.cores = number_of_cores))
+  base_seed <- sample.int(.Machine$integer.max - length(items), 1)
+  seeded_work <- function(index) {
+    set.seed(base_seed + index)
+    work(items[[index]])
+  }
+  if (forking_allowed)
+    return(parallel::mclapply(seq_along(items), seeded_work, mc.cores = number_of_cores))
   cluster <- parallel::makeCluster(number_of_cores)
   on.exit(parallel::stopCluster(cluster))
   parallel::clusterCall(cluster, setwd, getwd())
@@ -37,7 +46,7 @@ parallel_map <- function(items, work) {
     NULL
   }, attached_packages)
   parallel::clusterExport(cluster, ls(globalenv()), envir = globalenv())
-  parallel::parLapply(cluster, items, work)
+  parallel::parLapply(cluster, seq_along(items), seeded_work)
 }
 
 ## ---- Folders -------------------------------------------------------------------
