@@ -6,7 +6,7 @@ with a column, and the choice between them is made from this table, not
 before it.
 
 The numbers come from the full validation run of 4 November 2026 (commit
-e221561; [`5_validation.md`](5_validation.md)): 175 of 176
+643c0b8; [`5_validation.md`](5_validation.md)): 175 of 176
 checks pass, and the one failure (10, P4, flat R-squared) is a finding,
 explained in section 5. JZS (Cauchy, scale
 0.354, the BayesFactor/JASP default) and Zellner–Siow (scale 1) are reference

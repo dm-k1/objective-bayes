@@ -139,7 +139,7 @@ test with many predictors, variable selection, Stan messages):
   validated as equals, with no default; the results recommend flat partial r
   (`docs/4_comparison.md`, section 8). The superseded scripts (by-hand
   tutorials, the brms version of the prior, earlier approaches) were in
-  `archive/` and are in the git history up to commit 703d9c4.
+  `archive/` and are in the git history up to commit b0d96cc.
 
 ## Author
 

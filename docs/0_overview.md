@@ -150,7 +150,7 @@ Two ways to test one coefficient, and why the package uses the second:
 passes on the current code; **sketch** = the steps of a proof, with a check;
 **run** = a simulation study run on the current code, with its result; details
 in [`5_validation.md`](5_validation.md). All from the full run of
-4 November 2026 (commit e221561): 175 of 176 checks pass; the one failure is a
+4 November 2026 (commit 643c0b8): 175 of 176 checks pass; the one failure is a
 finding about flat R-squared (validation 10, P4; see
 [`4_comparison.md`](4_comparison.md), section 5).
 

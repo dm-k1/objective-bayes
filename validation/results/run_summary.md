@@ -1,7 +1,7 @@
 # Validation run
 
 - **started:** 2026-11-04 04:23 CET
-- **commit:** e221561
+- **commit:** 643c0b8
 - **R:** R version 4.6.1 (2026-06-24)
 - **CmdStan:** 2.40.0
 - **machine:** Darwin arm64

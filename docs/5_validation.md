@@ -126,7 +126,7 @@ the contrast.
 
 ## Last results
 
-The run of 4 November 2026 at commit e221561, all studies (00–11), 7 cores
+The run of 4 November 2026 at commit 643c0b8, all studies (00–11), 7 cores
 (`validation/results/run_summary.md`, logs in `cache/logs/`): **175 of 176 checks
 pass**. The one failure is 10 P4 for flat R-squared, a finding rather than a
 bug (below and in section 10).
