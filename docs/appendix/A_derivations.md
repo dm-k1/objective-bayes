@@ -222,9 +222,18 @@ is built:
 
 | Parameter | Prior | Factor |
 |---|---|---|
-| `R` | density $2a\,\lvert R\rvert^{2a-1}$ on (0, 1) (on (−1, 1) when $k = 1$: the sign) | 1 |
+| `R_magnitude` $= \lvert R\rvert$ | density $2a\,R^{2a-1}$ on (0, 1) | 1 |
 | `direction` $= z/\lVert z\rVert$ | uniform on the sphere | 2 |
 | `sigma`, `alpha` | $1/\sigma$, flat | |
+
+With several predictors the sign of each coefficient lives in the direction.
+With one predictor the sign of $R$ is + or − with probability ½: the model
+averages the likelihood over both signs and draws the sign afterwards, from
+the probability the likelihood gives it (flatcor 1.0.1). Sampling a signed $R$
+on (−1, 1) instead, as flatcor 1.0.0 did, puts a zero of the density at
+$R = 0$ whenever $a > ½$: under flat R-squared the density is $\lvert R\rvert$,
+and the sampler has to cross that zero at every change of sign, which gives
+divergent transitions.
 
 It then computes $\beta = \sigma f\, L^{-\top} d$, with $f = R/\sqrt{1-R^2}$,
 $d$ the direction and $L$ a square root of $\Sigma$ (here the Cholesky factor).
@@ -241,13 +250,13 @@ close to 0; there the direction is undefined and the sampler can struggle.
 
 The same Stan model serves all three priors, because the prior enters only
 through factor 1. The data value `r_squared_shape` is $a$, and one line adds
-`target += (2 * r_squared_shape - 1) * log(abs(R))` (nothing for $a = ½$).
+`target += (2 * r_squared_shape - 1) * log(R_magnitude)` (nothing for $a = ½$).
 Factors 2 and 3 are the same for all three.
 
 In these coordinates the prior has no peak. Study 1 (`R/studies/01_prior_sampling.R`)
 checks that the prior is reproduced for $k$ = 1, 3 and 8 for each prior
-(P1–P10), and that the posterior is calibrated (simulation-based calibration
-at $k = 8$, all three priors).
+(checks 1.1–1.10), and study 3 that the posterior is calibrated
+(simulation-based calibration at $k$ = 3 and 8, all three priors).
 
 ---
 

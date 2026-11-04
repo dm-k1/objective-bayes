@@ -45,7 +45,7 @@
 ##  Smoke test (ESS target 500, about a minute):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/01_prior_sampling.R
 ##  Raw results are cached in cache/study_01/ (delete them to rerun); the
-##  tables and checks are saved to results/study_01.rds.
+##  tables and checks are saved to results/studies/study_01.rds.
 ## =====================================================================
 library(posterior)
 source("R/shared/settings.R")             # flatcor, cores, record_check()

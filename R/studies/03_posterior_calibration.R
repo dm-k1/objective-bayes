@@ -26,7 +26,7 @@
 ##  Run from the project folder:  Rscript R/studies/03_posterior_calibration.R
 ##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/03_posterior_calibration.R
 ##  Raw results are cached in cache/study_03/ (delete them to rerun); the
-##  tables and checks are saved to results/study_03.rds.
+##  tables and checks are saved to results/studies/study_03.rds.
 ## =====================================================================
 library(SBC)
 library(patchwork)

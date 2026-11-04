@@ -93,7 +93,7 @@ Each task writes:
 - `cache/logs/slurm_<job>_<task>.out`: the start, the end and the number of
   checks passed and failed;
 - `cache/logs/NN_<study>.log`: the study's full output;
-- `results/study_NN.rds` and `figures/`: the study's
+- `results/studies/study_NN.rds` and `figures/`: the study's
   tables, checks and figures, which are tracked.
 
 A study that is interrupted (a time limit, a node failure) resumes where it

@@ -53,7 +53,7 @@
 ##  Run from the project folder:  Rscript R/studies/06_coherence.R
 ##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/06_coherence.R
 ##  Raw results are cached in cache/study_06/ (delete them to rerun); the
-##  tables and checks are saved to results/study_06.rds.
+##  tables and checks are saved to results/studies/study_06.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)

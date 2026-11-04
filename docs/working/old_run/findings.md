@@ -95,7 +95,7 @@ that is because it rarely calls anything null. It finds a 0.1 effect about as
 often as flat R-squared (.21) and JZS (.24), and more often than flat partial
 r (.15); what it lacks is the ability to confirm a null.
 
-![Study 06: what each test says, as k grows](../../../results/figures/06_outcomes.png)
+![Study 06: what each test says, as k grows](figures/06_outcomes.png)
 
 ## 4. Only flat partial r corresponds to one coherent model (study 10)
 
@@ -123,7 +123,7 @@ model's posterior with the Savage–Dickey density ratio (Wagenmakers et al.,
   intercept-only model. Under flat partial r and flat R-squared, the same
   restriction leaves a proper model (study 10, P6).
 
-![Study 10: the conditional and joint tests against the joint model](../../../results/figures/10_coherence.png)
+![Study 10: the conditional and joint tests against the joint model](figures/10_coherence.png)
 
 ## 5. What flat partial r costs
 

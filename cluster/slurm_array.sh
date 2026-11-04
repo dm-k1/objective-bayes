@@ -16,7 +16,7 @@
 ##  of its allocation, so the study uses exactly those. The numbers do not
 ##  depend on the number of cores (every dataset has its own random stream).
 ##  A task writes cache/logs/NN_*.log; the study writes its tables and checks
-##  to results/study_NN.rds and its figures to figures/.
+##  to results/studies/study_NN.rds and its figures to figures/.
 ##  When all tasks have finished, the notebook (setting "results") shows them.
 ##
 ##  The resources below are one setting for every task. Study 9 is the

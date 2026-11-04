@@ -54,9 +54,10 @@
 ##        of 0.01: within 3 of its errors (new). bridgesampling's error allows
 ##        for autocorrelation (the spectral density of the posterior draws;
 ##        Fruhwirth-Schnatter, 2004), but not for a biased sampler, so the
-##        fits use adapt_delta = 0.99: in the first full run, flat_r_squared
-##        at k = 1 (where R has the density |R|, with a kink at 0) had 13
-##        divergent transitions at 0.95 and missed by 0.0047 against 3 x 0.0012
+##        fits use adapt_delta = 0.99. In the first full run (flatcor 1.0.0),
+##        flat_r_squared at k = 1 had 13 divergent transitions and missed by
+##        0.0047 against 3 x 0.0012: R had the density |R| on (-1, 1), which
+##        vanishes at 0. flatcor 1.0.1 samples |R| and marginalises its sign
 ##    One coefficient and blocks
 ##    2.7 k = 1: the conditional test equals the joint test [C1]
 ##    2.8 the implied prior for one coefficient does not depend on how the
@@ -78,7 +79,7 @@
 ##    VALIDATION_SMOKE=1 Rscript R/studies/02_bayes_factors.R
 ##  Needs cmdstanr with CmdStan (check 2.6), Rmpfr and bridgesampling.
 ##  Raw results are cached in cache/study_02/ (delete them to rerun); the
-##  tables and checks are saved to results/study_02.rds.
+##  tables and checks are saved to results/studies/study_02.rds.
 ## =====================================================================
 library(dplyr)
 source("R/shared/settings.R")             # flatcor, cores, record_check(), parallel_map()
@@ -346,8 +347,10 @@ log_bayes_factor_by_sampling_to_precision <- function(predictors, outcome, prior
 ##   likelihood    normal, with all constants
 ##   alpha, sigma  flat and 1/sigma (the package's improper priors; the same in
 ##                 both models, so their arbitrary scale cancels in the ratio)
-##   R             k > 1: density 2a R^(2a - 1) on (0, 1); k = 1: a |R|^(2a - 1)
-##                 on (-1, 1)
+##   R_magnitude   the size of R, density 2a R^(2a - 1) on (0, 1); with k = 1 the
+##                 sign of R is + or - with probability 1/2, and the Stan model
+##                 (flatcor 1.0.1) marginalises it: the likelihood is averaged
+##                 over both signs, here as in the Stan program
 ##   z             k > 1: the auxiliary vector of the direction, density
 ##                 exp(-((|z| - 1)/0.1)^2 / 2) / C_k on R^k, with C_k = surface
 ##                 area of the unit sphere times the integral over the radius
@@ -373,17 +376,18 @@ bridge_sampling_log_bf <- function(predictors, outcome, prior, stan_model, seed,
   centered <- scale(predictors, scale = FALSE)
   upper_root <- chol(crossprod(centered) / n)
   log_c <- if (k > 1) log_normalizing_constant_of_direction(k) else 0
-  parameter_names <- c("alpha", "sigma", "R", if (k > 1) paste0("z[", seq_len(k), "]"))
+  parameter_names <- c("alpha", "sigma", "R_magnitude", if (k > 1) paste0("z[", seq_len(k), "]"))
   log_posterior <- function(pars, data) {
-    sigma <- pars[["sigma"]]; R <- pars[["R"]]
+    sigma <- pars[["sigma"]]; R <- pars[["R_magnitude"]]
     direction <- if (k > 1) { z <- pars[paste0("z[", seq_len(k), "]")]; z / sqrt(sum(z^2)) } else 1
     b <- sigma * R / sqrt(1 - R^2) * backsolve(upper_root, direction)
-    log_prior <- -log(sigma) +
-      (if (k > 1) log(2 * a) + (2 * a - 1) * log(R) else log(a) + (2 * a - 1) * log(abs(R))) +
+    log_prior <- -log(sigma) + log(2 * a) + (2 * a - 1) * log(R) +
       (if (k > 1) -((sqrt(sum(z^2)) - 1) / 0.1)^2 / 2 - log_c else 0)
-    sum(dnorm(outcome, pars[["alpha"]] + drop(centered %*% b), sigma, log = TRUE)) + log_prior
+    log_likelihood <- function(sign) sum(dnorm(outcome, pars[["alpha"]] + sign * drop(centered %*% b), sigma, log = TRUE))
+    if (k > 1) return(log_likelihood(1) + log_prior)
+    log_sum_exp(c(log_likelihood(1), log_likelihood(-1))) - log(2) + log_prior
   }
-  lower <- setNames(c(-Inf, 0, if (k > 1) 0 else -1, rep(-Inf, if (k > 1) k else 0)), parameter_names)
+  lower <- setNames(c(-Inf, 0, 0, rep(-Inf, if (k > 1) k else 0)), parameter_names)
   upper <- setNames(c(Inf, Inf, 1, rep(Inf, if (k > 1) k else 0)), parameter_names)
   draws_per_chain <- if (smoke_mode) 1000 else 4000
   repeat {

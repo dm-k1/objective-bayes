@@ -32,7 +32,7 @@
 ##  Smoke test (a corner of the design, 10 datasets per cell, about a minute):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/07_one_coefficient.R
 ##  Raw results are cached in cache/study_07/ (delete them to rerun); the
-##  tables and checks are saved to results/study_07.rds.
+##  tables and checks are saved to results/studies/study_07.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)

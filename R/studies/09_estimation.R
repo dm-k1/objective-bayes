@@ -40,7 +40,7 @@
 ##  Smoke test (2 cells, 10 datasets, short chains):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/09_estimation.R
 ##  Raw results are cached in cache/study_09/ (delete them to rerun); the
-##  tables and checks are saved to results/study_09.rds. Each fit of
+##  tables and checks are saved to results/studies/study_09.rds. Each fit of
 ##  fit_regression() runs its 4 chains in parallel, so SimDesign uses one
 ##  worker per 4 cores.
 ## =====================================================================

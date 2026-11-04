@@ -46,7 +46,7 @@
 ##  Smoke test (n = 50, correlation 0, 10 datasets):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/10_variable_selection.R
 ##  Raw results are cached in cache/study_10/ (delete them to rerun); the
-##  tables and checks are saved to results/study_10.rds.
+##  tables and checks are saved to results/studies/study_10.rds.
 ## =====================================================================
 library(SimDesign)
 library(BAS)

@@ -38,7 +38,7 @@ Only flat partial r's conditional test was also the Bayes factor of one joint
 model (the full model against its restriction by conditioning, as the
 Savage–Dickey ratio assumes).
 
-![What each test says about one coefficient as predictors are added (earlier validation)](results/figures/06_outcomes.png)
+![What each test says about one coefficient as predictors are added (earlier validation)](docs/working/old_run/figures/06_outcomes.png)
 
 Its findings, comparison and report are kept in
 [`docs/working/old_run/`](docs/working/old_run/). The validation has since
@@ -210,7 +210,7 @@ container from `cluster/Dockerfile`. Then open
 | `R/notebook/` | The notebook's helpers: they present the results, they compute nothing |
 | `validation.ipynb` | The validation notebook (R kernel): per study its question, checks, tables and figures; it reads `results/` or reruns the studies |
 | `run_all.R` | Runs the studies one after another, without the notebook |
-| `results/`, `figures/` | Each study's tables and checks (`study_NN.rds`) and figures, tracked; `results/figures/` still holds the figures of the old studies, which the docs show |
+| `results/`, `figures/` | The results of a run, tracked: each study's tables, checks and setup in `results/studies/study_NN.rds`, the run's summary and session information from `run_all.R` in `results/`, and every figure in `figures/` |
 | `cluster/` | Running the validation on a cluster: a SLURM array script and how to use the container with Apptainer |
 | `renv.lock`, `cluster/Dockerfile` | The pinned environment: the R packages, and R with packages and CmdStan as a container |
 

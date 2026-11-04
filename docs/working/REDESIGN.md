@@ -64,7 +64,7 @@ but it was built study by study:
 6. **Order: correctness, then formal properties, then behaviour.**
 7. **The package lives in its own repository**,
    [dm-k1/flatcor](https://github.com/dm-k1/flatcor), and this repository
-   validates a fixed release of it (v1.0.0, pinned in `renv.lock`). The
+   validates a fixed release of it (v1.0.1, pinned in `renv.lock`; 1.0.1 fixes the sampler with one predictor, see "Status"). The
    validation loads it with `library(flatcor)`; the internal functions some
    checks need are taken from its namespace in `R/shared/settings.R`.
 
@@ -149,13 +149,18 @@ construction) by more than 2 MCSE; k = 3 is reported.
   0.0012, with 13 divergent transitions. (An earlier note here said that
   bridgesampling's error treats draws as independent: it does not, it uses
   the spectral density of the posterior draws, Fruhwirth-Schnatter, 2004. It
-  does not allow for a biased sampler.) The fits now use adapt_delta = 0.99,
-  and all 9 cases pass. That case still has 10 divergent transitions and
-  passes with little margin (0.0022 against 0.0033): at k = 1, flat
-  R-squared gives R the density |R|, with a kink at 0, in flatcor's Stan
-  model itself. Worth raising in flatcor (for example, sampling R^2 rather
-  than R when k = 1).
-- Study 2 in full: 47 of 47 checks pass (rerun with the cache, 33 s).
+  does not allow for a biased sampler.) The fits now use adapt_delta = 0.99.
+  The cause was in flatcor's Stan model: at k = 1 it sampled a signed R on
+  (-1, 1), and under flat R-squared the density |R| vanishes at 0, a zero the
+  sampler had to cross at every change of sign. **flatcor 1.0.1** (pinned in
+  `renv.lock` since 5 November 2026) samples |R| and marginalises the sign;
+  prior and posterior are the same distributions (checked against 1.0.0 on
+  one-predictor data, KS <= .014, and against Beta(a, 1) for the prior),
+  and the divergent transitions are gone (47 -> 0 on null data).
+- Study 2 in full with flatcor 1.0.1: 47 of 47 checks pass, and none of the
+  nine bridge-sampling fits has a divergent transition. All ten studies run
+  in smoke mode with 1.0.1; nothing changes for k > 1 (the same draws for
+  the same seed).
 
 Known pitfalls, already handled in the ports: SimDesign masks a function named
 `summarise` and reserves all-capital names; give every `runSimulation()` its
@@ -175,8 +180,9 @@ R/
   data/             the shared data sets A (and A with factors), B, C, D
   studies/          the ten studies, 01-10
   notebook/         present.R, the notebook's helpers (they compute nothing)
-results/            one study_NN.rds per study: its tables, checks, figures and
-                    the run's setup (tracked); run_summary.md from run_all.R
+results/            studies/ holds one study_NN.rds per study: its tables,
+                    checks, figures and the run's setup (tracked); run_all.R
+                    adds run_summary.md and session_info.txt
 figures/            every figure as .png (tracked)
 validation.ipynb    the notebook (R kernel): per study, its question, a PASS/FAIL
                     table of its checks, its main tables (gt) and figures; a
@@ -192,15 +198,16 @@ cache/              raw per-dataset results, logs, smoke results (gitignored)
 
 Every script runs from the project folder (`Rscript R/studies/07_one_coefficient.R`).
 Each study script separates computing from presenting: it ends with
-`save_study_results()`, which writes `results/study_NN.rds`; the
+`save_study_results()`, which writes `results/studies/study_NN.rds`; the
 notebook only presents. The notebook needs `gt` and `IRkernel` (both in
 `renv.lock`; `IRkernel::installspec()` registers the `ir` kernel for R 4.6;
 Positron's own R kernel also runs it). The old report (`report.qmd`,
 `report.html`) is removed: the notebook replaces it, and it remains on `main`.
 
-The old figures in `results/figures/` belong to the old studies:
-the README and the docs still show them, so they stay until the docs are
-rewritten from the new results (step 6).
+The earlier run's figures, summary and session information are in
+`docs/working/old_run/`, with the documents that describe that run; the
+README still shows one of its figures until the docs are rewritten from the
+new results (step 6).
 
 `cluster/slurm_array.sh` is tested here only with mock SLURM variables (one
 smoke task); the Apptainer commands of `cluster/README.md` are untested, as

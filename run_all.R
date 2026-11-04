@@ -16,7 +16,7 @@
 ##  (e.g. VALIDATION_CORES=32 on a cloud machine).
 ##
 ##  The studies are R/studies/NN_*.R; each saves its tables and checks to
-##  results/study_NN.rds and its figures to figures/.
+##  results/studies/study_NN.rds and its figures to figures/.
 ##  This script writes the full output of each study to cache/logs/<study>.log
 ##  (gitignored), and to results/:
 ##    run_summary.md      the setup, one row per study, and every failed check

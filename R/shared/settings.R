@@ -85,7 +85,8 @@ parallel_map <- function(items, work) {
 }
 
 ## ---- Folders -------------------------------------------------------------------
-## Tracked: results/ (one study_NN.rds per study, the run summary)
+## Tracked: results/ (results/studies/ holds one study_NN.rds per study;
+## run_all.R adds the run's summary and session information)
 ## and figures/. Everything that can be recomputed goes to cache/.
 ## Smoke mode (VALIDATION_SMOKE=1, see R/shared/precision.R) writes its
 ## results and figures to cache/ as well: they are tests of the code, not
@@ -95,7 +96,8 @@ cache_folder   <- "cache"
 fits_folder    <- file.path(cache_folder, "fits")
 results_folder <- if (smoke_mode) file.path(cache_folder, "smoke_results") else "results"
 figures_folder <- if (smoke_mode) file.path(cache_folder, "smoke_figures") else "figures"
-for (folder in c(fits_folder, results_folder, figures_folder))
+studies_results_folder <- file.path(results_folder, "studies")
+for (folder in c(fits_folder, studies_results_folder, figures_folder))
   dir.create(folder, recursive = TRUE, showWarnings = FALSE)
 
 ## ---- Figures -------------------------------------------------------------------
@@ -176,7 +178,7 @@ report_checks <- function() {
 }
 
 ## ---- The study's results file ----------------------------------------------------
-## save_study_results("07", list(...)) writes results/study_07.rds:
+## save_study_results("07", list(...)) writes results/studies/study_07.rds:
 ## the study's tables, its checks, the figures it saved and the setup of the
 ## run. The notebook (validation.ipynb) presents only these files.
 save_study_results <- function(study, tables) {
@@ -188,5 +190,5 @@ save_study_results <- function(study, tables) {
                             R = R.version.string,
                             flatcor = as.character(utils::packageVersion("flatcor")),
                             cores = number_of_cores, smoke = smoke_mode)),
-          file.path(results_folder, sprintf("study_%s.rds", study)))
+          file.path(studies_results_folder, sprintf("study_%s.rds", study)))
 }

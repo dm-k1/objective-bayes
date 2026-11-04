@@ -2,7 +2,7 @@
 ##  Presenting the studies: the helpers of validation.ipynb
 ##
 ##  In one sentence: run the studies (optionally), read each study's
-##  results/study_NN.rds, and show its checks as a PASS/FAIL
+##  results/studies/study_NN.rds, and show its checks as a PASS/FAIL
 ##  table, its main tables formatted with gt (every estimate with its Monte
 ##  Carlo SE in brackets), and its figures.
 ##
@@ -62,7 +62,7 @@ run_studies <- function(studies, fresh = FALSE, smoke = FALSE, cores = NA) {
 
 ## ---- Reading ------------------------------------------------------------------------
 read_study <- function(study, smoke = FALSE) {
-  file <- file.path(results_folder_of(smoke), sprintf("study_%s.rds", study))
+  file <- file.path(results_folder_of(smoke), "studies", sprintf("study_%s.rds", study))
   if (file.exists(file)) readRDS(file) else NULL
 }
 
@@ -214,7 +214,7 @@ show_figures <- function(result) {
 show_study <- function(study, tables = list(), smoke = FALSE) {
   result <- read_study(study, smoke)
   if (is.null(result)) {
-    show_text(sprintf("Study %s has no results yet (`%s/study_%s.rds`). Run it, or set `mode` to `\"cached\"`.",
+    show_text(sprintf("Study %s has no results yet (`%s/studies/study_%s.rds`). Run it, or set `mode` to `\"cached\"`.",
                       study, results_folder_of(smoke), study))
     return(invisible(NULL))
   }

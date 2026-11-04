@@ -54,7 +54,7 @@
 ##  Run from the project folder:  Rscript R/studies/05_default_prior_criteria.R
 ##  Smoke test:  VALIDATION_SMOKE=1 Rscript R/studies/05_default_prior_criteria.R
 ##  Raw results are cached in cache/study_05/ (delete them to rerun); the
-##  tables and checks are saved to results/study_05.rds.
+##  tables and checks are saved to results/studies/study_05.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)

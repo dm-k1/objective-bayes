@@ -32,7 +32,7 @@
 ##  Run from the project folder:  Rscript R/studies/04_bayes_factor_calibration.R
 ##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/04_bayes_factor_calibration.R
 ##  Raw results are cached in cache/study_04/ (delete them to rerun); the
-##  tables and checks are saved to results/study_04.rds.
+##  tables and checks are saved to results/studies/study_04.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)

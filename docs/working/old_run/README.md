@@ -15,5 +15,6 @@ that run (`validation/report.html`), remain on the `main` branch.
 They are kept as the starting point for `docs/3_results.md`, which will be
 written from the redesigned validation ([`validation.ipynb`](../../../validation.ipynb));
 the old studies map onto the new ones as described in
-[appendix C](../../appendix/C_study_design.md). The figures they show are the
-old studies' figures, in [`results/figures/`](../../../results/figures/).
+[appendix C](../../appendix/C_study_design.md). The old studies' figures are in
+[`figures/`](figures/), and the run's summary and session information in
+[`run_summary.md`](run_summary.md) and [`session_info.txt`](session_info.txt).
