@@ -100,6 +100,22 @@ print(as.data.frame(cell_summaries |>
   summarise(across(c(null_found, false_effect, small_called_null, effect_0.2_found), mean),
             .groups = "drop")), digits = 3)
 
+## Every outcome, not only the correct one: at 3, a test says null, says
+## effect, or stays undecided. Shown for the conditional tests and JZS at
+## k = 2 and 20. With the same AUC, a test that "calls fewer effects null"
+## may simply say less: the difference is where it decides, not how well.
+cat("\nWhat each test says at 3 (share of datasets), k = 2 and 20:\n")
+print(as.data.frame(runs |>
+  filter(number_of_predictors %in% c(2, 20), grepl("conditional|JZS", method)) |>
+  mutate(outcome = case_when(log_BF10 < -log(3) ~ "says null", log_BF10 > log(3) ~ "says effect",
+                             TRUE ~ "undecided")) |>
+  count(method, number_of_predictors, slope_of_x1, outcome) |>
+  group_by(method, number_of_predictors, slope_of_x1) |> mutate(share = n / sum(n)) |> ungroup() |>
+  select(-n) |>
+  pivot_wider(names_from = outcome, values_from = share, values_fill = 0) |>
+  select(method, number_of_predictors, slope_of_x1, `says null`, undecided, `says effect`)),
+  digits = 3)
+
 
 ## ---- Figures -------------------------------------------------------------------
 by_k_and_correlation <- facet_grid(

@@ -343,6 +343,38 @@ the other coefficients):
 False effects for a true null (BF₁₀ > 3), largest over methods: 0.047 (flat
 R-squared joint, k = 2); the conditional tests at most 0.018.
 
+**What each test says** at 3 (share of datasets; conditional tests and JZS,
+averaged over n, correlation and pattern). Correct answers in bold.
+
+| Truth | k | Test | says null | undecided | says effect |
+|---|---|---|---|---|---|
+| null | 2 | flat partial r / flat R-squared | **0.86** | 0.13 | 0.01 |
+| null | 2 | flat R | **0.55** | 0.44 | 0.02 |
+| null | 2 | JZS | **0.54** | 0.44 | 0.02 |
+| null | 20 | flat partial r | **0.88** | 0.11 | 0.01 |
+| null | 20 | flat R-squared | **0.26** | 0.72 | 0.02 |
+| null | 20 | flat R | **0.06** | 0.92 | 0.02 |
+| null | 20 | JZS | **0.30** | 0.68 | 0.03 |
+| slope 0.1 | 2 | flat partial r / flat R-squared | 0.52 | 0.29 | **0.19** |
+| slope 0.1 | 2 | flat R | 0.19 | 0.58 | **0.23** |
+| slope 0.1 | 20 | flat partial r | 0.60 | 0.26 | **0.15** |
+| slope 0.1 | 20 | flat R-squared | 0.04 | 0.75 | **0.21** |
+| slope 0.1 | 20 | flat R | 0.005 | 0.78 | **0.21** |
+| slope 0.2 | 20 | flat partial r | 0.31 | 0.26 | **0.44** |
+| slope 0.2 | 20 | flat R-squared | 0.00 | 0.52 | **0.49** |
+| slope 0.2 | 20 | flat R | 0.00 | 0.52 | **0.48** |
+
+The three conditional tests rank the datasets identically (AUC null vs 0.1:
+0.728 at k = 2 and 0.701 at k = 20 for all three; JZS 0.713 and 0.684), so
+none of them is more accurate. They differ only in where they decide. At
+k = 20 flat R almost never calls a small effect null (0.005) because it
+almost never calls anything null: 92% of true nulls stay undecided, and it
+finds effects no more often than the others (0.21 for slope 0.1). Flat
+partial r decides on most datasets, which finds 88% of true nulls but also
+calls 60% of 0.1 effects and 31% of 0.2 effects null: with a small effect and
+little data it leans to the null. Neither is a gain in accuracy; one is
+silent, the other leans.
+
 ## 07: estimation (24 designs, 100 datasets each)
 
 Excess prediction error for a new observation, relative to OLS (below 1 =

@@ -81,6 +81,23 @@ Conditional tests unless stated; JZS and Zellner–Siow test jointly.
 | False effects for a true null (BF₁₀ > 3), largest | 0.010 | 0.017 | 0.018 | 0.029 | 0.033 | 06 |
 | Joint test: dependence on what the other predictors explain (M4; log BF per unit $R^2$ of the others) | −0.51 (conditional 0.002) | −5.19 (conditional −0.011) | −5.10 (conditional −0.001) | −1.93 | −0.52 | 04 |
 
+
+What the rows above leave out is the third answer, "undecided". At $k = 20$
+(conditional tests, share of datasets; full table in
+[`5_validation.md`](5_validation.md), study 06):
+
+| Truth | | Flat partial r | Flat R | Flat R-squared |
+|---|---|---|---|---|
+| null | says null / undecided / says effect | **0.88** / 0.11 / 0.01 | **0.06** / 0.92 / 0.02 | **0.26** / 0.72 / 0.02 |
+| slope 0.1 | says null / undecided / says effect | 0.60 / 0.26 / **0.15** | 0.005 / 0.78 / **0.21** | 0.04 / 0.75 / **0.21** |
+| slope 0.2 | says null / undecided / says effect | 0.31 / 0.26 / **0.44** | 0.00 / 0.52 / **0.48** | 0.00 / 0.52 / **0.49** |
+| AUC null vs 0.1 (ranking) | | 0.701 | 0.701 | 0.701 |
+
+The ranking is identical, so no prior is more accurate here. Flat R's low
+rate of calling small effects null comes from rarely deciding at all (92% of
+true nulls undecided), not from seeing effects better. Flat partial r decides
+on most datasets and leans to the null when an effect is small.
+
 ---
 
 ## 5. Calibration of the Bayes factor
