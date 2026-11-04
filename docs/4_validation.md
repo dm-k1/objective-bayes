@@ -116,7 +116,8 @@ the figures.
 **Simulation-based calibration** (01, S): draw the true parameters from the
 prior, simulate a dataset, fit it, and record where the true value falls among
 the posterior draws. If the sampler is right, every position is equally likely,
-so the counts per bin should be flat (Talts et al., 2018).
+so the counts per bin should be flat (Talts et al., 2018). In this run every bin
+test passes (χ² p > 0.01); the closest is flat partial r's σ, p = 0.020.
 
 **Why the Stan model samples R and a direction.** The prior as a density on the
 coefficients has a sharp peak at zero (`docs/2_how_it_calculates.md`, section

@@ -92,8 +92,11 @@ and they differ in one claim:
   LKJ(1) single correlations narrow as $k$ grows (median $|\rho|$ of $y$ with one
   predictor 0.50, 0.35, 0.23 for $k$ = 1, 3, 8). The marginally uniform prior of
   Barnard, McCulloch & Meng (2000), the correlations of an inverse-Wishart with
-  $k + 2$ degrees of freedom, keeps every single correlation flat for any $k$, and
-  implies the same $R^2 \sim$ Beta($k/2$, 1). So "flat on the correlations", in either sense, gives
+  $k + 2$ degrees of freedom (the dimension plus one), keeps every single
+  correlation flat for any $k$ (their result). That it implies the same
+  $R^2 \sim$ Beta($k/2$, 1) we found no source for; it is checked by
+  simulation in `docs/figures/make_figures.R` (KS 0.0025, 0.0027, 0.0038 for
+  $k$ = 1, 3, 8; 40,000 draws). So "flat on the correlations", in either sense, gives
   $a = k/2$; only "flat on the total" gives flat R.
 
 ### How Beta($k/2$, 1) was found: simulate, then derive, then check
@@ -140,7 +143,8 @@ Neither half is enough alone: the simulation without the formula is only
 numbers, and the formula without the simulation could hide a slip. The literal
 reading "every single correlation flat" was checked the same way, with the
 correlations of an inverse-Wishart with $k + 2$ degrees of freedom (Barnard et
-al., 2000): the same Beta($k/2$, 1).
+al., 2000): the same Beta($k/2$, 1), by simulation
+(`docs/figures/make_figures.R`).
 
 This is the $R^2$ prior of the **flat partial r** extension. The share per
 predictor, Beta(½, (k−1)/2) for every member of the family, is a different
@@ -157,7 +161,7 @@ predictors**.
 | 1 | Under LKJ(η), the partial correlation of $y$ with one predictor given all the others is Beta(η, η) on (−1, 1), **for every $k$**. Flat only at η = 1 | yes | `validation/05`, C7 |
 | 2 | At $k = 1$ the prior is Jeffreys' flat correlation | yes (LKJ(η) at $k = 1$ is Beta(η, η) on $r$) | the same, $k = 1$ |
 | 3 | As a g-mixture, one hyperprior for every $k$: $g/n \sim$ Inverse-Gamma(1, ½), so models of every size share one scale | no (every η gives a fixed hyperprior) | doc 2, section 8 |
-| 4 | "Every single correlation flat" (Barnard et al., 2000) leads to the same $R^2 \sim$ Beta($k/2$, 1) | — | simulation above |
+| 4 | "Every single correlation flat" (Barnard et al., 2000) leads to the same $R^2 \sim$ Beta($k/2$, 1) | — | simulation (`docs/figures/make_figures.R`); no source found for the $R^2$ part |
 
 Point 1 is why it matters for testing one coefficient: the test of a coefficient
 is Jeffreys' correlation test on its partial correlation, with or without

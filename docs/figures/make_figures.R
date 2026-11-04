@@ -244,3 +244,20 @@ for (k in c(2, 3, 5, 10)) {
               suppressWarnings(ks.test(share, "pbeta", 1 / 2, (k - 1) / 2)$statistic),
               mean(share), 1 / k))
 }
+
+## ---- Check printed for relation_to_others.md (Barnard et al.'s prior) -------
+## The marginally uniform prior of Barnard, McCulloch & Meng (2000): the
+## correlations of an inverse-Wishart(identity, dimension + 1). Each single
+## correlation is flat (their result); that R^2 of y on the k predictors is
+## then Beta(k/2, 1) is checked here, 40,000 draws per k
+set.seed(5)
+for (k in c(1, 3, 8)) {
+  dimension <- k + 1
+  draws <- replicate(40000, {
+    correlations <- cov2cor(solve(rWishart(1, dimension + 1, diag(dimension))[, , 1]))
+    c(correlations[1, 2], 1 - 1 / solve(correlations)[1, 1])
+  })
+  cat(sprintf("inverse-Wishart, k = %d: one correlation vs flat KS %.4f; R^2 vs Beta(k/2, 1) KS %.4f\n", k,
+              suppressWarnings(ks.test(draws[1, ], "punif", -1, 1)$statistic),
+              suppressWarnings(ks.test(draws[2, ], "pbeta", k / 2, 1)$statistic)))
+}
