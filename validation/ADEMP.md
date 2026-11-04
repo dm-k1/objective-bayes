@@ -5,17 +5,17 @@
 ADEMP form of Morris, White and Crowther (2019) as adapted for psychology by
 Siepe et al. (2024): **A**ims, **D**ata-generating mechanisms, **E**stimands,
 **M**ethods and **P**erformance measures. Every number of simulated datasets
-(*n*~sim~) is derived from a target Monte Carlo standard error (MCSE), fixed
+(*n*<sub>sim</sub>) is derived from a target Monte Carlo standard error (MCSE), fixed
 here before anything is run. The package under test is flatcor 1.0.0
 ([dm-k1/flatcor](https://github.com/dm-k1/flatcor), pinned in `renv.lock`).
 
 Notation: *n* is the sample size of one simulated dataset, *k* the number of
-predictors, *n*~sim~ the number of simulated datasets (or prior draws) per
+predictors, *n*<sub>sim</sub> the number of simulated datasets (or prior draws) per
 design cell.
 
 ---
 
-## How *n*~sim~ is chosen
+## How *n*<sub>sim</sub> is chosen
 
 For a performance measure that is a proportion *p* (a rate of decisions,
 interval coverage), the Monte Carlo standard error is
@@ -25,10 +25,10 @@ n_\text{sim} = \frac{p(1-p)}{\mathrm{MCSE}^2},$$
 
 taken at the worst case *p* = .5 where *p* is not known in advance (Morris et
 al., 2019, Table 6). For a mean (a bias, a mean log difference), MCSE =
-SD / √*n*~sim~, with the SD taken from the run of 4 November 2026 where one
+SD / √*n*<sub>sim</sub>, with the SD taken from the run of 4 November 2026 where one
 exists.
 
-| Target | MCSE | *n*~sim~ (worst case) |
+| Target | MCSE | *n*<sub>sim</sub> (worst case) |
 |---|---|---|
 | A proportion reported per design cell | .02 | 625 |
 | A proportion reported pooled over cells | .01 | 2,500 in total (met by pooling cells at 625 each) |
@@ -64,7 +64,7 @@ their seed, not stored.
 
 `docs/motivating_simulation.R`. Not a study: it shows why there are three
 priors. Kept as it is (200,000 matrices per *k*), with its checks F1–F3 now
-judged against the KS critical value for its *n*~sim~.
+judged against the KS critical value for its *n*<sub>sim</sub>.
 
 ---
 
@@ -78,7 +78,7 @@ judged against the KS critical value for its *n*~sim~.
 - **Methods.** flatcor's Stan model for each of the three priors.
 - **Performance.** The KS distance between the draws and the exact
   distribution.
-- ***n*~sim~.** 26,600 effective draws per setting (KS critical distance at the
+- ***n*<sub>sim</sub>.** 26,600 effective draws per setting (KS critical distance at the
   .01 level ≤ .01); the number of iterations is set from the effective sample
   size, not the raw draw count.
 
@@ -98,7 +98,7 @@ judged against the KS critical value for its *n*~sim~.
     reference); and, for the joint model, `bridgesampling` on the Stan fit.
   - Invariance under rescaling and recoding.
 - **Performance.** The absolute log difference from the ground truth.
-- ***n*~sim~.** Deterministic except the brute-force and bridge-sampling
+- ***n*<sub>sim</sub>.** Deterministic except the brute-force and bridge-sampling
   routes: those run until their own MCSE on the log scale is below 0.01 (a
   stated precision for an estimator, not a stopping rule on the result).
 
@@ -112,7 +112,7 @@ judged against the KS critical value for its *n*~sim~.
 - **Methods.** flatcor's Stan model for each prior; the coefficient-coordinates
   model as a contrast, expected to fail.
 - **Performance.** `SBC`'s ECDF-difference test and rank histograms.
-- ***n*~sim~.** 1,000 fits per prior and setting, thinned to 100 posterior draws
+- ***n*<sub>sim</sub>.** 1,000 fits per prior and setting, thinned to 100 posterior draws
   each. That is larger than the 400 of the current run, to give the ECDF test
   power against miscalibration of about 5% in the rank distribution.
   *To check against the guidance in the `SBC` documentation before fixing.*
@@ -128,7 +128,7 @@ judged against the KS critical value for its *n*~sim~.
 - **Methods.** The conditional test under each prior.
 - **Performance.** Observed against predicted share per bin, the χ² statistic
   over bins and the logistic calibration slope, with MCSE.
-- ***n*~sim~.** 20,000 datasets per cell, as now: with bins holding at least 625
+- ***n*<sub>sim</sub>.** 20,000 datasets per cell, as now: with bins holding at least 625
   datasets each, every bin's share has MCSE ≤ .02. Cheap (closed forms).
 
 ## 5. Does each prior meet the default-prior criteria?
@@ -146,7 +146,7 @@ judged against the KS critical value for its *n*~sim~.
     the truth.
 - **Methods.** The three priors; JZS and Zellner–Siow as references.
 - **Performance.** The slopes with bootstrap MCSE.
-- ***n*~sim~.**
+- ***n*<sub>sim</sub>.**
   - Fixed *k*: 2,000 *R*² draws per (*n*, *q*) setting, which gives a slope MCSE
     of about 0.02. The current 200 gave slopes that moved by up to 0.1 between
     runs.
@@ -176,7 +176,7 @@ judged against the KS critical value for its *n*~sim~.
     difference over about 10 datasets.
   - The restriction: the distribution of the others' *R*² against its
     predicted form (for flat partial r, Beta((*k*−1)/2, 3/2)), by KS distance.
-- ***n*~sim~.**
+- ***n*<sub>sim</sub>.**
   - Coherence: the SD of the difference was about 0.30 in the last run (flat
     R-squared, *k* = 8). For MCSE ≤ 0.05 that needs (0.30/0.05)² = 36
     estimable datasets per prior and *k*. Planned: 50 per prior, *k* and *n*
@@ -205,12 +205,12 @@ judged against the KS critical value for its *n*~sim~.
   each prior (3); JZS (BayesFactor, scale 0.354) and Zellner–Siow (scale 1). All
   eight are applied to every dataset, so every comparison is paired.
 - **Performance.**
-  - Rates with MCSE √(*p*(1−*p*)/*n*~sim~).
+  - Rates with MCSE √(*p*(1−*p*)/*n*<sub>sim</sub>).
   - The AUC difference from JZS with a paired bootstrap MCSE over datasets.
   - The check of the main claim: at every *k*, the three conditional tests'
     AUCs agree within 2 MCSE, and the difference in the null-confirmation rate
     between *k* = 2 and *k* = 20 is within 2 MCSE of zero for flat partial r.
-- ***n*~sim~.** 625 datasets per design cell and slope, so every per-cell rate
+- ***n*<sub>sim</sub>.** 625 datasets per design cell and slope, so every per-cell rate
   has MCSE ≤ .02. Pooled over the 18 cells at each *k*, that gives 11,250
   datasets and MCSE ≤ .005. The AUC per cell then has MCSE of about .018 at
   worst, and its paired difference from JZS less. In total 72 × 4 × 625 =
@@ -232,7 +232,7 @@ judged against the KS critical value for its *n*~sim~.
   (BayesFactor `lmBF`); Zellner–Siow.
 - **Performance.** As in study 7, plus the slope of the median log BF against
   the others' *R*² (expected zero for the conditional tests).
-- ***n*~sim~.** 625 datasets per cell (rates MCSE ≤ .02), against 200 now.
+- ***n*<sub>sim</sub>.** 625 datasets per cell (rates MCSE ≤ .02), against 200 now.
 
 ## 9. How good are the estimates?
 
@@ -252,7 +252,7 @@ judged against the KS critical value for its *n*~sim~.
 - **Performance.** Means and coverage with MCSE. Coverage is judged on one
   coefficient per dataset (*x*₁), so the replications are independent; the
   current study pooled correlated coefficients within datasets.
-- ***n*~sim~.** 475 datasets per cell (coverage near .95 with MCSE ≤ .01), so
+- ***n*<sub>sim</sub>.** 475 datasets per cell (coverage near .95 with MCSE ≤ .01), so
   16 × 475 × 3 ≈ 23,000 Stan fits. That is a cluster job: each fit takes
   seconds.
 
@@ -271,14 +271,14 @@ judged against the KS critical value for its *n*~sim~.
   `bas.lm` offers them for linear models; to check).
 - **Performance.** Means with MCSE; the AUC difference from flat R with a
   paired bootstrap MCSE.
-- ***n*~sim~.** 625 datasets per cell, against 100 now: per-cell shares then have
+- ***n*<sub>sim</sub>.** 625 datasets per cell, against 100 now: per-cell shares then have
   MCSE ≤ .02, and mean counts have MCSE ≤ about .05.
 
 ---
 
 ## Summary
 
-| Study | *n*~sim~ per cell (now) | *n*~sim~ per cell (planned) | Main cost |
+| Study | *n*<sub>sim</sub> per cell (now) | *n*<sub>sim</sub> per cell (planned) | Main cost |
 |---|---|---|---|
 | 1 | 4,000–40,000 draws | 26,600 effective draws | Stan, prior only |
 | 2 | deterministic | deterministic; brute force and bridge sampling to MCSE 0.01 | `Rmpfr` |
