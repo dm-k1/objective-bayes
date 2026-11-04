@@ -26,12 +26,14 @@ figure <- function(name) include_graphics(file.path(project, "validation", "resu
 checks_of <- function(study) {
   log_file <- file.path(project, "cache", "logs", paste0(study, ".log"))
   if (!file.exists(log_file)) return(data.frame(Note = "log not found: run validation/run_all.R"))
-  lines <- grep("^\\[(PASS|FAIL)\\]", readLines(log_file, warn = FALSE), value = TRUE)
+  lines <- grep("^\\[(PASS|FAIL)\\]", readLines(log_file, warn = FALSE, encoding = "UTF-8"),
+                value = TRUE)
   if (!length(lines)) return(data.frame(Note = "this study has no pass/fail checks"))
   data.frame(Result = sub("^\\[(PASS|FAIL)\\].*", "\\1", lines),
              Check = trimws(gsub("\\s{2,}", " | ", sub("^\\[(PASS|FAIL)\\] ", "", lines))))
 }
-summary_lines <- readLines(file.path(project, "validation", "results", "run_summary.md"))
+summary_lines <- readLines(file.path(project, "validation", "results", "run_summary.md"),
+                           encoding = "UTF-8")
 ```
 
 ## How to read this report
@@ -198,7 +200,10 @@ if (file.exists(outcomes_file)) {
   runs$outcome <- ifelse(runs$log_BF10 < -log(3), "says null",
                          ifelse(runs$log_BF10 > log(3), "says effect", "undecided"))
   shares <- as.data.frame.matrix(prop.table(
-    table(paste(runs$method, "| slope", runs$slope_of_x1),
+    table(factor(paste(runs$method, "| slope", runs$slope_of_x1),
+                 levels = paste(rep(c("flat partial r conditional", "flat R conditional",
+                                      "flat R-squared conditional", "JZS default"), each = 3),
+                                "| slope", c(0, 0.1, 0.2))),
           factor(runs$outcome, levels = c("says null", "undecided", "says effect"))), 1))
   kable(data.frame(Test = sub(" \\|.*", "", rownames(shares)),
                    Truth = sub(".*\\| ", "", rownames(shares)), round(shares, 3),
