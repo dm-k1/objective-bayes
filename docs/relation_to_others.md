@@ -371,8 +371,13 @@ The following points were not found in the literature searched:
 
 Still to be read in full: Kucharský et al. (2026), on whether $k$ is
 discussed beyond its role in the formula; Som et al. (2016), for its theorems
-on tests of single coefficients; Mulder et al. (2021); and the Bayes factor
-functions paper.
+on tests of single coefficients; Mulder et al. (2021); the Bayes factor
+functions paper; and the review of objective priors by Consonni, Fouskakis,
+Liseo and Ntzoufras (2018), whose model-selection part surveys the priors
+compared here (*g*-priors and their mixtures, the robust and intrinsic priors)
+and is the most likely place for a prior statement of the drift with *k* or
+of coherence between priors across nested models. Not yet read: the journal
+site requires a browser check that could not be passed here.
 
 ## Closest relatives
 
@@ -401,6 +406,9 @@ functions paper.
   for Bayesian model choice with application to variable selection. *Annals of Statistics*.
 - Bayes factor functions for testing partial correlation coefficients (2026).
   *Journal of Mathematical Psychology*; arXiv 2503.10787.
+- Consonni, G., Fouskakis, D., Liseo, B., & Ntzoufras, I. (2018). Prior
+  distributions for objective Bayesian analysis. *Bayesian Analysis*, *13*(2),
+  627–679. https://doi.org/10.1214/18-BA1103
 - Gabry, J., & Goodrich, B. Estimating regularized linear models with
   rstanarm (`stan_lm` vignette). https://mc-stan.org/rstanarm/articles/lm.html
 - Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
