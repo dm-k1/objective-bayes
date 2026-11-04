@@ -114,7 +114,7 @@ run, and results and figures go to `cache/`).
 | Study | File | 1 core = 4 cores | Notes |
 |---|---|---|---|
 | 1 | `01_prior_sampling.R` | yes | full run done: all 10 checks pass (66 s) |
-| 2 | `02_bayes_factors.R` | not needed (deterministic) | full run done (6 min): 42 of 45 checks pass; see below |
+| 2 | `02_bayes_factors.R` | not needed (deterministic) | full run done: 47 of 47 checks pass after the changes below |
 | 3 | `03_posterior_calibration.R` | yes | SBC package, `future` multisession; the ECDF figure is one panel per prior |
 | 4 | `04_bayes_factor_calibration.R` | yes | |
 | 5 | `05_default_prior_criteria.R` | yes | |
@@ -131,21 +131,31 @@ R-squared's mean absolute difference from Savage–Dickey exceeds flat partial
 r's (Monte Carlo error alone, since flat partial r is coherent by
 construction) by more than 2 MCSE; k = 3 is reported.
 
-**Open after the full run of study 2** (decisions for the author):
+**Study 2 after its full runs** (resolved 5 November 2026):
 
-- *2.6, bridge sampling:* 8 of 9 cases pass. Flat R-squared at k = 1, n = 80
-  fails: package -1.7301, bridge sampling -1.7348, a difference of 0.0047
-  against 3 x its error of 0.0012; it is the only fit with divergent
-  transitions (13). bridgesampling's error treats the draws as independent,
-  so it probably understates the error of MCMC draws. Options: a higher
-  `adapt_delta` for that case, or an error that allows for autocorrelation.
-- *2.2, the 200-bit ground truth:* the closed forms of flat partial r (and of
-  flat R-squared at k = 2) are off by up to 3.1 on the log scale where the
-  evidence is astronomical (R-squared = .99999, n = 10^6, log BF about
-  5.8 million, a relative error of 5e-7); `integrate()` agrees with the
-  ground truth to 1e-9. 8 of 90 settings exceed the absolute tolerance of
-  1e-6, all with log BF > 1,000. Options: a relative tolerance, a tolerance
-  for |log BF| < 1,000 only with the rest reported, or a fix in flatcor.
+- *2.2, the 200-bit ground truth:* the first full run used one absolute
+  tolerance of 1e-6 and failed in 8 of 90 settings, all with log BF > 1,000:
+  where the evidence is astronomical (R-squared = .99999, n = 10^6, log BF
+  about 5.8 million) the closed forms of flat partial r (and of flat
+  R-squared at k = 2) are off by up to 3.1, a relative error of 5e-7;
+  `integrate()` agrees with the ground truth to 1e-9. 2.2 is now split as 2.1
+  is: 2.2a, ordinary evidence (|log BF| < 50) within 1e-6 (largest error
+  9e-13); 2.2b, all settings within a relative error of 1e-6 (largest
+  5.4e-7). Both pass. The split was made after seeing the result, and the
+  script's header says so. A more precise closed form at extreme evidence
+  would be a change to flatcor.
+- *2.6, bridge sampling:* in the first full run 8 of 9 cases passed; flat
+  R-squared at k = 1, n = 80 missed by 0.0047 against 3 x its error of
+  0.0012, with 13 divergent transitions. (An earlier note here said that
+  bridgesampling's error treats draws as independent: it does not, it uses
+  the spectral density of the posterior draws, Fruhwirth-Schnatter, 2004. It
+  does not allow for a biased sampler.) The fits now use adapt_delta = 0.99,
+  and all 9 cases pass. That case still has 10 divergent transitions and
+  passes with little margin (0.0022 against 0.0033): at k = 1, flat
+  R-squared gives R the density |R|, with a kink at 0, in flatcor's Stan
+  model itself. Worth raising in flatcor (for example, sampling R^2 rather
+  than R when k = 1).
+- Study 2 in full: 47 of 47 checks pass (rerun with the cache, 33 s).
 
 Known pitfalls, already handled in the ports: SimDesign masks a function named
 `summarise` and reserves all-capital names; give every `runSimulation()` its
