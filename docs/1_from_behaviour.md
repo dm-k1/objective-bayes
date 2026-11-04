@@ -49,7 +49,7 @@ the other predictors, $R$, and $R^2$.
    (B keeps P($R^2$ > 0.5) at 0.29 and C at 0.50, for every $k$.)
 3. **Check.** Each version is flat where it should be: A's partial correlation,
    B's $R$ and C's $R^2$, against the flat distribution for every $k$ (checks
-   F1–F3, KS distance 0.002–0.003).
+   F1–F3, largest KS distance 0.0027–0.0031).
 
 The figure is `validation/results/figures/00_partial_r_R_R2_by_k.png` (made
 by running the study). At $k = 1$, A and B are the same prior: Jeffreys' flat

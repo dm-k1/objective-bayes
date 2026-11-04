@@ -128,8 +128,8 @@ checks_of("02_bayes_factor")
 
 ## 03 · Testing one coefficient: how often is the evidence right?
 
-**Design.** Four correlated predictors; the slope of x₁ varies; 200 datasets
-per cell. A comparison, no pass/fail.
+**Design.** Four predictors, uncorrelated or with correlation 0.5; the slope
+of x₁ varies; 200 datasets per cell. A comparison, no pass/fail.
 
 **How to read.** Top figure: the share with BF > 3 for the true hypothesis.
 In the left column (slope 0) that means evidence *for the null*. Slopes 0.3
@@ -245,9 +245,9 @@ figure("07_bias")
 
 **Result.** Flat R and flat R-squared shrink more: lowest prediction error at
 small *n* with many predictors (0.37–0.77 of OLS at *k* = 8, *n* = 30), at the
-cost of bias in real effects (−29% and −21% of the effect) and coverage down
+cost of bias in real effects (−28% and −21% of the effect) and coverage down
 to 0.76 and 0.82. Flat partial r shrinks less (−8%), is better than OLS in
-every cell, and keeps coverage at 0.92 or above.
+every cell, and keeps coverage at 0.916 or above.
 
 ## 08 · Consistency when the number of predictors grows with *n*
 

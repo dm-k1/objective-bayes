@@ -6,7 +6,8 @@ three priors that remain are built and validated side by side, and the choice
 between them follows from the results: flat partial r is recommended
 ([`4_comparison.md`](4_comparison.md), section 8).
 
-This page is the map. Every other document goes into one part of it.
+This page is the map. Every other document goes into one part of it. The
+finding itself, in one page: [`findings.md`](findings.md).
 
 ---
 
@@ -116,6 +117,7 @@ Two ways to test one coefficient, and why the package uses the second:
 
 | Document | Read it for |
 |---|---|
+| [`findings.md`](findings.md) | What the project shows: the claim and the evidence for it, in one page |
 | [`1_from_behaviour.md`](1_from_behaviour.md) | *Why* these priors: from study 00 and what effects can do, in steps with simulated figures |
 | [`2_how_it_calculates.md`](2_how_it_calculates.md) | *How* it computes: the density, the Stan model, the Bayes factor, the conditional test, the default-prior criteria |
 | [`3_consistency.md`](3_consistency.md) | The proofs and sketches behind the consistency criteria, for the whole family |
@@ -150,7 +152,7 @@ Two ways to test one coefficient, and why the package uses the second:
 passes on the current code; **sketch** = the steps of a proof, with a check;
 **run** = a simulation study run on the current code, with its result; details
 in [`5_validation.md`](5_validation.md). All from the full run of
-4 November 2026 (commit 643c0b8): 175 of 176 checks pass; the one failure is a
+4 November 2026 (commit 643c0b8): 131 of 132 checks pass; the one failure is a
 finding about flat R-squared (validation 10, P4; see
 [`4_comparison.md`](4_comparison.md), section 5).
 
@@ -169,11 +171,11 @@ finding about flat R-squared (validation 10, P4; see
 | What singles the prior out | checked (C7) | checked (V5) | – | validation 05, 09 |
 | The conditional test is computed correctly | checked (C1, C3–C5) | checked (C1, C2, C5) | checked (C1, C2, C5) | validation 05, C1–C5 |
 | The block conditional test is computed correctly | checked (C9–C11) | checked (C9–C11) | checked (C9–C11) | validation 05, C9–C11 |
-| Separating nulls from small effects, against JZS | run: equal or better (AUC +0.001 to +0.045) | run: the same as flat partial r (conditional) | run: the same as flat partial r (conditional) | validation 04, 06 |
+| Separating nulls from small effects, against JZS | run: equal or better (AUC +0.001 to +0.045, mean over $n$ and pattern per $k$ and correlation) | run: the same as flat partial r (conditional) | run: the same as flat partial r (conditional) | validation 04, 06 |
 | Confirming a true null, one coefficient | run: 86–88%, for any $k$ | run: 55% at $k = 2$, 6% at $k = 20$ | run: 86% at $k = 2$, 26% at $k = 20$ | validation 06 |
 | Calling a small effect (0.1) null | run: 52–60% | run: 19% at $k = 2$, 0.5% at $k = 20$ | run: 52% at $k = 2$, 4% at $k = 20$ | validation 06 |
 | Calibrated on its own prior | checked (P1) | checked (P1) | checked (P1) | validation 10 |
-| Variable selection | run: fewest false inclusions of the three, misses more | run: most inclusions, fewest misses | run: close to flat R | validation 09 |
+| Variable selection | run: fewest false inclusions of the three, misses more (mean 0.36 of 8 nulls included, 2.09 of 4 real missed) | run: many more inclusions, fewer misses (1.14, 1.55) | run: nearly the same as flat R (1.13, 1.56) | validation 09 |
 | Estimation: prediction error, interval coverage | run: better than OLS everywhere, coverage ≥ 0.916 | run: lowest error at small $n$, coverage down to 0.76 | run: in between, coverage down to 0.82 | validation 07 |
 
 ---

@@ -129,13 +129,13 @@ the contrast.
 ## Last results
 
 The run of 4 November 2026 at commit 643c0b8, all studies (00–11), 7 cores
-(`validation/results/run_summary.md`, logs in `cache/logs/`): **175 of 176 checks
+(`validation/results/run_summary.md`, logs in `cache/logs/`): **131 of 132 checks
 pass**. The one failure is 10 P4 for flat R-squared, a finding rather than a
 bug (below and in section 10).
 
 | Check | Criterion | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|
-| 00 F1–F3 | KS distance < 0.01 | pass (F1, 0.0028) | pass (F2, 0.0021) | pass (F3, 0.0027) |
+| 00 F1–F3 | KS distance < 0.01 | pass (F1, 0.0031) | pass (F2, 0.0027) | pass (F3, 0.0030) |
 | 01 P-checks | KS distance < 0.03 | pass (P5–P7, 0.003–0.012) | pass (P1–P4, 0.004–0.009) | pass (P8–P10, 0.006–0.009) |
 | 01 S | rank bins, χ² p > 0.01 (R², b1, σ) | pass (p = 0.43, 0.94, 0.76) | pass (0.61, 0.86, 0.67) | pass (0.89, 0.91, 0.45) |
 | 02 A1 | log BF within 0.001 of `integrate()`, 162 settings | pass, largest error 2.6e-07 | pass, 4.1e-05 | pass, 8.4e-05 |
@@ -147,7 +147,7 @@ bug (below and in section 10).
 | 02 B3 | slope of median log BF₀₁ in 0.35–0.65 | pass (0.49) | pass (0.53) | pass (0.51) |
 | 02 B3b | slopes within 20% of q/2 (smaller model x1), within 30% of a (intercept only) | pass: 0.47 1.48 2.91; 0.51 1.46 2.86 | pass: 0.54 1.56 2.98; 0.47 0.50 0.48 | pass: 0.53 1.64 2.88; 0.99 1.00 1.01 |
 | 02 B4 | median log BF₁₀ increasing, > 20 at n = 5000 | pass (−0.0, 8.5, 53.3) | pass (0.9, 9.3, 54.1) | pass (1.1, 9.5, 54.3) |
-| 02 B5 | KS distance at n = 30, 300, 10⁵: < 0.01 at 10⁵ and falling | pass (0.034, 0.005, 0.005) | pass (0.026, 0.005, 0.005) | pass (0.032, 0.005, 0.005) |
+| 02 B5 | KS distance at n = 30, 300, 10⁵: < 0.01 at 10⁵, and at n = 30 more than twice that | pass (0.034, 0.005, 0.005) | pass (0.026, 0.005, 0.005) | pass (0.032, 0.005, 0.005) |
 | 03 U1–U2 | k = 1 agreement within 1e-3; g-prior Monte Carlo within 0.01 | pass (U1 4.9e-06; U2 0.0012) | pass (U1, shared with flat partial r) | pass (U2 0.0015; U1 not applicable: at k = 1 a different prior) |
 | 05 C1–C5 | see the script | pass (C1 1.8e-06 for all; C4a KS ≤ 0.0025; C4b 1.8e-05; C5 3.5e-06) | pass (C2 KS 0.0024; C5 6.7e-05) | pass (C2 KS 0.0021; C5 5.0e-05) |
 | 05 C7–C11 | see the script; C10 (1.0e-04) and C11 (1.6e-14) cover all three | pass (C7, C8; C9 KS ≤ 0.016) | pass (C9 KS 0.0033) | pass (C9 KS 0.0038) |
@@ -250,13 +250,13 @@ small real effect (x1 = 0.1) called null, P(BF₀₁ > 3):
 
 | Method | null found, n = 200 unc. / corr. | null found, n = 500 unc. / corr. | 0.1 called null, n = 200 unc. / corr. | 0.1 called null, n = 500 unc. / corr. |
 |---|---|---|---|---|
-| flat partial r conditional | 0.91 / 0.90 | 0.94 / 0.94 | 0.61 / 0.64 | 0.34 / 0.52 |
-| flat R conditional | 0.41 / 0.40 | 0.70 / 0.72 | 0.16 / 0.20 | 0.12 / 0.21 |
+| flat partial r conditional | 0.91 / 0.90 | 0.94 / 0.94 | 0.62 / 0.64 | 0.34 / 0.52 |
+| flat R conditional | 0.41 / 0.40 | 0.70 / 0.72 | 0.16 / 0.20 | 0.12 / 0.22 |
 | flat R-squared conditional | 0.80 / 0.79 | 0.89 / 0.88 | 0.46 / 0.50 | 0.23 / 0.38 |
 | flat partial r joint | 0.82 / 0.83 | 0.91 / 0.90 | 0.47 / 0.51 | 0.25 / 0.40 |
-| flat R joint | 0.40 / 0.54 | 0.73 / 0.78 | 0.07 / 0.15 | 0.08 / 0.21 |
-| flat R-squared joint | 0.42 / 0.54 | 0.73 / 0.78 | 0.08 / 0.17 | 0.09 / 0.21 |
-| JZS default | 0.61 / 0.65 | 0.80 / 0.82 | 0.22 / 0.26 | 0.12 / 0.27 |
+| flat R joint | 0.40 / 0.54 | 0.73 / 0.78 | 0.08 / 0.15 | 0.08 / 0.22 |
+| flat R-squared joint | 0.42 / 0.54 | 0.73 / 0.78 | 0.08 / 0.17 | 0.09 / 0.22 |
+| JZS default | 0.61 / 0.65 | 0.80 / 0.82 | 0.22 / 0.26 | 0.13 / 0.27 |
 | Zellner–Siow | 0.85 / 0.85 | 0.92 / 0.91 | 0.52 / 0.55 | 0.28 / 0.45 |
 
 ## 04: discrimination, threshold-free
@@ -330,7 +330,7 @@ the other coefficients):
 | conditional tests, correlation 0.7 | +0.035 | +0.045 | +0.041 | +0.031 |
 | flat partial r joint, correlation 0.7 | +0.022 | +0.027 | +0.020 | +0.012 |
 | flat R joint, correlation 0.7 | −0.064 | −0.035 | −0.022 | −0.013 |
-| flat R-squared joint, correlation 0.7 | −0.059 | −0.033 | −0.020 | −0.012 |
+| flat R-squared joint, correlation 0.7 | −0.059 | −0.033 | −0.019 | −0.012 |
 
 **Calibration at 3**, averaged over everything except the method and k:
 
@@ -346,8 +346,10 @@ the other coefficients):
 | Small effect (0.1) called null: JZS | 0.21 | 0.12 | 0.08 | 0.11 |
 | Effect 0.2 found: flat partial r / flat R / flat R-squared / JZS | 0.51 / 0.53 / 0.51 / 0.56 | 0.47 / 0.52 / 0.51 / 0.55 | 0.45 / 0.50 / 0.50 / 0.53 | 0.44 / 0.48 / 0.49 / 0.52 |
 
-False effects for a true null (BF₁₀ > 3), largest over methods: 0.047 (flat
-R-squared joint, k = 2); the conditional tests at most 0.018.
+False effects for a true null (BF₁₀ > 3), averaged as in the table above,
+largest over methods: 0.047 (flat R-squared joint, k = 2); the conditional
+tests at most 0.018. In a single design cell the largest is 0.105 (flat
+R-squared joint, k = 2, n = 200, correlation 0.3, dense).
 
 **What each test says** at 3 (share of datasets; conditional tests and JZS,
 averaged over n, correlation and pattern). Correct answers in bold.
@@ -390,15 +392,16 @@ mean bias of real effects:
 | | prediction error, k = 3: n = 30 / 60 / 200 | k = 8: n = 30 / 60 / 200 | coverage, real effects, k = 3 / 8 | lowest cell, real effects | mean bias, real effects |
 |---|---|---|---|---|---|
 | flat partial r | 0.83 / 0.89 / 0.97 | 0.74 / 0.84 / 0.95 | 0.957 / 0.940 | 0.916 | −0.016 (−8%) |
-| flat R | 0.72 / 0.85 / 1.02 | 0.51 / 0.73 / 0.94 | 0.947 / 0.928 | 0.760 | −0.054 (−29%) |
+| flat R | 0.72 / 0.85 / 1.02 | 0.51 / 0.73 / 0.94 | 0.947 / 0.928 | 0.760 | −0.054 (−28%) |
 | flat R-squared | 0.74 / 0.84 / 0.97 | 0.53 / 0.72 / 0.92 | 0.957 / 0.942 | 0.815 | −0.040 (−21%) |
 | JZS default | 0.70 / 0.80 / 0.95 | 0.56 / 0.72 / 0.91 | 0.959 / 0.951 | 0.870 | −0.037 (−19%) |
 | Zellner–Siow | 0.86 / 0.91 / 0.97 | 0.77 / 0.85 / 0.95 | 0.952 / 0.939 | 0.910 | −0.014 (−7%) |
 | OLS | 1 | 1 | 0.953 / 0.945 | 0.920 | −0.000 (0%) |
 
-The lowest cell for every method except flat partial r (k = 8, n = 30, dense)
-and Zellner–Siow (k = 8, n = 30, sparse) is k = 8, n = 60, uncorrelated,
-sparse. Mean bias of real effects: mean error, in brackets relative to the
+The lowest cell for the other methods is k = 8, n = 60, uncorrelated,
+sparse; for flat partial r it is k = 8, n = 30, uncorrelated, dense; for
+Zellner–Siow k = 8, n = 30, uncorrelated, sparse; for OLS k = 8, n = 60,
+correlation 0.5, sparse. Mean bias of real effects: mean error, in brackets relative to the
 true value.
 
 Divergent transitions over all Stan fits: none (0 of 2400 fits for each of

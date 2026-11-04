@@ -6,7 +6,7 @@ with a column, and the choice between them is made from this table, not
 before it.
 
 The numbers come from the full validation run of 4 November 2026 (commit
-643c0b8; [`5_validation.md`](5_validation.md)): 175 of 176
+643c0b8; [`5_validation.md`](5_validation.md)): 131 of 132
 checks pass, and the one failure (10, P4, flat R-squared) is a finding,
 explained in section 5. JZS (Cauchy, scale
 0.354, the BayesFactor/JASP default) and Zellner–Siow (scale 1) are reference
@@ -39,9 +39,9 @@ differ in which scale they keep flat as predictors are added.
 
 | Check | Flat partial r | Flat R | Flat R-squared | Study |
 |---|---|---|---|---|
-| Valid correlation matrices give the version | pass (F1, KS 0.003) | pass (F2, KS 0.002) | pass (F3, KS 0.003) | 00 |
+| Valid correlation matrices give the version | pass (F1, KS 0.003) | pass (F2, KS 0.003) | pass (F3, KS 0.003) | 00 |
 | Stan samples the prior (KS < 0.03) | pass (P5–P7, KS ≤ 0.012) | pass (P1–P4, KS ≤ 0.009) | pass (P8–P10, KS ≤ 0.009) | 01, P1–P10 |
-| Simulation-based calibration (Talts et al., 2018) | pass ($k = 8$, $n = 60$; χ² p ≥ 0.43) | pass (p ≥ 0.61) | pass (p ≥ 0.45) | 01, S |
+| Simulation-based calibration (Talts et al., 2018) | pass ($k = 8$, $n = 60$; χ² p ≥ 0.43) | pass (p ≥ 0.60) | pass (p ≥ 0.44) | 01, S |
 | Whole-model BF against `integrate()` (162 settings) | pass, largest error 2.6e-07 | pass, largest error 4.1e-05 | pass, largest error 8.4e-05 | 02, A1 |
 | Against a brute-force BF (no formula) | pass | pass | pass | 02, A3 |
 | A second derivation | pass (block route, 5.1e-05) | pass (g-mixture and block route, 3.5e-04) | pass (block route and g-mixture by `integrate()`, 2.4e-05) | 02, A4 |
@@ -120,9 +120,9 @@ another prior, as it should be)?
 | Real predictors missed (of 4), $n = 500$, uncorrelated (beta-binomial / uniform model prior) | 0.84 / 0.64 | 0.45 / 0.43 | 0.44 / 0.43 | 0.58 / 0.47 | 0.89 / 0.67 | 09 |
 | Null predictors included (of 8), the same | 0.13 / 0.20 | 0.91 / 0.60 | 0.92 / 0.61 | 0.42 / 0.47 | 0.12 / 0.17 | 09 |
 | Ranking (AUC real vs null), difference from flat R, mean (range) over cells | +0.003 (−0.021 to +0.022) | 0 | −0.002 (−0.018 to +0.002) | −0.002 (−0.029 to +0.007) | +0.002 (−0.030 to +0.023) | 09 |
-| Prediction error relative to OLS, $k = 8$, $n = 30$ (range over 4 cells) | 0.71–0.81 | 0.37–0.77 | 0.42–0.75 | 0.48–0.74 | 0.74–0.82 | 07 |
+| Prediction error relative to OLS, $k = 8$, $n = 30$ (range over 4 cells) | 0.72–0.81 | 0.37–0.77 | 0.42–0.75 | 0.48–0.74 | 0.74–0.82 | 07 |
 | 95% interval coverage, real effects, lowest cell (OLS 0.920) | 0.916 | 0.760 | 0.815 | 0.870 | 0.910 | 07 |
-| Mean bias of real effects, toward zero (share of the effect) | −8% | −29% | −21% | −19% | −7% | 07 |
+| Mean bias of real effects, toward zero (share of the effect) | −8% | −28% | −21% | −19% | −7% | 07 |
 
 ---
 
@@ -158,7 +158,7 @@ another prior, as it should be)?
   flat R and flat R-squared include more and miss fewer.
 - **Estimation (07):** flat R and flat R-squared shrink more, so they have the
   lowest prediction error at small $n$ with many predictors, at the cost of
-  bias (−29% and −21% of a real effect) and lower interval coverage (down to
+  bias (−28% and −21% of a real effect) and lower interval coverage (down to
   0.76 and 0.82). Flat partial r shrinks less (−8%), is better than OLS in
   every cell, and keeps coverage at 0.916 or above.
 
@@ -186,7 +186,7 @@ another prior, as it should be)?
 - **Evidence for a true null keeps growing with large models** (log BF₀₁
   407.7 with 500 null predictors at $n = 2000$, against 1.9 and 3.7; 08).
 - **Its estimates are close to honest**: −8% bias, 95% interval coverage
-  0.916 or above, better than OLS in every cell (07). Flat R: −29%, down to
+  0.916 or above, better than OLS in every cell (07). Flat R: −28%, down to
   0.760.
 - **The other two are not more accurate.** All three conditional tests rank
   the datasets identically (AUC 0.701 at $k = 20$). Flat R's low rate of
@@ -202,7 +202,7 @@ another prior, as it should be)?
   small effect: report it with the support curve (`R/support_curve.R`), which
   shows which effect sizes the data cannot tell apart from zero.
 - **It shrinks less, so it predicts somewhat worse** with many predictors and
-  small $n$ (prediction error 0.71–0.81 of OLS at $k = 8$, $n = 30$, against
+  small $n$ (prediction error 0.72–0.81 of OLS at $k = 8$, $n = 30$, against
   0.37–0.77 for flat R; 07). For prediction alone, flat R does better.
 - **In variable selection it is conservative**: few null predictors included,
   more real ones missed (0.84 of 4 missed at $n = 500$ with the beta-binomial

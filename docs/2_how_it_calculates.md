@@ -389,8 +389,8 @@ CDF), as the conditional test does.
   $I_\nu(t)$ with $\nu = k/2 - 1$. Above $t = 10^4$ R's `besselI()` loses
   accuracy and returns 0 beyond about $10^5$, so there the large-argument
   expansion $I_\nu(t)\,e^{-t} = (2\pi t)^{-1/2}\bigl(1 - \tfrac{4\nu^2-1}{8t} +
-  \tfrac{(4\nu^2-1)(4\nu^2-9)}{2(8t)^2} - \dots\bigr)$ is used (error below
-  $10^{-12}$ at $t = 10^4$). This also keeps the block conditional test exact at
+  \tfrac{(4\nu^2-1)(4\nu^2-9)}{2(8t)^2} - \dots\bigr)$ is used (error on the log scale at $t = 10^4$:
+  below $10^{-12}$ up to 15 columns, $4\times10^{-10}$ at 30, $10^{-7}$ at 60). This also keeps the block conditional test exact at
   extreme evidence.
 
 **In the code:** `log_bayes_factor_vs_intercept_only(r_squared, n, k, prior)`:
@@ -613,7 +613,7 @@ evidence depends only on $r^2$, $n$, $k$ and $q$, and not on what the other
 predictors explain. The code evaluates the integral over $v$ with the average
 over directions in closed form (a Bessel function, with its large-argument
 expansion for very strong evidence: section 7, step 5), which stays accurate
-for large $n$; it agrees with `stats::integrate()` within $2\cdot10^{-4}$ on
+for large $n$; it agrees with `stats::integrate()` within $1\cdot10^{-4}$ on
 the log scale for $q$ = 2 to 5, $n$ = 50 to $10^6$ (check C10, every prior),
 and the likelihood ratio agrees with a direct integration over $\sigma$ and
 the direction from simulated data (check C11). With $q = k$ the block test is

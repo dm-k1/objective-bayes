@@ -90,7 +90,7 @@ and they differ in one claim:
   0.95 / 0.98, are those of Beta($k/2$, ½)).
 - **Keeping every single correlation flat leads to the same place.** Under
   LKJ(1) single correlations narrow as $k$ grows (median $|\rho|$ of $y$ with one
-  predictor 0.51, 0.35, 0.23 for $k$ = 1, 3, 8). The marginally uniform prior of
+  predictor 0.50, 0.35, 0.23 for $k$ = 1, 3, 8). The marginally uniform prior of
   Barnard, McCulloch & Meng (2000), the correlations of an inverse-Wishart with
   $k + 2$ degrees of freedom, keeps every single correlation flat for any $k$, and
   implies the same $R^2 \sim$ Beta($k/2$, 1) (simulation, KS ≤ 0.007 for $k$ =
