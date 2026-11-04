@@ -211,8 +211,7 @@ The direction is $z/\lVert z\rVert$ for a free vector $z$. Any density for $z$
 that depends only on its length makes the direction uniform; the model uses one
 that keeps $\lVert z\rVert$ near 1. Stan's built-in `unit_vector` does the same
 with a standard normal $z$, which lets $\lVert z\rVert$ come near 0, where the
-direction is undefined; with 2 predictors that gave 1–3 divergent transitions
-per 4,000 draws, and none with the length kept near 1.
+direction is undefined and the sampler can struggle.
 
 **Three priors, one model.** The prior enters only through factor 1: the
 data value `r_squared_shape` is $a$, and one line adds
@@ -717,8 +716,7 @@ $g^{(n-1-k)/2 - 2}$, which diverges if and only if $(n-1-k)/2 - 2 \ge -1$, that
 is $n \ge k + 3$. The same tail on the effect scale: $p(f) \approx 2a f^{-3}$ for
 every $a$ (section 2). Check B2b confirms the boundary: at $n = k + 2$ the
 evidence levels off (for flat R, $\log\mathrm{BF} \to 0.91$ for $k = 1$), at
-$n = k + 3$ it keeps growing. For comparison, the robust prior of Bayarri et
-al. needs $n \ge k + 2$.
+$n = k + 3$ it keeps growing.
 
 What is still open for criterion 2: [`0_overview.md`](0_overview.md), "Open".
 

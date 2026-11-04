@@ -209,15 +209,11 @@ grows with the number of predictors in published regressions. Flat partial r
 predicts a median $R^2$ of 0.76 with 5 predictors and 0.84 with 8; flat R
 predicts 0.25 and flat R-squared 0.5 at any size.
 
-### Flat R-squared, and the earlier "growing" experiment
+### Flat R-squared at one predictor
 
-An earlier version of study 09 tried $R^2 \sim$ Beta($a$, 1) with
-$a = k/(k+1)$: flat R at one predictor, moving toward flat R-squared as $k$
-grows. It barely differed from flat R and was dropped. Flat R-squared is now a
-full member of the comparison instead ($a = 1$ for every $k$), built and
-checked like the other two, so that experiment is superseded. Its one
-structural difference: at $k = 1$ it is flat on $r^2$, not on $r$, so it does
-not start from Jeffreys' correlation (study 00, version C).
+Flat R-squared ($a = 1$ for every $k$) has one structural difference from the
+other two: at $k = 1$ it is flat on $r^2$, not on $r$, so it does not start
+from Jeffreys' correlation (study 00, version C).
 
 ## The conditional Lindley paradox
 
@@ -254,9 +250,8 @@ correlation, 1,000,000 draws each:
 | median \|r\| | 0.50 | **0.31** |
 
 R2-D2 with "the same" $R^2$ prior puts 2.5 times as much weight on near-zero
-correlations: it leans toward small effects, so as a test it finds true nulls
-more slowly and rarely calls a small real effect null (an earlier version of
-study 03 showed this; R2-D2 is no longer in the comparison).
+correlations: it leans toward small effects. R2-D2 is not part of this
+project's comparison.
 
 brms's closest built-in option,
 

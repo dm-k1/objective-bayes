@@ -231,3 +231,16 @@ save_doc_figure(
          subtitle = "n = 100; flat R and flat R-squared stay put, robust and intrinsic scale g with k but still drift") +
     theme(legend.position = "bottom"),
   "6_g_prior_family")
+
+
+## ---- Check printed for doc 1 (step 3 of the share derivation) --------------
+## One predictor's share of the total, z_1^2 / sum(z^2) for a uniform direction,
+## against Beta(1/2, (k - 1)/2): 40,000 directions per k
+set.seed(3)
+for (k in c(2, 3, 5, 10)) {
+  z <- matrix(rnorm(40000 * k), ncol = k)
+  share <- z[, 1]^2 / rowSums(z^2)
+  cat(sprintf("share of the total, k = %2d: KS distance %.4f, mean %.3f (1/k = %.3f)\n", k,
+              suppressWarnings(ks.test(share, "pbeta", 1 / 2, (k - 1) / 2)$statistic),
+              mean(share), 1 / k))
+}

@@ -103,9 +103,6 @@ conditional test solid and the joint test dashed; the references are grey.
 - Estimation (07): the three priors (all `fit_regression()`, the same Stan
   model with the shape a as data), JZS, Zellner–Siow and `lm()`; the
   conditional tests have no estimation version.
-- Dropped: R2-D2 and the approximate flat partial correlation from 03, and the
-  experiment R² ~ Beta(k/(k+1), 1) from 09, which flat R-squared now replaces
-  as a full member (the code is in git history).
 
 Each check prints PASS/FAIL with its criterion; 00, 01, 02 and 05 stop with an
 error if anything failed. Simulation results, Stan fits and logs are cached in
@@ -120,11 +117,9 @@ so the counts per bin should be flat (Talts et al., 2018).
 
 **Why the Stan model samples R and a direction.** The prior as a density on the
 coefficients has a sharp peak at zero (`docs/2_how_it_calculates.md`, section
-3). A sampler moving through the coefficients, as brms does with a custom prior,
-misses it for larger k, without divergent transitions: with brms at k = 8 the
-10% quantile of the implied R² was 0.027 where the prior gives 0.010 (KS
-distance 0.074; the earlier brms check, now in git history). Check 01 shows
-the contrast.
+3), which a sampler moving through the coefficients directly can miss without
+any warning. Sampling R and a direction avoids the peak; checks P1–P10 of
+study 01 show the model reproduces each prior (KS ≤ 0.012).
 
 ## Last results
 

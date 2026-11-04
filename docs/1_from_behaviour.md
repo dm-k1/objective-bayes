@@ -175,8 +175,9 @@ simulating, then deriving, then checking.**
    \qquad E[\text{share}] = \frac{1/2}{1/2 + (k-1)/2} = \frac1k .
    $$
 
-3. **Check.** 40,000 directions per $k$: KS distance to that Beta 0.003–0.006,
-   mean share 0.501, 0.333, 0.201, 0.100 for $k$ = 2, 3, 5, 10. For $k = 1$ the
+3. **Check** (printed by `docs/figures/make_figures.R`). 40,000 directions per
+   $k$: KS distance to that Beta 0.003–0.006, mean share 0.499, 0.330, 0.200,
+   0.101 for $k$ = 2, 3, 5, 10. For $k = 1$ the
    share is 1: the predictor gets the whole total.
 
 Predictor 1's own explained/unexplained variance (its Cohen's $f^2$) is then
