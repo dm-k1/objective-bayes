@@ -62,12 +62,13 @@ criteria of Bayarri et al. (2012), simulation-based calibration, operating
 characteristics and coherence with the joint model; `r sum(counts[, "passed"])`
 of `r sum(counts)` checks passed. All three priors are computed correctly and
 meet the formal criteria, but they behave differently. Under flat *R* and flat
-*R*², the test of one coefficient drifts as unrelated predictors are added,
-and it does not become more accurate as it does so. At 20 predictors all
+*R*², the test of one coefficient drifts as other predictors are added, and
+it does not become more accurate as it does so. At 20 predictors all
 three tests rank datasets identically (AUC = .701), yet flat *R* leaves 92% of
-true nulls undecided, whereas flat partial *r* confirms 88%. Only the flat
-partial *r* test is the Bayes factor of one joint model; under flat *R* no such
-model exists. We recommend flat partial *r* and state its costs.
+true nulls undecided, whereas flat partial *r* confirms 88%. Only the
+conditional test under flat partial *r* is the Bayes factor of one joint
+model; under flat *R* the corresponding restricted model is not a proper
+model. We recommend flat partial *r* and state its costs.
 :::
 
 # Introduction
@@ -91,7 +92,7 @@ the question by testing all three on equal terms.
 Not every correlation-based quantity can be flat at once. Study 00 shows
 this by drawing random valid correlation matrices of (*y*, *x*₁ … *x*ₖ). If
 each **partial correlation** (= the correlation of *y* with one predictor after
-removing the others) is kept flat, *R*² grows with *k*. If *R* or *R*² is kept
+removing the other predictors from both) is kept flat, *R*² grows with *k*. If *R* or *R*² is kept
 flat, each partial correlation shrinks with *k*. The three versions define the
 three priors compared here.
 
@@ -102,9 +103,10 @@ three priors compared here.
 | flat R-squared | Beta(1, 1) | *R*² | — |
 
 For every *k*, each simulated version is flat on its own scale (study 00,
-checks F1–F3, 200,000 matrices per *k*). All three priors divide the total
-explained variance uniformly over the predictors, and all three are mixtures
-of Zellner *g*-priors.
+checks F1–F3, 200,000 matrices per *k*). All three priors spread the total
+explained variance in a uniformly random direction over the predictors (so one
+predictor's share follows Beta(½, (*k* − 1)/2)), and all three are mixtures of
+Zellner *g*-priors (Liang et al., 2008).
 
 ```{r}
 #| fig-cap: "Study 00. What valid correlation matrices force, per k: the three versions share the matrices and differ only in what is kept flat."
@@ -119,6 +121,15 @@ that the joint prior implies for it) looks at that coefficient alone. The
 **joint test** compares the model with the predictor against the model
 without it. JZS (Cauchy prior with scale 0.354) and Zellner–Siow (scale 1)
 serve as reference methods.
+
+The behaviour of the test is studied mainly in study 06. It crosses 72
+designs: *k* = 2, 5, 10 or 20 predictors; *n* = 50, 200 or 1,000; predictor
+correlations of 0, .30 or .70; and the other coefficients either sparse (one
+of them 0.3, the rest zero) or dense (all 0.1). In each design the tested
+coefficient *x*₁ has a true slope of 0, 0.1 or 0.2, with 200 datasets per
+cell. Predictors have unit variance and the noise has standard deviation 1,
+so a slope of 0.1 is a change of 0.1 noise standard deviations per standard
+deviation of the predictor.
 
 ## Validation
 
@@ -163,10 +174,10 @@ calibration fits. The one failed check (study 10, P4) is a property of flat
 ## The test of one coefficient drifts with *k*, without becoming more accurate {#sec-drift}
 
 The three conditional tests are equally accurate, and they differ only in
-where they decide. Across 216 designs (*k* = 2–20, *n* = 50–1,000, predictor
-correlations 0–.70), they separate true nulls from small effects (slope 0.1)
-equally well. Their area under the ROC curve (AUC) is the same at every *k*:
-.728 at *k* = 2 and .701 at *k* = 20, against .713 and .684 for JZS. At a
+where they decide. Across the 72 designs of study 06, they separate true nulls from small
+effects (slope 0.1) equally well: at each *k* the three areas under the ROC
+curve (AUC) are identical (.728 at *k* = 2, .701 at *k* = 20), against .713
+and .684 for JZS. At a
 Bayes factor of 3, each test either supports the null (BF₀₁ > 3), supports an
 effect (BF₁₀ > 3), or remains undecided:
 
@@ -199,31 +210,37 @@ Under flat partial *r*, the share of true nulls that is confirmed is about the
 same at *k* = 2 (.86) and *k* = 20 (.88). Under flat *R* it falls from .55 to
 .06, under flat *R*² from .86 to .26, and under JZS from .54 to .30. Flat *R*
 rarely calls a small effect null (.005 at *k* = 20) because it rarely calls
-anything null: it leaves 92% of true nulls undecided, and it detects small
-effects no more often than the other tests. The joint tests of flat *R* and
-flat *R*² also depend on how much variance the other predictors explain: their
+anything null: it leaves 92% of true nulls undecided. It finds a 0.1 effect
+about as often as flat *R*² (.21) and JZS (.24), and more often than flat
+partial *r* (.15); what it lacks is the ability to confirm nulls. Flat
+partial *r*'s rates for small effects shift a little with *k*: the share of
+0.1 effects it calls null rises from .52 to .60, and the share of 0.2 effects
+it finds falls from .51 to .44. The joint tests of flat *R* and flat *R*² also
+depend on how much variance the other predictors explain, the shared-scale
+problem known as the conditional Lindley paradox (Som et al., 2016): their
 log Bayes factor changes by −5.2 and −5.1 per unit of the others' *R*²,
 against −0.5 for flat partial *r* (study 04).
 
 ## Only flat partial *r* is one coherent model {#sec-coherence}
 
-A test of one coefficient is **coherent** (= it equals the Bayes factor of the
-full model against the same model with that coefficient's partial
-correlation fixed at zero) when it agrees with that model comparison. The
-comparison can be estimated from the full model's posterior with the
-Savage–Dickey density ratio (Wagenmakers et al., 2010). Under flat partial *r*
-the conditional test agrees with it to within a factor of 1.10. Under flat
-*R*² the two diverge at *k* = 8, by a factor of 2.40 (P4, the one failed
-check). This reflects the prior: its partial correlations are linked through
+A test of one coefficient is **coherent** when it equals the Bayes factor of
+the full model against the same model with that coefficient's partial
+correlation fixed at zero. That Bayes factor can be estimated from the full
+model's posterior with the Savage–Dickey density ratio (Wagenmakers et al.,
+2010). Under flat partial *r* the conditional test agrees with it to within a
+factor of 1.10, on the 16 of 20 datasets where the ratio can be estimated
+(the other four agree within three Monte Carlo standard errors). Under flat
+*R*² the two diverge at *k* = 8, by a factor of up to 2.40 over its 19
+estimable datasets (study 10, P4, the one failed check). This reflects the prior: its partial correlations are linked through
 *R*², so information about the other coefficients shifts the evidence for
 *x*₁.
 
-Under flat *R*, the restricted model does not exist as a proper model. When
-the prior is conditioned on |ρ₁| < ε for shrinking ε (P7), the density of ρ₁
+Under flat *R*, the restricted model is not a proper alternative. When the
+prior is conditioned on |ρ₁| < ε for shrinking ε (study 10, P7), the density of ρ₁
 near zero keeps growing, and the *R*² of the other predictors goes to zero
 (median .001 at *k* = 3 and .003 at *k* = 8, for ε = .005). The restricted
 model therefore collapses to the intercept-only model. Under flat partial *r*
-and flat *R*², the same restriction leaves a proper model (P6).
+and flat *R*², the same restriction leaves a proper model (study 10, P6).
 
 ```{r}
 #| fig-cap: "Study 10. The conditional and joint tests for x1 against the Savage-Dickey ratio of the joint model (flat partial r and flat R-squared)."
@@ -257,13 +274,26 @@ predictors in nearly the same order (study 09).
 
 # Discussion
 
-We recommend flat partial *r*. Its test of one coefficient gives the same
-answer at every number of predictors, it is the Bayes factor of one coherent
-joint model, and its estimates are close to unbiased with near-nominal
-interval coverage.
+We recommend flat partial *r*. Its test of one coefficient confirms true
+nulls at the same rate at every number of predictors, its conditional test is
+the Bayes factor of one coherent joint model, and its estimates are close to
+unbiased with near-nominal interval coverage.
 
-The prior has three costs. First, with a small effect and little data it
-leans towards the null: at *k* = 20 it calls 60% of 0.1 effects null. A
+Our argument for preferring a stable rate of confirming nulls over the extra
+caution of flat *R* is as follows. A default test should let the conclusion
+about *x*₁ depend on the data about *x*₁. Under flat *R* and flat *R*², the
+same data lead to a different verdict once covariates are added. That caution
+is not learned from the data: the three conditional tests rank the datasets
+identically, so the larger undecided share comes from the prior, which
+shrinks each partial correlation as *k* grows (study 00), and not from weaker
+evidence. A researcher who adds covariates would, under flat *R*, all but lose
+the ability to confirm a null (.06 at *k* = 20) with nothing in the data to
+show for it. Flat partial *r*'s own cost, described next, is visible and can
+be reported.
+
+The prior has three costs. First, with a small effect it leans towards the
+null: at *k* = 20 it calls 60% of 0.1 effects null (averaged over *n* = 50 to
+1,000). A
 BF₀₁ above 3 from this prior therefore does not rule out a small effect, and
 it is best reported together with the range of effects that the data cannot
 distinguish from zero (the support curve in the package). Second, its
@@ -275,8 +305,11 @@ test of Kucharský et al. (2026) with α = 1, and the joint prior is LKJ(1)
 (Lewandowski et al., 2009), which is also `stan_lm` with η = 1. Two points were
 not found in the literature searched. The first is that this test is the
 Bayes factor of one joint model, and that no such model exists under flat
-*R*. The second is that the drift of *R*-based and *R*²-based defaults with *k*
-changes where the test decides rather than what it can detect. The search was
+*R*. The second is that, for the conditional tests, the drift of *R*-based and
+*R*²-based defaults with *k* changes where the test decides and leaves what it
+can detect unchanged. Their joint tests are a different matter: with
+correlated predictors they separate nulls from small effects worse than JZS
+(an AUC difference of −.064 at *k* = 2 and correlation .70). The search was
 not a systematic review.
 
 The study has four limitations. All results are simulations, limited to the
@@ -292,17 +325,20 @@ published regressions.
   *Annals of Statistics*.
 - Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
   Analytic posterior distribution and Bayes factor for Pearson partial
-  correlations. *TEST*.
+  correlations. *TEST*, *35*(2), 535–558.
 - Lewandowski, D., Kurowicka, D., & Joe, H. (2009). Generating random
   correlation matrices based on vines and extended onion method. *Journal of
   Multivariate Analysis*.
+- Liang, F., Paulo, R., Molina, G., Clyde, M. A., & Berger, J. O. (2008).
+  Mixtures of *g* priors for Bayesian variable selection. *Journal of the
+  American Statistical Association*.
 - Schad, D. J., Nicenboim, B., Bürkner, P.-C., Betancourt, M., & Vasishth, S.
   (2023). Workflow techniques for the robust use of Bayes factors.
   *Psychological Methods*.
 - Schönbrodt, F. D., & Wagenmakers, E.-J. (2018). Bayes factor design
   analysis: Planning for compelling evidence. *Psychonomic Bulletin & Review*.
 - Som, A., Hans, C. M., & MacEachern, S. N. (2016). A conditional Lindley
-  paradox in Bayesian linear models. *Biometrika*.
+  paradox in Bayesian linear models. *Biometrika*, *103*(4), 993–999.
 - Talts, S., Betancourt, M., Simpson, D., Vehtari, A., & Gelman, A. (2018).
   Validating Bayesian inference algorithms with simulation-based calibration.
   arXiv:1804.06788.

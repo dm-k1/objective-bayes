@@ -30,8 +30,10 @@ Factors 1 and 2 carry the judgements; the reasons are in
 none. It only converts units, so that the prior becomes a density per point of
 $\beta$, which is what estimation software needs.
 
-The Bayes factor with $k$ predictors is the one-predictor Bayes factor,
-averaged over every direction the effect could take. For any shape $a$, the
+For flat R, the Bayes factor with $k$ predictors is the one-predictor Bayes
+factor, averaged over every direction the effect could take; for other shapes
+$a$ the same holds with that prior's distribution of the length $f$ in place of
+the one-predictor prior. For any shape $a$, the
 same number follows from testing the model's $k$ columns as one block against
 none (section 7, step 5, the block route).
 
@@ -40,7 +42,7 @@ none (section 7, step 5, the block route).
 | 1–5 | the density, factor by factor | `draw_coefficients_from_prior()` |
 | 6 | how estimation samples it | `fit_regression()` |
 | 7, 9 | the Bayes factor for whole models | `bayes_factor_models()`, `log_bayes_factor_vs_intercept_only()` |
-| 8 | the same prior as a mixture of g-priors | (theory, and check A4) |
+| 8 | the same prior as a mixture of g-priors | `log_bayes_factor_vs_intercept_only()` for flat R-squared with $k \ge 3$; check A4 |
 | 10 | the test for one coefficient (the conditional test) | `bayes_factor_per_term()`, `log_bayes_factor_conditional()` |
 | 11–12 | the default-prior criteria; assumptions and limits | |
 
@@ -71,9 +73,9 @@ slopes.
 | $R^2$ (sample) | the share of explained variance in the fitted regression |
 | $\mathrm{SST} = \sum_i (y_i - \bar y)^2$ | total sum of squares |
 
-**Noise units** (= an effect measured with the unexplained spread $\sigma$ as
-the ruler, as Cohen's $d$ divides a difference by a standard deviation). For
-example, $f = 1$ means that the predictors explain as much variance as the
+Effects are measured in **noise units** (= with the unexplained spread
+$\sigma$ as the ruler, as Cohen's $d$ divides a difference by a standard
+deviation). For example, $f = 1$ means that the predictors explain as much variance as the
 noise leaves unexplained, so $\rho^2 = .5$.
 
 The prior conditions on the observed predictors, which are treated as fixed,
@@ -149,7 +151,8 @@ $|f|(1+f^2)^{-2}$.
 
 ![](figures/4_three_factors.png)
 
-The density has a peak at $\beta = 0$ for most of the family. For $k \ge 2$ the
+The density has a peak at $\beta = 0$ for flat R with $k \ge 2$ and for flat
+R-squared with $k \ge 3$, and none for flat partial r. For $k \ge 2$ the
 size $A_k f^{k-1}$ goes to 0 as $f \to 0$, and factor 1 goes to 0 like
 $f^{2a-1}$, so the density per point behaves like $f^{2a-k}$ near $\beta = 0$.
 That is an infinitely high but integrable peak for flat R ($f^{1-k}$) and for
@@ -286,7 +289,7 @@ R_d^2 = \frac{(v^\top y_c)^2}{\mathrm{SST}} = R^2\, c^2 ,
 $$
 
 where $c$ is the **alignment** (= the cosine of the angle between $d$ and the
-direction in which the data point, the least-squares fit $Q^\top y_c$). Given
+direction of the data, the least-squares fit $Q^\top y_c$). Given
 $d$, the data enter only through $R^2$ and $c$.
 
 ### Step 2: the one-predictor Bayes factor, through g
@@ -310,8 +313,9 @@ $$
 = (1+g)^{-1/2} \left(1 - R^2 c^2 \frac{g}{1+g}\right)^{-(n-1)/2} .
 $$
 
-The Zellner–Siow (JZS) default uses Inverse-Gamma(½, $n r^2/2$) instead,
-which is a Cauchy prior on the effect. The shape of this hyperprior, 1 instead
+The Zellner–Siow (JZS) default uses Inverse-Gamma(½, $n s^2/2$) instead,
+which is a Cauchy prior on the effect with scale $s$ (0.354 in BayesFactor and
+JASP, 1 for Zellner–Siow). The shape of this hyperprior, 1 instead
 of ½, is what separates "flat on the correlation" from "Cauchy on the effect
 size".
 
@@ -368,7 +372,7 @@ calls it):
 | Code | Formula |
 |---|---|
 | `g_values` | $g$ |
-| `log_g_weights` | $\log \mathrm{IG}(g; 1, n/2) + \log g$ |
+| `g_grid$log_weights` (from `inverse_gamma_g_grid()`) | $\log \mathrm{IG}(g; 1, n/2) + \log g$ + log grid step |
 | `shrink_factor` | $g/(1+g)$ |
 | `alignment_squared` | $c^2$ |
 | `log_direction_weights` | $\log p_k(c)\,dc$ on the packed angle grid |
@@ -394,13 +398,14 @@ factor is its average over factor 1,
 
 $$
 \mathrm{BF}_k = \int_0^\infty e^{-nf^2/2}\, {}_1F_1\!\left(\tfrac{n-1}{2}; \tfrac k2; \tfrac{n R^2 f^2}{2}\right)
-\, dP(|f| < f), \qquad P(|f| < f) = \left(\frac{f^2}{1+f^2}\right)^{a}.
+\, dP(|f| < f_0), \qquad P(|f| < f_0) = \left(\frac{f_0^2}{1+f_0^2}\right)^{a}.
 $$
 
 The code takes this average on a grid in $f$ around the peak of the
 likelihood ratio, weighting each cell by its exact prior probability (a
 difference of the cumulative distribution function), as the conditional test
-does.
+does. With few residual degrees of freedom ($n - k < 10$) it adds a log grid
+from $10^{-8}$ to $10^{8}$, where the likelihood ratio is broad (check B2b).
 
 - The block route reproduces the closed forms. With $a = ½$ it gives flat R's
   Bayes factor of steps 1 to 4, and with $a = k/2$ flat partial r's (section
@@ -599,7 +604,7 @@ predictor it equals the joint test.
 Under flat partial r ($a = k/2$) the mixture simplifies exactly. One
 coefficient's partial correlation is flat on (−1, 1) for every $k$
 ([`relation_to_others.md`](relation_to_others.md), "Why η = 1"), so
-$P(|f| < f) = f/\sqrt{1+f^2}$, Jeffreys' one-predictor prior, whatever $k$ is.
+$P(|f| < f_0) = f_0/\sqrt{1+f_0^2}$, Jeffreys' one-predictor prior, whatever $k$ is.
 The code uses that closed form; the share mixture with $a = k/2$ reproduces it
 within $10^{-4}$ (`validation/05`, C4b). Under flat R and flat R-squared the
 prior for one coefficient narrows as $k$ grows (study 00, versions B and C):
@@ -687,7 +692,7 @@ correlation of *x*₁ is the **Savage–Dickey ratio** (= the prior density of
 that partial correlation at 0 divided by its posterior density at 0),
 estimated here from `fit_regression()` draws (`validation/10`, part 2;
 validation run of 4 November 2026, commit 21d42dc). The comparison uses 20
-datasets per prior (k = 3, 8; n = 50, 200):
+datasets per prior ($k$ = 3, 8; $n$ = 50, 200):
 
 - Flat partial r (prior density 1/2 at 0, flat on (−1, 1)). The conditional
   log Bayes factor is within 0.09 of Savage–Dickey wherever the density at 0
@@ -698,38 +703,40 @@ datasets per prior (k = 3, 8; n = 50, 200):
   the joint prior given a zero partial correlation. The conditional test is
   therefore the Bayes factor of one model with one prior for the hypothesis
   "this partial correlation is 0", to within a few percent.
-- Flat R-squared (prior density at 0 from the share mixture, π/4 at k = 3).
-  The two agree at k = 3 (mean difference −0.04) but not at k = 8 (mean −0.48
-  at n = 50 and −0.34 at n = 200; largest 0.87 on the log scale, a factor 2.4;
-  19 estimable datasets, mean absolute difference 0.28). This is check P4, the
-  one failure of the run, and it reflects the prior rather than an error in
-  the code. Savage–Dickey equals the conditional test only when the null's
+- Flat R-squared (prior density at 0 from the share mixture, π/4 at $k$ = 3).
+  The two are close on average at $k$ = 3 (mean difference −0.04; largest
+  absolute difference 0.30 at $n$ = 50 and 0.37 at $n$ = 200) but not at
+  $k$ = 8 (mean −0.48 at $n$ = 50 and −0.34 at $n$ = 200; largest 0.87 on the
+  log scale, a factor 2.4; 19 of 20 datasets estimable, mean absolute
+  difference 0.28). This is check P4 of study 10, the one failure of the run.
+  It is a property of the prior; the code is correct. Savage–Dickey equals the conditional test only when the null's
   prior for the other parameters is the joint prior given a zero partial
   correlation. Under flat partial r (the LKJ vine) the partial correlations
   are independent, so this holds. Under flat R-squared they are tied together
   through the total $R^2$, so what the other coefficients explain moves the
   posterior of *x*₁'s partial correlation, and the gap grows with $k$. The
   joint test is further away still (mean absolute difference 1.0, up to 2.4).
-- Flat R has no such model to compare with. Its implied prior for one partial
-  correlation has an infinite density at 0 for $k \ge 2$, and conditioning
-  the joint prior on that partial correlation being 0 drags the other
-  coefficients to 0 as well (`validation/10`, part 3, check P7). With |ρ₁|
-  below .1, .02 and .005, the density of ρ₁ near 0 grows from 1.51 to 2.30 to
-  2.99 at k = 3, and from 2.23 to 3.83 to 5.20 at k = 8, while the median R²
-  of the other predictors falls from .024 to .005 to .001 at k = 3, and from
-  .054 to .012 to .003 at k = 8. The restricted model collapses to the
-  intercept-only model, so under flat R no joint model corresponds to testing
-  one coefficient, and the Savage–Dickey ratio cannot be formed. Under flat
+- Under flat R the restricted model is not a proper alternative. The implied
+  prior for one partial correlation has an infinite density at 0 for
+  $k \ge 2$, and conditioning the joint prior on that partial correlation
+  being near 0 drags the other coefficients to 0 as well (study 10, part 3,
+  check P7). With |ρ₁| below .1, .02 and .005, the density of ρ₁ near 0 grows
+  from 1.51 to 2.30 to 2.99 at $k$ = 3, and from 2.23 to 3.83 to 5.20 at
+  $k$ = 8, while the median $R^2$ of the other predictors falls from .024 to
+  .005 to .001 at $k$ = 3, and from .054 to .012 to .003 at $k$ = 8. The
+  restricted model collapses to the intercept-only model, so under flat R no
+  joint model corresponds to testing one coefficient, and the Savage–Dickey
+  ratio cannot be formed. Under flat
   partial r and flat R-squared the same conditioning is a proper restriction
-  (check P6): the density near 0 settles (flat partial r 0.50, 0.50 and 0.49 at
-  k = 3; flat R-squared 0.74, 0.77 and 0.78), and the other predictors keep
-  their R² (flat partial r .37 at k = 3 and .73 at k = 8; flat R-squared
-  .16–.22).
+  (study 10, check P6): the density near 0 settles (flat partial r 0.50, 0.50
+  and 0.49 at $k$ = 3; flat R-squared 0.74, 0.77 and 0.78), and the other
+  predictors keep their $R^2$ (flat partial r .37 at $k$ = 3 and .73 at
+  $k$ = 8; flat R-squared .16–.22).
 
 Each prior is also calibrated on itself. With data drawn from the joint prior
 (half with *x*₁ = 0), the share of nulls among datasets with Bayes factor BF₁₀
-is 1/(1 + BF₁₀) within Monte Carlo error, at k = 3 and 8 and n = 50 and 200, for
-all three priors (`validation/10`, P1). This justifies calling a slope of 0.1
+is 1/(1 + BF₁₀) within Monte Carlo error, at $k$ = 3 and 8 and $n$ = 50 and
+200, for all three priors (study 10, P1). This justifies calling a slope of 0.1
 null in about half of the datasets under flat partial r (study 06). Under a
 flat partial correlation an effect of 0.1 is rare, and at these sample sizes
 it predicts data much like no effect, so among datasets with BF₀₁ > 3, 83–89%
@@ -755,7 +762,7 @@ criteria is proven analytically here.
 | # | Criterion | Meaning | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|---|
 | 1 | Basic | the prior on the tested coefficients is proper, and not arbitrarily vague | **met**, by construction | **met** | **met** |
-| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | checked (B3, B3b, B4): null rate $\tfrac q2 \log n$ in every case | checked: ½ log n against the intercept-only model, $\tfrac q2 \log n$ otherwise | checked (B3, B3b, B4): $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; slopes 1.01, 0.96, 0.99 against the intercept-only model and 0.55, 1.55, 2.95 against the model with $x_1$ |
+| 2 | Model selection consistency | the true model's posterior probability goes to 1 as $n$ grows | checked (B3, B3b, B4): null rate $\tfrac q2 \log n$ in every case | checked (B3, B3b, B4): $\tfrac12 \log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; slopes 0.51, 0.48, 0.50 against the intercept-only model and 0.56, 1.58, 2.97 against the model with $x_1$ | checked (B3, B3b, B4): $\log n$ against the intercept-only model, $\tfrac q2 \log n$ otherwise; slopes 1.01, 0.96, 0.99 against the intercept-only model and 0.55, 1.55, 2.95 against the model with $x_1$ |
 | 3 | Information consistency | BF → ∞ as $R^2 \to 1$ | **met for $n \ge k + 3$**: checked (B2, B2b) | **met for $n \ge k + 3$**: checked (B2, B2b) | **met for $n \ge k + 3$**: checked (B2, B2b) |
 | 4 | Intrinsic consistency | the prior converges to a fixed proper prior as $n$ grows | **met**: checked (B5) | **met**: checked (B5) | **met**: checked (B5) |
 | 5 | Predictive matching | on minimal samples ($n = k + 1$) BF = 1 with the null and between models of equal size | **met**: checked (B1) | **met**: checked (B1) | **met**: by the general argument, checked against the ground truth for $k \ge 2$ (B1) |

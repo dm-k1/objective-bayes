@@ -2,8 +2,8 @@
 
 This document compares the three priors that study 00 leaves (flat partial
 r, flat R and flat R-squared) on the criteria from the literature, with one
-column per prior. The choice between them is made from these tables, in
-section 8.
+column per prior. The choice between them is made from these tables, not
+before them; it is given in section 8.
 
 The numbers come from the full validation run of 4 November 2026 (started
 12:24, commit 21d42dc; [`4_validation.md`](4_validation.md)). Of its 138
@@ -61,20 +61,22 @@ SD (χ² *p* = .02, against a threshold of .01).
 | Criterion | Flat partial r | Flat R | Flat R-squared | Where |
 |---|---|---|---|---|
 | Basic (proper, no arbitrary scale) | met | met | met | doc 2, section 11 |
-| Predictive matching ($n = k + 1$) | met, checked | met, checked | met, checked | 02, B1 |
+| Predictive matching ($n = k + 1$) | met, checked ($k$ = 1–6) | met, checked ($k$ = 1–6) | met, checked ($k$ = 2–6) | 02, B1 |
 | Measurement invariance | met, checked | met, checked | met, checked | 02, A2 |
 | Group invariance | met | met | met | doc 2, section 11 |
 | Information consistency ($n \ge k + 3$) | checked | checked | checked | 02, B2, B2b |
 | Intrinsic consistency | checked | checked | checked | 02, B5 |
 | Model selection consistency, fixed $k$ | checked | checked | checked | 02, B3, B3b, B4 |
-| Null rate against the intercept-only model | $\tfrac q2 \log n$ (slopes 0.51, 1.44, 2.90 for $q$ = 1, 3, 6) | $\tfrac12 \log n$ (0.51, 0.48, 0.50) | $\log n$ (1.01, 0.96, 0.99) | 02, B3b |
+| Null rate against the intercept-only model | $\tfrac k2 \log n$ (slopes 0.51, 1.44, 2.90 for $k$ = 1, 3, 6) | $\tfrac12 \log n$ (0.51, 0.48, 0.50) | $\log n$ (1.01, 0.96, 0.99) | 02, B3b |
 | Null rate between models with an effect | $\tfrac q2 \log n$ (0.50, 1.47, 2.95) | $\tfrac q2 \log n$ (0.56, 1.58, 2.97) | $\tfrac q2 \log n$ (0.55, 1.55, 2.95) | 02, B3b |
 | Model selection consistency, $k$ growing with $n$ (median log BF₀₁, $k = n/4$, $n = 2000$) | pass, 407.6 | pass, but slow: 1.9 | pass, but slow: 3.7 | 08 (JZS 149.3, Zellner–Siow 410.8) |
 
 "Checked" means a numerical check in the settings the study covers; none of
 these criteria is proven analytically here. The **null rate** (= how fast the
 evidence for a true null grows with the sample size) is the slope of the
-median log BF₀₁ against $\log n$.
+median log BF₀₁ against $\log n$. Against the intercept-only model it is
+$a \log n$, which is $\tfrac k2 \log n$ for flat partial r; between two models
+that differ by $q$ predictors it is $\tfrac q2 \log n$ for all three.
 
 ---
 
@@ -82,7 +84,12 @@ median log BF₀₁ against $\log n$.
 
 The rows use the **conditional tests** (= the test of one coefficient's
 partial correlation against zero, with the prior the joint prior implies for
-it) unless stated otherwise; JZS and Zellner–Siow test jointly.
+it) unless stated otherwise; JZS and Zellner–Siow test jointly. Slopes are in
+units of the noise SD, with standardised predictors. The study 06 rows come
+from 72 designs ($k$ = 2, 5, 10, 20; $n$ = 50, 200, 1,000; predictor
+correlation 0, .30, .70; sparse or dense other coefficients), each at three
+slopes of $x_1$ (0, 0.1, 0.2) with 200 datasets each; the rates are averaged
+over $n$, correlation and pattern.
 
 | | Flat partial r | Flat R | Flat R-squared | JZS | Zellner–Siow | Study |
 |---|---|---|---|---|---|---|
@@ -101,16 +108,18 @@ undecided, and that third answer is where the priors differ most. At $k = 20$
 
 | Truth | | Flat partial r | Flat R | Flat R-squared |
 |---|---|---|---|---|
-| null | says null / undecided / says effect | **.88** / .11 / .01 | **.06** / .92 / .02 | **.26** / .72 / .02 |
+| null | says null / undecided / says effect | **.88** / .11 / .01 | **.06** / .92 / .01 | **.26** / .72 / .02 |
 | slope 0.1 | says null / undecided / says effect | .60 / .26 / **.15** | .005 / .78 / **.21** | .04 / .75 / **.21** |
 | slope 0.2 | says null / undecided / says effect | .31 / .26 / **.44** | .00 / .52 / **.48** | .00 / .52 / **.49** |
 | AUC null vs 0.1 (ranking) | | .701 | .701 | .701 |
 
-Correct answers are in bold. The three tests rank the datasets identically,
-so none of them is more accurate. Flat R rarely calls a small effect null
-because it rarely decides at all: it leaves 92% of true nulls undecided.
-Flat partial r decides on most datasets and leans towards the null when an
-effect is small.
+Correct answers are in bold. The three conditional tests rank the datasets
+identically, so none of them separates nulls from small effects better.
+Flat R rarely calls a small effect null because it rarely calls anything
+null: it leaves 92% of true nulls undecided. It finds a 0.1 effect about as
+often as flat R-squared (.21) and JZS (.24), and more often than flat
+partial r (.15). Flat partial r decides on most datasets and leans towards
+the null when an effect is small.
 
 ---
 
@@ -125,14 +134,16 @@ data from another prior it should be miscalibrated.
 | Calibrated on its own prior (χ² *p*, logistic slope) | pass: *p* = .40–.79, slope 0.98–1.03 | pass: *p* = .52–.98, slope 0.99–1.02 | pass: *p* = .37–.94, slope 0.98–1.02 | 10, P1 |
 | "*x*₁'s partial correlation = 0" is a proper restriction of the joint prior (density of ρ₁ near 0, ε = 0.1 → 0.005, $k$ = 3 / 8) | yes (P6): 0.50 → 0.49 / 0.50 → 0.49 | no (P7): 1.51 → 2.99 / 2.23 → 5.20, others' median $R^2$ → .001 / .003 | yes (P6): 0.74 → 0.78 / 1.34 → 1.56 | 10, P6–P7 |
 | Miscalibration shows with JZS data | yes: χ² = 503–556, slope 0.89–0.95 | yes: χ² = 233–1198, slope 1.16–1.41 | yes, least: χ² = 50–265, slope 0.95–1.12 | 10, P2 |
-| Conditional test against Savage–Dickey under the joint model (largest log difference) | pass: 0.092 (factor 1.10) | no joint counterpart (P7): the prior density of one partial correlation at 0 is infinite, and fixing it at 0 drags the other coefficients to 0 | **fail (P4)**: 0.874 (factor 2.40), at $k = 8$ | 10, P3–P5, P7 |
+| Conditional test against Savage–Dickey under the joint model (largest log difference, on the datasets where Savage–Dickey is estimable) | pass: 0.092 (factor 1.10; 16 of 20 datasets, the other 4 within 3 Monte Carlo SE) | no joint counterpart (P7): the prior density of one partial correlation at 0 is infinite, and fixing it at 0 drags the other coefficients to 0 | **fail (P4)**: 0.874 (factor 2.40), at $k = 8$; 19 of 20 datasets | 10, P3–P5, P7 |
 
 The **Savage–Dickey ratio** (= the posterior density of a parameter at zero
 divided by its prior density there) gives the Bayes factor of the full model
 against the same model with that parameter at zero. The row on the
-restriction shows when that restricted model exists: under flat partial r and
-flat R-squared the density of ρ₁ near zero settles as the interval shrinks,
-under flat R it keeps growing.
+restriction shows whether that restricted model is a proper alternative.
+Under flat partial r and flat R-squared the density of ρ₁ near zero settles
+as the interval shrinks. Under flat R it keeps growing, and conditioning on
+ρ₁ near zero drags the other coefficients to zero, so the restricted model
+collapses to the intercept-only model (study 10, P7).
 
 ---
 
@@ -144,8 +155,8 @@ under flat R it keeps growing.
 | Null predictors included (of 8), the same | 0.13 / 0.20 | 0.91 / 0.60 | 0.92 / 0.61 | 0.42 / 0.47 | 0.12 / 0.17 | 09 |
 | Ranking (AUC real vs null), difference from flat R, mean (range) over cells | +.003 (−.021 to +.022) | 0 | −.002 (−.018 to +.002) | −.002 (−.029 to +.007) | +.002 (−.030 to +.023) | 09 |
 | Prediction error relative to OLS, $k = 8$, $n = 30$ (range over 4 cells) | 0.72–0.81 | 0.37–0.77 | 0.42–0.75 | 0.48–0.74 | 0.74–0.82 | 07 |
-| 95% interval coverage, real effects, lowest cell (OLS .920) | .916 | .760 | .815 | .870 | .910 | 07 |
-| Mean bias of real effects, towards zero (share of the effect) | −8% | −28% | −21% | −19% | −7% | 07 |
+| 95% interval coverage of real effects, each method's lowest cell (OLS's own lowest cell: .920) | .916 | .760 | .815 | .870 | .910 | 07 |
+| Mean bias of real effects towards zero (share of the effect) | 8% | 28% | 21% | 19% | 7% | 07 |
 
 ---
 
@@ -164,24 +175,29 @@ under flat R it keeps growing.
   quickly (407.6).
 - **One coefficient (studies 04 and 06).** The conditional tests rank
   datasets the same way for all three priors and differ only in where they
-  decide. Flat partial r's answer does not depend on $k$: it finds .86 to .88
-  of true nulls and calls .52 to .60 of 0.1 effects null. As $k$ grows from 2
+  decide. Flat partial r confirms true nulls at the same rate at every $k$
+  (.86 at $k = 2$, .88 at $k = 20$); its rates for small effects shift
+  somewhat (0.1 effects called null from .52 to .60, 0.2 effects found from
+  .51 to .44). As $k$ grows from 2
   to 20, flat R and flat R-squared confirm fewer nulls (from .55 to .06, and
   from .86 to .26) and call fewer 0.1 effects null (from .19 to .005, and from
   .52 to .04), because they stay undecided more often. False effects stay
-  below .02 for all three. Their joint tests depend strongly on what the other
-  predictors explain (M4: −5.2 and −5.1 per unit $R^2$, against −0.5 for flat
+  below .02 for all three. The joint tests of flat R and flat R-squared also
+  separate nulls from small effects worse than JZS when predictors are
+  correlated, and depend strongly on what the other predictors explain (M4: −5.2 and −5.1 per unit $R^2$, against −0.5 for flat
   partial r).
 - **Calibration and coherence (study 10).** Each prior is calibrated on data
   from its own prior. The conditional test agrees with the joint model under
-  flat partial r (within a factor 1.10 of Savage–Dickey). Under flat R-squared
+  flat partial r (within a factor 1.10 of Savage–Dickey on the 16 of 20
+  datasets where it is estimable). Under flat R-squared
   it does not at $k = 8$ (a factor 2.40; P4, the one failed check), because the
   partial correlations are dependent through $R^2$, so the conditional test
-  is not the Bayes factor of the joint model. Under flat R there is no joint
-  counterpart at all: the prior density of one partial correlation is
-  infinite at zero, and conditioning on it being zero drags the other
-  coefficients to zero (P7: the others' median $R^2$ falls to .001 at $k = 3$),
-  so the restricted model collapses to the intercept-only model.
+  is not the Bayes factor of the joint model. Under flat R the restricted
+  model is not a proper alternative: the prior density of one partial
+  correlation is infinite at zero, and conditioning on it being near zero
+  drags the other coefficients to zero (study 10, P7: the others' median
+  $R^2$ falls to .001 at $k = 3$), so the restricted model collapses to the
+  intercept-only model.
 - **Variable selection (study 09).** The ranking of predictors is nearly
   identical. Flat partial r, like Zellner–Siow, includes few null predictors
   and misses more real ones; flat R and flat R-squared include more and miss
@@ -197,23 +213,26 @@ under flat R it keeps growing.
 ## 8. Recommendation
 
 > **Recommendation (the author's judgement, from the results above):**
-> **flat partial r.** It is the only one of the three whose answers mean the
-> same thing at every number of predictors. Sections 2–6 are the evidence;
-> this section is the conclusion drawn from them.
+> **flat partial r.** It is the only one of the three whose test of one
+> coefficient confirms true nulls at the same rate at every number of
+> predictors, and the only one whose conditional test agrees with one joint
+> model. Sections 2–6 are the evidence; this section is the conclusion drawn
+> from them.
 
 ### Why flat partial r
 
-- **Its test of one coefficient does not depend on $k$.** It finds .86 of
-  true nulls at $k = 2$ and .88 at $k = 20$, and calls .52 and .60 of 0.1
-  effects null (study 06). Under flat R (from .55 to .06) and flat R-squared
-  (from .86 to .26), adding predictors changes the answer about $x_1$ while
+- **Its test of one coefficient confirms true nulls at the same rate at
+  every $k$.** It finds .86 of true nulls at $k = 2$ and .88 at $k = 20$
+  (study 06); its rates for small effects shift somewhat (0.1 effects called
+  null from .52 to .60). Under flat R (from .55 to .06) and flat R-squared
+  (from .86 to .26), adding predictors changes the verdict about $x_1$ while
   the data on $x_1$ stay the same.
-- **It is coherent.** Its conditional test is the Bayes factor of the joint
-  model, within a factor 1.10 of Savage–Dickey (study 10). Flat R-squared
-  fails this check at $k = 8$ (a factor 2.40). Under flat R no joint model
-  corresponds to testing one coefficient: fixing that coefficient's partial
-  correlation at zero drags the other coefficients to zero as well (study 10,
-  P7).
+- **It is coherent.** Its conditional test agrees with the Bayes factor of the
+  joint model, within a factor 1.10 of Savage–Dickey on the 16 of 20 datasets
+  where Savage–Dickey is estimable (study 10). Flat R-squared fails this check
+  at $k = 8$ (a factor 2.40). Under flat R the restricted model is not a
+  proper alternative: fixing one coefficient's partial correlation near zero
+  drags the other coefficients to zero as well (study 10, P7).
 - **Its joint test barely depends on what the other predictors explain**
   (−0.5 per unit $R^2$, against −5.2 and −5.1; study 04).
 - **Evidence for a true null keeps growing in large models** (log BF₀₁ of
@@ -226,10 +245,29 @@ under flat R it keeps growing.
   calling small effects null comes from rarely deciding (92% of true nulls
   undecided at $k = 20$; section 4).
 
+### Why a stable rate of confirming nulls is preferable (the author's argument)
+
+This is an argument, not a result of the studies.
+
+- A default test should let the conclusion about $x_1$ depend on the data
+  about $x_1$. Under flat R and flat R-squared, the same data about $x_1$ lead
+  to a different verdict when covariates are added.
+- Their extra caution is not learned from the data. The three conditional
+  tests rank datasets identically, so the larger undecided share comes from
+  the prior, which shrinks each partial correlation as $k$ grows (study 00),
+  and not from weaker evidence.
+- A researcher who adds covariates would, under flat R, nearly lose the
+  ability to confirm a null (.06 at $k = 20$), with nothing in the data to
+  show for it.
+- Flat partial r's own cost, its lean towards the null for small effects, is
+  visible and can be reported with the support curve, and only its
+  conditional test agrees with one joint model.
+
 ### What it costs (to be stated when it is used)
 
-- **It leans towards the null for small effects with little data.** At
-  $k = 20$ it calls 60% of 0.1 effects and 31% of 0.2 effects null (study 06).
+- **It leans towards the null for small effects.** At $k = 20$ it calls 60%
+  of 0.1 effects and 31% of 0.2 effects null (study 06, averaged over
+  $n$ = 50 to 1,000).
   This follows from the prior, which keeps real weight near zero at every $k$,
   so a weak signal reads as "probably nothing". A BF₀₁ above 3 from this prior
   therefore does not rule out a small effect; report it together with the
@@ -254,4 +292,4 @@ under flat R it keeps growing.
 The package keeps no default prior: every function requires `prior =`, so
 the choice is stated in every analysis. Flat R and flat R-squared remain
 available for uses where their trade-off fits, such as prediction with many
-predictors and little data.
+predictors and a small sample.

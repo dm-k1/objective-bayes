@@ -8,8 +8,9 @@ equally plausible.
 
 This document builds that statement from what effects in a regression can
 actually do. It starts from the project's first simulation (study 00) and
-proceeds in steps. Each step has a figure based on a simulation, made by
-`docs/figures/make_figures.R` or by the validation scripts. How the priors
+proceeds in steps. Steps 1, 2 and 4 each have a figure based on a simulation,
+made by `docs/figures/make_figures.R`; step 0 uses the figure of study 00, and
+step 3 is a definition without a figure. How the priors
 become a density and a Bayes factor is described in
 [`2_how_it_calculates.md`](2_how_it_calculates.md).
 
@@ -28,7 +29,7 @@ become a density and a Bayes factor is described in
 Study 00 (`validation/00_initial_simulation.R`) draws valid correlation
 matrices of $(y, x_1 \ldots x_k)$ for $k = 1 \ldots 10$, 200,000 per $k$. In
 each matrix it records three quantities: the **partial correlation** (= the
-correlation of $y$ with $x_1$ after removing the other predictors), $R$, and
+correlation of $y$ with $x_1$ after removing the other predictors from both), $R$, and
 $R^2$.
 
 1. **Simulate.** Version A draws every valid correlation matrix with equal
@@ -199,7 +200,7 @@ the prior of the conditional test
 
 - **Flat partial r** ($a = k/2$): the mixture is exactly a flat partial
   correlation, for every $k$. The total grows with $k$ just fast enough to
-  keep each share's partial correlation flat (validation 05, C4).
+  keep each coefficient's partial correlation flat (validation 05, C4).
 - **Flat R and flat R-squared** ($a$ fixed): the total stays where it is and
   the share shrinks, so each coefficient's prior narrows as $k$ grows (study
   00, versions B and C).
@@ -216,7 +217,7 @@ rather than left for the reader to find:
 | ----------------------------------------------------------------- | ---------------------------------------------- | ------------------- | ------------------ |
 | $E[R^2]$                                                        | $k/(k+2)$: 1/3, 3/5, 5/6 at $k$ = 1, 3, 10 | 1/3                 | 1/2                |
 | median $R^2$                                                    | $0.5^{2/k}$: .25, .63, .87                | .25                | .50               |
-| expected share per predictor                                      | $1/(k+2)$                                    | $1/(3k)$          | $1/(2k)$         |
+| expected explained variance per predictor, $E[\text{share} \times R^2]$ | $1/(k+2)$                                    | $1/(3k)$          | $1/(2k)$         |
 | one coefficient's prior                                           | flat partial correlation, any $k$            | narrows with $k$  | narrows with $k$ |
 | evidence for the null against the intercept-only model grows like | $\tfrac k2 \log n$                           | $\tfrac12 \log n$ | $\log n$         |
 

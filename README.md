@@ -5,12 +5,12 @@
 When a default Bayes factor tests one regression coefficient, the answer can
 depend on how many other predictors are in the model. Whether it does depends
 on what the default prior keeps flat as predictors are added. If each partial
-correlation is kept flat (**flat partial r**), the test gives the same answer
-for any number of predictors. If the total is kept flat (**flat R**, **flat
-R²**), the test drifts with the number of predictors without becoming more
-accurate. At 20 predictors all three rank datasets identically, yet flat R
+correlation is kept flat (**flat partial r**), the test confirms true nulls at
+the same rate for any number of predictors. If the total is kept flat (**flat
+R**, **flat R²**), the test drifts with the number of predictors without
+becoming more accurate. At 20 predictors all three rank datasets identically, yet flat R
 leaves 92% of true nulls undecided while flat partial r confirms 88%. Only
-flat partial r's test is also the Bayes factor of one joint model.
+flat partial r's conditional test is also the Bayes factor of one joint model.
 
 ![What each test says about one coefficient as predictors are added](validation/results/figures/06_outcomes.png)
 

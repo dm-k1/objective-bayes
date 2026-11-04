@@ -17,8 +17,8 @@ of it. The finding itself is stated on one page in [`findings.md`](findings.md).
 The comparison started from a simulation (`validation/00_initial_simulation.R`).
 It draws valid correlation matrices of $(y, x_1 \ldots x_k)$, 200,000 per $k$,
 and follows one coefficient's partial correlation $r$ and the total $R^2$ as
-$k$ grows. The three versions use the same matrices and differ only in what
-is kept flat:
+$k$ grows. The three versions start from the same matrices and differ only in
+what is kept flat:
 
 - **A. partial r flat:** every valid correlation matrix is equally likely, so
   each partial correlation is flat on (−1, 1);
@@ -134,7 +134,7 @@ by default:
 
 | Name used | Means | Also appears as |
 |---|---|---|
-| **total** | the multiple correlation $R$ of the whole model | "shared total" |
+| **total** | the explained variance $R^2$ of the whole model (flat R keeps its square root $R$ flat) | "shared total" |
 | **shape** $a$ | the first parameter of $R^2 \sim$ Beta($a$, 1): $k/2$, ½ or 1 | `r_squared_shape` (Stan), `prior_shape()` |
 | **share** | the fraction of the total that one predictor gets; Beta(½, (k−1)/2) for every $a$ | $c^2$ (squared alignment, doc 2 section 7), $B$ (doc 2 section 8) |
 | **noise units**, $f$ | an effect divided by the noise SD $\sigma$; $f^2$ is Cohen's $f^2$ | |
@@ -161,7 +161,7 @@ P4; see [`3_comparison.md`](3_comparison.md), section 5).
 | Claim | Flat partial r | Flat R | Flat R-squared | Where |
 |---|---|---|---|---|
 | Valid correlation matrices give the three versions | checked (F1) | checked (F2) | checked (F3) | validation 00 |
-| The Stan model samples the prior correctly | checked (P5–P7, KS ≤ .012) | checked (P1–P4, KS ≤ .009) | checked (P8–P10, KS ≤ .009) | validation 01, P1–P10 |
+| The Stan model samples the prior correctly | checked (01-P5–P7, KS ≤ .012) | checked (01-P1–P4, KS ≤ .009) | checked (01-P8–P10, KS ≤ .009) | validation 01, P1–P10 |
 | The Stan posterior is calibrated ($k = 8$) | checked (SBC *p* ≥ .02) | checked (SBC *p* ≥ .38) | checked (SBC *p* ≥ .22) | validation 01, S |
 | The whole-model Bayes factor is exact | checked (A1–A4) | checked (A1–A4) | checked (A1–A4) | validation 02 |
 | Units and recoding don't change the answer | checked (A2) | checked (A2) | checked (A2) | validation 02 |

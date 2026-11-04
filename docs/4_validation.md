@@ -171,8 +171,8 @@ and in section 10.
 | 09 V1–V5 | tables and draws (shared by the methods) | pass (V3, V4: KS ≤ 0.013) | pass (V2: 7.7e-06) | pass (V1 tables: 2.8e-06) |
 | 10 P1 | calibrated on its own prior: χ² p > 0.01, slope near 1 | pass (p 0.40–0.79; slopes 0.98–1.03) | pass (0.52–0.98; 0.99–1.02) | pass (0.37–0.94; 0.98–1.02) |
 | 10 P2 | miscalibration shows with JZS data | pass (χ² 503–556) | pass (233–1198) | pass (50–265) |
-| 10 P3–P5 | Savage–Dickey estimable and agreeing; conditional within a factor 2 | pass (P4 largest 0.092, factor 1.10) | not estimable: infinite prior density at 0 (see P7) | P3, P5 pass; **P4 fail** (largest 0.874, factor 2.40) |
-| 10 P6–P7 | the joint prior given \|ρ₁\| < ε, ε = 0.1, 0.02, 0.005: density near 0 settles (P6) or grows and the others' R² goes to 0 (P7) | pass (P6: density 0.498 0.502 0.485 at k = 3, 0.504 0.497 0.491 at k = 8; others' R² 0.37, 0.73) | pass (P7: density 1.51 2.30 2.99 at k = 3, 2.23 3.83 5.20 at k = 8; others' median R² down to 0.001 and 0.003) | pass (P6: density 0.741 0.767 0.781 at k = 3, 1.342 1.537 1.558 at k = 8; others' R² 0.17–0.22) |
+| 10 P3–P5 | Savage–Dickey estimable and agreeing; conditional within a factor 2 | pass (P4 largest 0.092, factor 1.10, on the 16 of 20 estimable datasets) | not estimable: infinite prior density at 0 (see P7) | P3, P5 pass; **P4 fail** (largest 0.874, factor 2.40) |
+| 10 P6–P7 | the joint prior given \|ρ₁\| < ε, ε = 0.1, 0.02, 0.005: density near 0 settles (P6) or grows and the others' R² goes to 0 (P7) | pass (P6: density 0.498 0.502 0.485 at k = 3, 0.504 0.497 0.491 at k = 8; others' R² 0.37, 0.73) | pass (P7: density 1.51 2.30 2.99 at k = 3, 2.23 3.83 5.20 at k = 8; others' median R² down to 0.001 and 0.003) | pass (P6: density 0.741 0.767 0.781 at k = 3, 1.342 1.537 1.558 at k = 8; others' R² 0.16–0.22) |
 | 11 F1–F3 | block conditional test unchanged by what the others explain; same AUC for the three; JZS (lmBF) precise | pass (F1 1.4e-12 over all three; F2 identical AUC in 72 cells) | pass | pass (F3, shared: largest error 0.032) |
 
 **Why check P4 of study 10 fails for flat R-squared.** On the 19 datasets
@@ -181,7 +181,8 @@ test differs from it by 0.283 on the log scale on average (largest 0.874, a
 factor of 2.40). The difference is small at *k* = 3 (mean −0.04 for both
 *n* = 50 and *n* = 200) and grows with *k* (mean −0.48 at *k* = 8, *n* = 50;
 −0.34 at *k* = 8, *n* = 200). For flat partial r it is at most 0.092 (a factor
-of 1.10). The Savage–Dickey ratio equals the conditional test only when the
+of 1.10) on its 16 estimable datasets; the other four agree within three
+Monte Carlo standard errors (P5). The Savage–Dickey ratio equals the conditional test only when the
 prior of the other parameters, given a zero partial correlation, is the
 joint prior's conditional. Under flat partial r the partial correlations are
 independent (the LKJ vine), so this holds. Under flat R-squared they are
@@ -212,17 +213,19 @@ The comparison criterion by criterion is in
   tests rank datasets identically (the same AUC) and differ only in where
   the Bayes factor lands. Flat partial r confirms true nulls most often, and
   its rate does not depend on *k*. Flat R and flat R-squared confirm fewer
-  true nulls as *k* grows (at *k* = 20: .88, .06 and .26) and call a small
-  effect null less often. Their joint tests depend on how much the other
+  true nulls as *k* grows (.06 and .26 at *k* = 20, against .88 for flat
+  partial r) and call a small effect null less often. Their joint tests depend on how much the other
   predictors explain (study 04, M4: −5.2 and −5.1 log BF per unit of the
   others' *R*², against −0.5 for flat partial r), and with correlated
   predictors they separate nulls from small effects less well than JZS.
 - **Calibration and coherence** (study 10). Each prior is calibrated on data
   drawn from itself. Only flat partial r's conditional test matches the
-  Savage–Dickey ratio under its joint model; flat R-squared's moves away from
-  it as *k* grows. Under flat R, a zero partial correlation for *x*₁ drags
-  every other coefficient to zero (check P7), so no joint model corresponds
-  to its test of one coefficient.
+  Savage–Dickey ratio under its joint model (within a factor of 1.10 on the
+  16 of 20 datasets where the ratio is estimable); flat R-squared's moves
+  away from it as *k* grows. Under flat R the restricted model is not a
+  proper alternative: conditioning on a zero partial correlation for *x*₁
+  drags every other coefficient to zero (study 10, P7), so it collapses to
+  the intercept-only model.
 - **Variable selection and estimation** (studies 07, 09). Flat R and flat
   R-squared include more predictors (fewer real ones missed, more nulls
   included) and shrink the estimates more. This gives them a lower
@@ -360,12 +363,14 @@ uncertainty to ours (*f* in sample units = *f* in population units ×
 √(*W*/*n*), with *W* ~ χ²(*n* − *k*)) makes the two agree to within 5e-7 in
 all 48 cases.
 
-## 06: does the picture hold across designs? (216 cells)
+## 06: does the picture hold across designs? (72 designs, each at three slopes)
 
-Do the results of studies 03 and 04 hold beyond one design? The study varies
-*k* (2–20), *n* (50–1,000), the predictor correlation (0–0.7) and the
-pattern of the other coefficients (sparse or dense), with 200 datasets per
-cell.
+Do the results of studies 03 and 04 hold beyond one design? The study crosses
+*k* (2, 5, 10, 20), *n* (50, 200, 1,000), the predictor correlation (0, .3,
+.7) and the pattern of the other coefficients (sparse: one other slope of
+0.3; dense: every other slope 0.1), 72 designs in all, each with a slope of
+*x*₁ of 0, 0.1 or 0.2 and 200 datasets per cell (216 cells). Slopes are in
+units of the noise standard deviation, with predictors of unit variance.
 
 **Discrimination.** AUC for null against a slope of 0.1, minus that of JZS,
 averaged over *n* and the pattern of the other coefficients:
@@ -405,11 +410,11 @@ Correct answers are in bold.
 | Truth | k | Test | says null | undecided | says effect |
 |---|---|---|---|---|---|
 | null | 2 | flat partial r / flat R-squared | **0.86** | 0.13 | 0.01 |
-| null | 2 | flat R | **0.55** | 0.44 | 0.02 |
+| null | 2 | flat R | **0.55** | 0.44 | 0.01 |
 | null | 2 | JZS | **0.54** | 0.44 | 0.02 |
 | null | 20 | flat partial r | **0.88** | 0.11 | 0.01 |
 | null | 20 | flat R-squared | **0.26** | 0.72 | 0.02 |
-| null | 20 | flat R | **0.06** | 0.92 | 0.02 |
+| null | 20 | flat R | **0.06** | 0.92 | 0.01 |
 | null | 20 | JZS | **0.30** | 0.68 | 0.03 |
 | slope 0.1 | 2 | flat partial r / flat R-squared | 0.52 | 0.29 | **0.19** |
 | slope 0.1 | 2 | flat R | 0.19 | 0.58 | **0.23** |
@@ -425,11 +430,12 @@ against 0.1 of .728 at *k* = 2 and .701 at *k* = 20 for all three; JZS .713 and
 .684), so none of them is more accurate; they differ only in where they
 decide. At *k* = 20, flat R almost never calls a small effect null (.005)
 because it almost never calls anything null: 92% of true nulls stay
-undecided, and it finds effects no more often than the other priors (.21 for
-a slope of 0.1). Flat partial r reaches a decision on most datasets. It
+undecided. It finds a 0.1 effect about as often as flat R-squared (.21) and
+JZS (.24), and more often than flat partial r (.15); what it lacks is
+confirming nulls. Flat partial r reaches a decision on most datasets. It
 confirms 88% of true nulls, but it also calls 60% of 0.1 effects and 31% of
-0.2 effects null, so with a small effect and little data it leans towards the
-null. Neither behaviour is a gain in accuracy: flat R stays silent, and flat
+0.2 effects null (averaged over *n* = 50 to 1,000), so with a small effect it
+leans towards the null. Neither behaviour is a gain in accuracy: flat R stays silent, and flat
 partial r leans.
 
 ## 07: how good are the estimates? (24 designs, 100 datasets each)
@@ -484,7 +490,7 @@ How well does each method pick out the four real predictors among twelve
 candidates? At an inclusion-probability cutoff of 0.5 (*n* = 500,
 uncorrelated predictors, beta-binomial model prior):
 
-| | real predictors missed (of 4) | null predictors included (of 8) | inclusion of the 0.1 effect | true model found (uniform model prior) |
+| | mean number of real predictors missed (of 4) | mean number of null predictors included (of 8) | mean inclusion probability of x4 (slope 0.1) | median-probability model is the true model (share; uniform model prior) |
 |---|---|---|---|---|
 | flat partial r | 0.84 | 0.13 | 0.45 | 0.37 |
 | flat R | 0.45 | 0.91 | 0.64 | 0.36 |
@@ -580,9 +586,9 @@ Savage–Dickey ratio applies (check P6). Under flat R the density keeps
 growing as ε shrinks, because it is infinite at 0, and the other predictors'
 *R*² goes to 0 (check P7). Conditioning on a zero partial correlation for
 *x*₁ then drags every other coefficient to zero, so the restricted model
-collapses to the intercept-only model. Under flat R, therefore, no joint
-model corresponds to testing one coefficient, and its conditional test
-stands on its own.
+collapses to the intercept-only model and is not a proper alternative. Under
+flat R, therefore, no joint model corresponds to testing one coefficient, and
+its conditional test stands on its own.
 
 Figures: `validation/results/figures/10_calibration.png`, `10_coherence.png`.
 
@@ -631,6 +637,9 @@ The list of open work for the whole project is in
 - Bayarri, M. J., Berger, J. O., Forte, A., & García-Donato, G. (2012). Criteria
   for Bayesian model choice with application to variable selection. *The Annals
   of Statistics, 40*(3), 1550–1577.
+- Kucharský, Š., Wagenmakers, E.-J., van den Bergh, D., & Ly, A. (2026).
+  Analytic posterior distribution and Bayes factor for Pearson partial
+  correlations. *TEST, 35*(2), 535–558.
 - Lewandowski, D., Kurowicka, D., & Joe, H. (2009). Generating random
   correlation matrices based on vines and extended onion method. *Journal of
   Multivariate Analysis, 100*(9), 1989–2001.

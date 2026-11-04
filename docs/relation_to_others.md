@@ -23,7 +23,7 @@ Zellner–Siow (JZS, the BayesFactor and JASP default), hyper-*g*,
 hyper-*g*/*n*, beta-prime, robust and intrinsic priors all put a prior on
 Zellner's *g*. The three priors here do too, with $g/n = B \cdot W$,
 $W \sim$ Inverse-Gamma(1, ½) and $B \sim$ Beta($a$, $k/2 - a$). This gives
-Beta(½, (k−1)/2) for flat R, Beta(1, $k/2 - 1$) for flat R-squared
+Beta(½, $(k-1)/2$) for flat R, Beta(1, $k/2 - 1$) for flat R-squared
 ($k \ge 3$; at $k = 2$ it equals flat partial r, and at $k = 1$ it is not a
 *g*-mixture) and $B \equiv 1$ for flat partial r
 ([`2_how_it_calculates.md`](2_how_it_calculates.md), section 8). The table in
@@ -31,32 +31,33 @@ that section shows how much $R^2$ each member expects before any data as $k$
 grows: from a median of .25 at every $k$ (flat R) and .50 at every $k$ (flat
 R-squared) to .98 at $k = 30$ (Zellner–Siow).
 
-The flat R hyperprior involves Kummer's confluent hypergeometric function, so
-it is not a special case of the tCCH family of Li and Clyde (2018), which
-unifies the hyper-*g*, beta-prime, robust and intrinsic priors. A search of
-the *g*-prior literature did not turn it up, which is the result of a search
-and not a proof that it is new.
+The flat R hyperprior involves Kummer's confluent hypergeometric function. We
+did not find it to be a special case of the tCCH family of Li and Clyde
+(2018), which unifies the hyper-*g*, beta-prime, robust and intrinsic priors,
+but we have not shown that it is not one. A search of the *g*-prior
+literature did not turn it up, which is the result of a search and not a
+proof that it is new.
 
 ## Which priors drift with the number of predictors
 
 A prior **drifts** (= the $R^2$ it implies before seeing data rises as
-predictors are added; [`1_from_behaviour.md`](1_from_behaviour.md), step 2)
-when each added predictor brings its own expected share of explained
-variance.
+predictors are added; [`1_from_behaviour.md`](1_from_behaviour.md), step 2).
+This happens when each added predictor brings its own expected share of
+explained variance.
 
 | Prior | Drifts? | Why |
 |---|---|---|
 | independent normal / Student-t per coefficient (usual brms/Stan setup; rstanarm's autoscaled normal) | yes | each coefficient adds its own expected share |
 | ridge with a fixed penalty | yes | = independent normals |
-| uniform box per standardized coefficient | yes | mass sits in the corners |
+| uniform box per standardised coefficient | yes | mass sits in the corners |
 | uniform over all coefficient vectors with $R^2 \le 1$ | yes | implies $R^2 \sim$ Beta($k/2$, 1) |
 | Zellner's g-prior with fixed $g$ (e.g. $g = n$) | yes | $R^2$ rises with $k$ for fixed $g$ |
-| JZS / Zellner–Siow (BayesFactor, JASP) | yes, milder | heavy-tailed mixture over $g$, but still per-dimension |
+| JZS / Zellner–Siow (BayesFactor, JASP) | yes | with scale 1, $R^2 \sim$ Beta($k/2$, ½), which rises faster with $k$ than flat partial r (median .98 against .95 at $k = 30$) |
 | spike-and-slab with a fixed slab | yes | with the number of included predictors |
 | independent flat partial correlations, combined | yes, strongly | $1 - R^2$ is a product of one factor per predictor |
 | rstanarm `stan_lm`, and **flat partial r** (η = 1) | yes, by design | $R^2 \sim$ Beta($k/2$, η); η = 1 is "every correlation matrix equally likely" (next section) |
 | hyper-g (Liang et al., 2008), Maruyama & George (2011) | partly | prior on the shrinkage $g/(1+g)$ |
-| regularized horseshoe | no | global scale tied to the expected number of relevant predictors |
+| regularised horseshoe | no | global scale tied to the expected number of relevant predictors |
 | R2-D2 (Zhang et al., 2022), R2D2M2 (Aguilar & Bürkner, 2023) | no | fixed prior on $R^2$, Dirichlet split |
 | **flat R** | no | flat on $R$ for every $k$, even split |
 | **flat R-squared** | no | flat on $R^2$ for every $k$, even split |
@@ -76,8 +77,9 @@ correlation matrices allow three ways to extend it to $k$ predictors (study
 - **Beta($k/2$, 1) is the distribution of $R^2$ under a uniform correlation
   matrix.** Under the LKJ distribution with shape η (Lewandowski, Kurowicka &
   Joe, 2009; η = 1 is uniform), the squared multiple correlation of one
-  variable on the others is Beta($k/2$, η), the classical null distribution of
-  the sample $R^2$ (Muirhead, 1982, Theorem 5.2.2). The next subsection
+  variable on the others is Beta($k/2$, η). This is the form of the classical
+  null distribution of the sample $R^2$, with η in place of $(n - k - 1)/2$
+  (Muirhead, 1982, Theorem 5.2.2). The next subsection
   describes how this was found and checked.
 - **It is rstanarm's `stan_lm` prior.** `stan_lm` uses exactly this
   construction: $\sqrt{R^2}$ times a uniformly random direction in
@@ -138,8 +140,8 @@ with the Beta distribution that a short argument predicts.
    r_squared <- rho %*% solve(Sigma, rho)   # population R-squared of y on the x's
    ```
 
-   Thousands of matrices at $k$ = 1, 2, 3, 5 and 8 give the distribution of
-   $R^2$ that "every correlation matrix equally likely" implies.
+   Thousands of matrices at $k$ = 1, 2 and 5 give the distribution of $R^2$
+   that "every correlation matrix equally likely" implies.
 4. **Predict the formula, then test it.** $R^2$ builds up one predictor at a
    time:
 
@@ -149,10 +151,10 @@ with the Beta distribution that a short argument predicts.
 
    with $p_j$ the partial correlations of step 2: independent Beta variables
    whose parameters increase by ½ at each step. A product of such Betas
-   collapses into a single Beta, which predicts $R^2 \sim$ Beta($k/2$, η). The
-   simulated $R^2$ matches that Beta to within simulation noise (KS =
-   .010–.013; check V4 in study 09), and so does η = 2, so the formula holds
-   beyond the flat case.
+   collapses into a single Beta, which predicts $R^2 \sim$ Beta($k/2$, η). For
+   η = 1 the simulated $R^2$ matches that Beta to within simulation noise at
+   $k$ = 1, 2 and 5 (KS = .010–.013; check V4 in study 09). Other values of η
+   are not checked for $R^2$.
 
 Each half needs the other: the simulation without the formula gives only
 numbers, and the formula without the simulation could hide a slip. The
@@ -162,7 +164,7 @@ with the correlations of an inverse-Wishart with $k + 2$ degrees of freedom
 (`docs/figures/make_figures.R`).
 
 This is the $R^2$ prior of flat partial r. The share per predictor,
-Beta(½, (k−1)/2) for every member of the family, is a separate result found
+Beta(½, $(k-1)/2$) for every member of the family, is a separate result found
 in the same way ([`1_from_behaviour.md`](1_from_behaviour.md), step 4).
 
 ### Why η = 1
@@ -201,9 +203,8 @@ Simulated KS distances (4,000 matrices per cell; validation run of
 | η = 2, to flat | .097 | .104 | .101 |
 | η = 2, to Beta(2, 2) | .012 | .018 | .014 |
 
-**What is not new.** A flat prior on each partial correlation is the default
-partial-correlation test (Wetzels & Wagenmakers, 2012; Kucharský et al.,
-2026, with a flat prior, α = 1). Our Bayes factor differs from the exact one
+**What is not new.** A Bayes factor for one partial correlation with a flat
+prior on it is the test of Kucharský et al. (2026) with α = 1. Our Bayes factor differs from the exact one
 of Kucharský et al. in one assumption only (`validation/05`, C8). Theirs is
 derived for multivariate normal data, so the predictors are random and the
 tested predictor's residual SD is an unknown parameter. Ours conditions on
@@ -213,10 +214,11 @@ within 5e-7, and the priors on the noise and the other coefficients are the
 same in both. Without it, ours is lower on the log scale by up to 0.26
 (*n* = 20, *k* = 8, *r* = 0), by 0.10 at *n* = 50 and by 0.005 at
 *n* = 1,000, with the largest difference at *r* = 0 (where ours does not
-depend on *k*). Flat partial r adds three things: the fixed-*X* version of
-their test, the fact that this test follows from one prior on the whole
-model, and the use of the same prior for Bayes factors between whole models
-and for estimation (`stan_lm` with η = 1).
+depend on *k*). Three things were not found in the literature searched (see
+"What is new here, and what is not"): the fixed-*X* version of their test,
+the fact that this test agrees with one prior on the whole model, and the use
+of the same prior for Bayes factors between whole models and for estimation
+(`stan_lm` with η = 1).
 
 **Variable selection** ([`4_validation.md`](4_validation.md), study 09)
 compares the three priors with JZS, Zellner–Siow and BIC. They rank real
@@ -345,20 +347,24 @@ The following points were not found in the literature searched:
 
 - **The test of one coefficient as the Bayes factor of one joint model.**
   Kucharský et al. justify their test by Jeffreys's desiderata, with separate
-  improper priors for the other parameters, and do not relate it to a prior on
-  the whole model (there is no mention of LKJ, `stan_lm` or Savage–Dickey).
-  Here the flat partial r conditional test is the Bayes factor of the joint
-  LKJ(1) model (within a factor 1.10 of Savage–Dickey, `validation/10`). This
-  does not hold for flat R-squared (a factor 2.40 at $k = 8$), and under flat
-  R no such joint model exists.
-- **How $R^2$-based defaults drift with $k$, and that the drift moves the
-  threshold rather than the accuracy.** No source found shows that, under a
-  fixed prior on $R$ or $R^2$, the test of one coefficient changes as
-  unrelated predictors are added while the ranking of datasets stays
-  identical (AUC = .701 for all three at $k = 20$) and only the share left
-  undecided changes (92% of true nulls under flat R; `validation/06`).
-  Kucharský et al., Som et al. and Liang et al. report no simulations of this
-  kind.
+  improper priors for the other parameters. In the parts read we found no
+  relation to a prior on the whole model (no mention of LKJ, `stan_lm` or
+  Savage–Dickey). Here the flat partial r conditional test agrees numerically
+  with the Bayes factor of the joint LKJ(1) model (within a factor 1.10 of
+  Savage–Dickey on the 16 of 20 datasets where it is estimable;
+  `validation/10`). This does not hold for flat R-squared (a factor 2.40 at
+  $k = 8$), and under flat R the restricted model is not a proper alternative:
+  it collapses to the intercept-only model (study 10, P7).
+- **How $R^2$-based defaults drift with $k$, and that for the conditional
+  tests the drift moves the threshold and leaves the ranking unchanged.** No
+  source found shows that, under a fixed prior on $R$ or $R^2$, the
+  conditional test of one coefficient changes as other predictors are added
+  while the ranking of datasets stays identical (AUC = .701 for all three at
+  $k = 20$) and only the share left undecided changes (92% of true nulls under
+  flat R; `validation/06`). The joint tests of flat R and flat R-squared do
+  separate worse than JZS when predictors are correlated (AUC −.064 at
+  $k = 2$, correlation .70). In the parts of Kucharský et al., Som et al. and
+  Liang et al. read so far we found no simulations of this kind.
 - **The three priors as one family**, $R^2 \sim$ Beta($a$, 1) with
   $a = k/2$, ½ or 1, compared side by side on the Bayarri et al. criteria
   ([`3_comparison.md`](3_comparison.md)).
