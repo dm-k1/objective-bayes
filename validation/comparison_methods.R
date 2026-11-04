@@ -60,7 +60,8 @@ method_scales <- function(methods, linetype = TRUE) {
          theme(legend.position = "bottom", legend.key.width = unit(2.5, "lines"))),
     if (linetype) list(scale_linetype_manual(values = setNames(ifelse(dashed, "22", "solid"), methods),
                                              breaks = methods, name = NULL),
-                       guides(colour = legend, linetype = legend))
+                       guides(colour = legend,
+                              linetype = guide_legend(nrow = rows, byrow = FALSE)))
     else list(guides(colour = legend)))
 }
 

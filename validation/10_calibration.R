@@ -38,8 +38,21 @@
 ##                     (finite: pi/4 at k = 3)
 ##    flat R           not included: its implied prior for one partial
 ##                     correlation has an infinite density at 0 (for k >= 2 the
-##                     share mixture E[s^(-1/2)] diverges), so the Savage-Dickey
-##                     ratio is not defined.
+##                     share mixture E[s^(-1/2)] diverges), so the
+##                     Savage-Dickey ratio cannot be formed.
+##
+##  Part 3, what "x1's partial correlation = 0" means under each joint prior
+##  (prior draws only, no data). Condition the prior on |rho1| < eps for
+##  shrinking eps (0.1, 0.02, 0.005; k = 3 and 8, independent predictors) and
+##  follow the density of rho1 near 0, P(|rho1| < eps) / (2 eps), and the R^2
+##  of the other predictors given it.
+##    P6. flat partial r and flat R-squared: the density settles (within 10%
+##        from eps = 0.02 to 0.005) and the others keep their R^2: the
+##        restricted model is a proper model, and Savage-Dickey applies.
+##    P7. flat R: the density keeps growing as eps shrinks and the others' R^2
+##        goes to 0 (median below 0.01 at eps = 0.005): the restricted model
+##        collapses to the intercept-only model, so under flat R no joint model
+##        corresponds to testing one coefficient.
 ##
 ##  Run from the project folder: Rscript validation/10_calibration.R
 ##  About 70 minutes on 7 cores (68 in the run of 4 November 2026); part 1 is
@@ -351,5 +364,41 @@ save_figure(
          colour = NULL, shape = "n",
          title = "The conditional and the joint test against one prior for everything"),
   "10_coherence", width = 10, height = 8)
+
+
+## =====================================================================
+##  Part 3: what "x1's partial correlation = 0" means under each joint prior
+## =====================================================================
+set.seed(7)
+widths <- c(0.1, 0.02, 0.005)
+near_zero <- do.call(rbind, lapply(c(3, 8), function(k) do.call(rbind, lapply(contenders, function(prior) {
+  b <- draw_coefficients_from_prior(400000, diag(k), prior = prior)
+  rho1 <- b[, 1] / sqrt(1 + b[, 1]^2)   # x1's partial correlation (identity covariance, sigma = 1)
+  others <- rowSums(b[, -1, drop = FALSE]^2)
+  do.call(rbind, lapply(widths, function(eps) {
+    keep <- abs(rho1) < eps
+    data.frame(prior = prior, k = k, eps = eps, density_near_0 = mean(keep) / (2 * eps),
+               median_r_squared_others = median((others / (1 + others))[keep]))
+  }))
+}))))
+cat("\nThe joint prior conditioned on |rho1| < eps: density of rho1 near 0, and the others' R^2\n")
+print(near_zero, digits = 3, row.names = FALSE)
+for (k in c(3, 8)) {
+  for (prior in c("flat_partial_r", "flat_r_squared")) {
+    rows <- near_zero[near_zero$prior == prior & near_zero$k == k, ]
+    record_check(sprintf("P6. %s, k = %d: rho1 = 0 is a proper restriction", prior, k),
+                 abs(rows$density_near_0[3] / rows$density_near_0[2] - 1) < 0.1 &&
+                   rows$median_r_squared_others[3] > 0.7 * rows$median_r_squared_others[1],
+                 sprintf("density near 0: %s; others' median R^2: %s",
+                         paste(sprintf("%.3f", rows$density_near_0), collapse = " "),
+                         paste(sprintf("%.3f", rows$median_r_squared_others), collapse = " ")))
+  }
+  rows <- near_zero[near_zero$prior == "flat_r" & near_zero$k == k, ]
+  record_check(sprintf("P7. flat_r, k = %d: rho1 = 0 drags the others to 0", k),
+               all(diff(rows$density_near_0) > 0) && rows$median_r_squared_others[3] < 0.01,
+               sprintf("density near 0: %s; others' median R^2: %s",
+                       paste(sprintf("%.3f", rows$density_near_0), collapse = " "),
+                       paste(sprintf("%.3f", rows$median_r_squared_others), collapse = " ")))
+}
 
 report_checks()
