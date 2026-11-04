@@ -14,7 +14,7 @@ of it. The finding itself is stated on one page in [`findings.md`](findings.md).
 
 ## Where it started: study 00
 
-The comparison started from a simulation (`validation/00_initial_simulation.R`).
+The comparison started from a simulation (`motivating_simulation.R` in this folder).
 It draws valid correlation matrices of $(y, x_1 \ldots x_k)$, 200,000 per $k$,
 and follows one coefficient's partial correlation $r$ and the total $R^2$ as
 $k$ grows. The three versions start from the same matrices and differ only in
@@ -36,9 +36,9 @@ what is kept flat:
 Keeping each partial correlation flat makes the total grow with $k$; keeping
 the total flat makes each partial correlation shrink with $k$. With one
 predictor, A and B coincide (Jeffreys' prior), while C is not flat on $r$
-even then. The figure `validation/results/figures/00_partial_r_R_R2_by_k.png`
+even then. The figure `figures/motivation_partial_r_R_R2_by_k.png`
 (made by running study 00) shows the three distributions for each $k$, and
-the table is also written to `validation/results/00_first_result.md`.
+the table is also written to `figures/motivation_table.md`.
 
 Studies 01–11 test the three options this leaves.
 

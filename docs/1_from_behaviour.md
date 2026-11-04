@@ -26,7 +26,7 @@ become a density and a Bayes factor is described in
 
 ## Step 0. The first result: not everything can stay flat
 
-Study 00 (`validation/00_initial_simulation.R`) draws valid correlation
+Study 00 (`motivating_simulation.R` in this folder) draws valid correlation
 matrices of $(y, x_1 \ldots x_k)$ for $k = 1 \ldots 10$, 200,000 per $k$. In
 each matrix it records three quantities: the **partial correlation** (= the
 correlation of $y$ with $x_1$ after removing the other predictors from both), $R$, and
@@ -57,7 +57,7 @@ $R^2$.
    every $k$ (checks F1–F3, largest Kolmogorov–Smirnov (KS) distance
    .0024–.0038).
 
-The figure is `validation/results/figures/00_partial_r_R_R2_by_k.png` (made
+The figure is `figures/motivation_partial_r_R_R2_by_k.png` (made
 by running the study). At $k = 1$, versions A and B are the same prior,
 Jeffreys' flat correlation; from $k = 2$ on they differ. Every later document
 therefore asks which of the three branches to use, and the studies compare

@@ -58,8 +58,9 @@ but it was built study by study:
    - **C. Variable selection**: 12 candidates, 4 real.
    - **D. Growing *k***: *k* rising with *n*.
 5. **The motivating simulation (current study 00) moves out of the
-   validation.** It shows why there are three priors; it does not validate
-   anything. It stays as code, as the motivating example of the docs.
+   validation**, to `docs/motivating_simulation.R`, with its figures and
+   table in `docs/figures/`. It shows why there are three priors; it does
+   not validate anything. *Done.*
 6. **Order: correctness, then formal properties, then behaviour.**
 
 ## The new structure
@@ -98,8 +99,10 @@ but it was built study by study:
 
 ## Open questions
 
-- Where the motivating simulation lives as code (proposal: `motivation/`,
-  with its own figures, linked from the README and the docs).
+- Whether the explaining docs (docs 0–4, `findings.md`) are still needed
+  next to the report, or can be folded into it.
+- Whether the package and the validation should live in separate
+  repositories.
 - The target Monte Carlo standard error per quantity (step 2).
 - Whether `BAS` offers the robust and intrinsic priors for linear models.
 

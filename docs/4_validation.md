@@ -7,7 +7,7 @@ Study 00 comes first because it is the result that started the comparison.
 Run the scripts from the project folder:
 
 ```bash
-Rscript validation/00_initial_simulation.R    # the first result; about a minute, no Stan
+Rscript docs/motivating_simulation.R          # the motivating simulation (not part of the validation); about a minute
 Rscript validation/01_prior_and_posterior.R   # needs cmdstanr (or rstan)
 Rscript validation/02_bayes_factor.R          # no Stan needed
 Rscript validation/03_simulations.R           # a few minutes
@@ -57,7 +57,7 @@ November 2026). With the caches in `cache/`, a rerun takes about 20 minutes.
 
 | Script | Question | How | Run time |
 |---|---|---|---|
-| `00_initial_simulation.R` | The first result: what happens to partial r, R and R² as k grows, in valid correlation matrices? | 200,000 matrices per k = 1–10; three versions (partial r flat, R flat, R² flat); F1–F3: each version flat where it should be; writes `validation/results/00_first_result.md` | about a minute |
+| `docs/motivating_simulation.R` (outside the validation) | The first result: what happens to partial r, R and R² as k grows, in valid correlation matrices? | 200,000 matrices per k = 1–10; three versions (partial r flat, R flat, R² flat); F1–F3: each version flat where it should be; writes `validation/results/00_first_result.md` | about a minute |
 | `01_prior_and_posterior.R` | Does the Stan model (`inst/stan/flatcor.stan`) get the prior and the posterior right, for each prior? | P1–P4 (flat R), P5–P7 (flat partial r), P8–P10 (flat R-squared): sample the prior alone and compare with its distribution. S: simulation-based calibration, k = 8, n = 60, 400 datasets, all three. Contrast: flat R sampled in coefficient coordinates | about 8 minutes |
 | `02_bayes_factor.R` | Is the whole-model Bayes factor right, for each prior? | One loop over the three priors: A1 against `integrate()` by a route that is not the package's; A2 invariance; A3 against a brute-force Bayes factor; A4 a second derivation; B1–B4 predictive matching, information and model-selection consistency; B5 intrinsic consistency | about a minute |
 | `03_simulations.R` | Testing one coefficient across many datasets | 4 correlated predictors, x1's slope varies, x3 null; all one-coefficient methods (below); U1–U2 | 10–15 minutes |
@@ -268,8 +268,8 @@ with *k*; keeping *R* or *R*² flat makes each partial correlation shrink.
 
 - At *k* = 1, "partial r flat" and "R flat" are the same prior (Jeffreys');
   "R² flat" is not flat on *r* even then.
-- Figures: `validation/results/figures/00_partial_r_R_R2_by_k.png` (the three
-  distributions overlaid per *k*) and `00_three_versions_against_k.png`.
+- Figures: `docs/figures/motivation_partial_r_R_R2_by_k.png` (the three
+  distributions overlaid per *k*) and `motivation_three_versions_against_k.png`.
 - Because the three versions cannot be reconciled, every later study compares
   three priors.
 

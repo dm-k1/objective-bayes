@@ -24,7 +24,7 @@ recommendation of flat partial r with its costs, are in
 ## The three priors
 
 The project starts from study 00
-([`validation/00_initial_simulation.R`](validation/00_initial_simulation.R)),
+([`docs/motivating_simulation.R`](docs/motivating_simulation.R)),
 which draws valid correlation matrices of $(y, x_1 \ldots x_k)$. Keeping each
 partial correlation flat makes $R^2$ grow with $k$; keeping $R$ or $R^2$ flat
 makes each partial correlation shrink towards zero as $k$ grows. That leaves

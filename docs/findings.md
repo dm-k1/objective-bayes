@@ -46,7 +46,7 @@ The simulated matrices follow these distributions for every *k*
 (Kolmogorov–Smirnov distance at most .0026, .0024 and .0038 for the three
 versions, with 200,000 matrices per *k*; checks F1–F3).
 
-![Study 00: what valid correlation matrices force](../validation/results/figures/00_partial_r_R_R2_by_k.png)
+![Study 00: what valid correlation matrices force](figures/motivation_partial_r_R_R2_by_k.png)
 
 ## 2. All three priors are computed correctly and meet the formal criteria (studies 01, 02, 05)
 

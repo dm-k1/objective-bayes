@@ -1,10 +1,12 @@
 ## =====================================================================
-##  Validation 00: the first result, the one that started the comparison
+##  The motivating simulation: why there are three priors
 ##
 ##  The starting question: what happens to partial r, R and R-squared as the
 ##  number of predictors k grows? With one predictor, a flat r (Jeffreys) is
 ##  all there is. With more, not everything can stay flat. This simulation
-##  shows the fork, and studies 01-11 test the three options it leaves.
+##  shows the fork; the validation (validation/) tests the three options it
+##  leaves. It explains the project and validates nothing, so it lives here
+##  with the other code behind the docs.
 ##
 ##  Three versions, k = 1 ... 10, all of them valid correlation matrices of
 ##  (y, x1 ... xk):
@@ -30,14 +32,15 @@
 ##    F1-F3. each version is flat where it should be: A's partial r, B's R and
 ##        C's R^2 against the flat distribution, for every k (KS distance < 0.01)
 ##
-##  Run from the project folder: Rscript validation/00_initial_simulation.R
-##  About a minute on 8 cores; no Stan needed. Writes its table to
-##  validation/results/00_first_result.md (included in run_summary.md).
+##  Run from the project folder: Rscript docs/motivating_simulation.R
+##  About a minute on 8 cores; no Stan needed. Writes its figures and its
+##  table to docs/figures/ (motivation_*.png, motivation_table.md).
 ## =====================================================================
 library(ggplot2)
 library(patchwork)
 source("validation/settings.R")   # parallel_map(), save_figure(), record_check()
 source("validation/comparison_methods.R")   # draw_lkj_correlation_matrix()
+figures_folder <- file.path("docs", "figures")   # save_figure() writes here, next to the docs' figures
 
 set.seed(2026)
 number_of_draws       <- 200000
@@ -125,7 +128,7 @@ writeLines(c(
       paste0(c("P_abs_partial_r_0.3.", "P_R2_above_0.5."), versions[1]),
       paste0(c("P_abs_partial_r_0.3.", "P_R2_above_0.5."), versions[2]),
       paste0(c("P_abs_partial_r_0.3.", "P_R2_above_0.5."), versions[3]))])), collapse = " | "), " |"))),
-  file.path(results_folder, "00_first_result.md"))
+  file.path(figures_folder, "motivation_table.md"))
 
 
 ## ---- Checks: each version is flat where it should be ----------------------------
@@ -177,7 +180,7 @@ save_figure(
       subtitle = paste(format(number_of_draws, big.mark = ",", scientific = FALSE), "matrices of (y, x1 ... xk) per k; the same matrices in every version,",
                        "only the size of y's correlations differs")) &
     theme(legend.position = "bottom"),
-  "00_partial_r_R_R2_by_k", width = 13, height = 9)
+  "motivation_partial_r_R_R2_by_k", width = 13, height = 9)
 
 
 ## ---- Figure 2: the three versions against k ---------------------------------
@@ -199,6 +202,6 @@ save_figure(
          title = "Keep partial r flat and R-squared grows; keep R or R-squared flat and partial r shrinks") +
     theme_minimal(base_size = 12) +
     theme(legend.position = "bottom"),
-  "00_three_versions_against_k", width = 11, height = 5)
+  "motivation_three_versions_against_k", width = 11, height = 5)
 
 report_checks()

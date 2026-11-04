@@ -41,7 +41,7 @@ summary_lines <- readLines(file.path(project, "validation", "results", "run_summ
                            encoding = "UTF-8")
 run_line <- function(field)
   trimws(sub(".*\\*\\*:? *", "", grep(paste0("\\*\\*", field), summary_lines, value = TRUE)[1]))
-studies <- c("00_initial_simulation", "01_prior_and_posterior", "02_bayes_factor", "03_simulations",
+studies <- c("01_prior_and_posterior", "02_bayes_factor", "03_simulations",
              "04_matched_comparison", "05_conditional_test", "06_broad_simulation", "07_estimation",
              "08_growing_k", "09_variable_selection", "10_calibration", "11_factor_terms")
 counts <- t(sapply(studies, function(s) {
@@ -110,7 +110,7 @@ Zellner *g*-priors (Liang et al., 2008).
 
 ```{r}
 #| fig-cap: "Study 00. What valid correlation matrices force, per k: the three versions share the matrices and differ only in what is kept flat."
-figure("00_partial_r_R_R2_by_k")
+include_graphics(file.path(project, "docs", "figures", "motivation_partial_r_R_R2_by_k.png"))
 ```
 
 ## Tests
@@ -358,7 +358,6 @@ study's remaining figures (click a panel to open it). Full descriptions are in
 
 ```{r appendix, results = "asis"}
 extra_figures <- list(
-  "00_initial_simulation" = "00_three_versions_against_k",
   "03_simulations" = c("03_correct_evidence_x1", "03_misleading_evidence_x1", "03_trade_off"),
   "04_matched_comparison" = "04_discrimination",
   "06_broad_simulation" = c("06_auc_sparse", "06_auc_dense"),
