@@ -28,9 +28,9 @@
 ##    7.3 Flat R confirms fewer true nulls at k = 20 than at k = 2: the drop
 ##        exceeds .05, judged by its 95% Monte Carlo interval.
 ##
-##  Run from the project folder:  Rscript validation/study_07_one_coefficient.R
+##  Run from the project folder:  Rscript validation/07_one_coefficient.R
 ##  Smoke test (a corner of the design, 10 datasets per cell, about a minute):
-##    VALIDATION_SMOKE=1 Rscript validation/study_07_one_coefficient.R
+##    VALIDATION_SMOKE=1 Rscript validation/07_one_coefficient.R
 ##  Results are cached in cache/study_07/ (delete them to rerun).
 ## =====================================================================
 library(SimDesign)
