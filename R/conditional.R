@@ -76,6 +76,20 @@ prior_cdf_of_f <- function(f_values, number_of_predictors, points_share, number_
 ## m = n - k + q - 2. The average over directions is the 0F1 below:
 ##   E_c[exp(t c)] = 0F1(; q/2; t^2/4) = Gamma(q/2) (t/2)^(1 - q/2) I_{q/2-1}(t)
 ## (Bessel I; cosh(t) when q = 1, the two signs). Its log, for t >= 0:
+## Above t = 1e4, besselI() loses its accuracy and returns 0 beyond about 1e5
+## (very strong evidence), so there the large-argument expansion
+##   I_v(t) e^(-t) = (2 pi t)^(-1/2) (1 - (4v^2 - 1) / (8t) + (4v^2 - 1)(4v^2 - 9) / (2 (8t)^2) - ...)
+## is used; at t = 1e4 its error is below 1e-12.
+log_scaled_bessel_i <- function(t, order) {
+  mu <- 4 * order^2
+  large <- t > 1e4
+  t_large <- ifelse(large, t, 1e4)   # each branch only sees the arguments it is meant for
+  ifelse(large,
+         -0.5 * log(2 * pi * t_large) +
+           log1p(-(mu - 1) / (8 * t_large) + (mu - 1) * (mu - 9) / (2 * (8 * t_large)^2) -
+                   (mu - 1) * (mu - 9) * (mu - 25) / (6 * (8 * t_large)^3)),
+         log(besselI(pmin(t, 1e4), order, expon.scaled = TRUE)))
+}
 log_direction_average <- function(t, number_of_columns) {
   if (number_of_columns == 1) return(t + log1p(exp(-2 * t)) - log(2))
   order <- number_of_columns / 2 - 1
@@ -83,7 +97,7 @@ log_direction_average <- function(t, number_of_columns) {
   t_large <- ifelse(small, 1, t)
   ifelse(small, t^2 / (2 * number_of_columns),
          lgamma(number_of_columns / 2) - order * log(t_large / 2) +
-           log(besselI(t_large, order, expon.scaled = TRUE)) + t_large)
+           log_scaled_bessel_i(t_large, order) + t_large)
 }
 
 ## log of integral_0^inf v^m exp(-v^2/2) E_c[exp(b v c)] dv for a vector of
@@ -143,7 +157,7 @@ log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_
 
   ## 3. Averaged over the prior: each cell weighs with its exact prior
   ##    probability (a difference of the prior's CDF), so where the prior
-  ##    piles up (for flat-R, near f = 0 for small shares) needs no fine grid
+  ##    piles up (for flat_r, near f = 0 for small shares) needs no fine grid
   prior_probability <- diff(prior_cdf(f_edges))
   log_sum_exp(log_likelihood_ratio + log(prior_probability))
 }
@@ -185,7 +199,7 @@ log_bayes_factor_from_prior_cdf_of_f <- function(partial_r, sample_size, number_
 #' @export
 log_bayes_factor_conditional <- function(partial_r, sample_size, number_of_predictors, prior,
                                          number_of_columns = 1, points_f = 600,
-                                         points_share = 500) {
+                                         points_share = 1500) {
   if (sample_size < number_of_predictors + 2)
     stop("Need at least two more observations than predictors.")
   prior_cdf <- if (check_prior(prior) == "flat_partial_r") {

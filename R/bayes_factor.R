@@ -13,9 +13,10 @@
 ## One route works for every a: the model's k columns tested as one block
 ## against none (R/conditional.R), with the prior P(|f| < f) = (f^2/(1+f^2))^a
 ## on the length f of the effect in noise units. flat_r and flat_partial_r also
-## have a closed form through g-priors, used here because it is faster; the
-## block route reproduces both (validation/02, check A4), and is the one used
-## for flat_r_squared.
+## have a closed form through g-priors, and so does flat_r_squared for k >= 3
+## (a g-prior mixture whose hyperprior is computed once per k); these are
+## faster. The block route reproduces all of them (validation/02, check A4),
+## and is the one used for flat_r_squared with one predictor.
 
 log_sum_exp <- function(log_values) {
   largest <- max(log_values)
@@ -117,6 +118,48 @@ log_bayes_factor_flat_partial_r_vs_intercept_only <- function(explained_share, s
   log_sum_exp(g_grid$log_weights + log_g_prior_bayes_factor)
 }
 
+## flat_r_squared for k >= 3, closed form: R^2 ~ Beta(1, 1) with a uniform
+## direction is the g-prior mixture g/n = t = B W, B ~ Beta(1, k/2 - 1),
+## W ~ Inverse-Gamma(1, 1/2) (docs/2_how_it_calculates.md, section 8). The
+## density of t, p(t) = E[B exp(-B / (2t))] / (2 t^2), depends only on k: it is
+## computed once per k (integrate() over B at each point of a log-t grid) and
+## kept, so each Bayes factor is one sum over the grid, as for flat_partial_r.
+## (k = 2: B = 1, the flat_partial_r prior; k = 1: the block route.)
+flat_r_squared_hyperprior <- new.env()
+log_t_grid_flat_r_squared <- function(number_of_predictors, points_t = 1600) {
+  key <- as.character(number_of_predictors)
+  if (is.null(flat_r_squared_hyperprior[[key]])) {
+    log_t <- seq(log(1e-9), log(1e9), length.out = points_t)
+    other_shape <- number_of_predictors / 2 - 1
+    log_density <- vapply(exp(log_t), function(t) {
+      weighted_beta <- function(b) b * stats::dbeta(b, 1, other_shape) * exp(-b / (2 * t))
+      split <- min(1, 60 * t)   # the integrand sits near b = 0 when t is small
+      value <- stats::integrate(weighted_beta, 0, split, rel.tol = 1e-10)$value +
+        (if (split < 1) stats::integrate(weighted_beta, split, 1, rel.tol = 1e-10)$value else 0)
+      log(value) - log(2) - 2 * log(t)
+    }, numeric(1))
+    flat_r_squared_hyperprior[[key]] <- list(
+      log_t = log_t, log_weights = log_density + log_t + log(log_t[2] - log_t[1]))
+  }
+  flat_r_squared_hyperprior[[key]]
+}
+log_bayes_factor_flat_r_squared_vs_intercept_only <- function(explained_share, sample_size,
+                                                              number_of_predictors) {
+  if (number_of_predictors == 0) return(0)
+  if (number_of_predictors <= 2)
+    return(if (number_of_predictors == 2)
+      log_bayes_factor_flat_partial_r_vs_intercept_only(explained_share, sample_size, 2) else
+      log_bayes_factor_shape_vs_intercept_only(explained_share, sample_size, 1, shape = 1))
+  if (sample_size < number_of_predictors + 1)
+    stop("Need at least one more observation than predictors.")
+  grid <- log_t_grid_flat_r_squared(number_of_predictors)
+  g_values <- sample_size * exp(grid$log_t)
+  log_g_prior_bayes_factor <- (sample_size - 1 - number_of_predictors) / 2 * log1p(g_values) -
+    (sample_size - 1) / 2 * log1p(g_values * (1 - pmin(explained_share, 1 - 1e-12)))
+  keep <- is.finite(grid$log_weights)
+  log_sum_exp(grid$log_weights[keep] + log_g_prior_bayes_factor[keep])
+}
+
 ## Any a, through the block route: the k columns against none, with
 ## P(|f| < f) = (f^2 / (1 + f^2))^a. At n = k + 1 every model fits the data
 ## exactly (sample R^2 = 1) and the data say nothing about the effect: the
@@ -128,10 +171,25 @@ log_bayes_factor_shape_vs_intercept_only <- function(explained_share, sample_siz
   if (sample_size < number_of_predictors + 1)
     stop("Need at least one more observation than predictors.")
   if (sample_size == number_of_predictors + 1) return(0)
-  log_bayes_factor_from_prior_cdf_of_f(
-    sqrt(pmin(explained_share, 1 - 1e-12)), sample_size, number_of_predictors,
-    function(f_values) (f_values^2 / (1 + f_values^2))^shape,
-    number_of_columns = number_of_predictors)
+  ## The grid: fine around the peak of the likelihood ratio, as in the
+  ## conditional test. With few residual degrees of freedom (n - k < 10) the
+  ## ratio is broad and, when R^2 is near 1, the peak grid alone misses its
+  ## tail (validation/02, check B2b): then also 40 points per decade of f from
+  ## 1e-8 to 1e8.
+  r_squared <- pmin(explained_share, 1 - 1e-12)
+  m       <- sample_size - 2
+  peak_f  <- sqrt(m / sample_size) * sqrt(r_squared / (1 - r_squared))
+  width_f <- 1 / sqrt(sample_size * (1 - r_squared))
+  f_edges <- sort(unique(c(
+    seq(max(0, peak_f - (15 + 2 * sqrt(number_of_predictors - 1)) * width_f),
+        peak_f + 15 * width_f, length.out = 601),
+    0, if (sample_size - number_of_predictors < 10) 10^seq(-8, 8, length.out = 641))))
+  f_middles <- (f_edges[-1] + f_edges[-length(f_edges)]) / 2
+  log_likelihood_ratio <- log_likelihood_ratio_block(f_middles, r_squared, sample_size,
+                                                     number_of_predictors, number_of_predictors)
+  prior_probability <- diff((f_edges^2 / (1 + f_edges^2))^shape)
+  keep <- prior_probability > 0
+  log_sum_exp(log_likelihood_ratio[keep] + log(prior_probability[keep]))
 }
 
 #' Log Bayes factor of a model with k predictors against the intercept-only model
@@ -158,8 +216,8 @@ log_bayes_factor_vs_intercept_only <- function(explained_share, sample_size, num
                                                                number_of_predictors),
     flat_partial_r = log_bayes_factor_flat_partial_r_vs_intercept_only(
       explained_share, sample_size, number_of_predictors),
-    flat_r_squared = log_bayes_factor_shape_vs_intercept_only(
-      explained_share, sample_size, number_of_predictors, shape = 1))
+    flat_r_squared = log_bayes_factor_flat_r_squared_vs_intercept_only(
+      explained_share, sample_size, number_of_predictors))
 }
 
 ## Pull predictors and outcome out of a flatcor_fit or lm fit

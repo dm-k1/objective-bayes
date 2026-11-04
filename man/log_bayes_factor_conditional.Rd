@@ -11,7 +11,7 @@ log_bayes_factor_conditional(
   prior,
   number_of_columns = 1,
   points_f = 600,
-  points_share = 500
+  points_share = 1500
 )
 }
 \arguments{

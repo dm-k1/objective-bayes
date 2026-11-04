@@ -82,12 +82,12 @@ test_that("multi-column terms get the block conditional test", {
   expect_equal(bayes_factor_per_term(y ~ x1 + group, data, prior = "flat_partial_r", test = "joint")$test, c("joint", "joint"))
 })
 
-test_that("block conditional test: q = 1 is the one-column test, and q = k the joint test (flat-R)", {
+test_that("block conditional test: q = 1 is the one-column test, and q = k the joint test (flat R)", {
   for (case in list(c(0.3, 30, 3), c(0.1, 1e4, 5))) {
     expect_equal(flat_r_conditional(case[1], case[2], case[3], number_of_columns = 1),
                  flat_r_conditional(case[1], case[2], case[3]))
   }
-  ## a block of all k columns: its share is 1, so it is the joint flat-R test
+  ## a block of all k columns: its share is 1, so it is the joint flat R test
   ## with flat priors on nothing else
   for (case in list(c(0.2, 40, 2), c(0.05, 300, 3)))
     expect_equal(flat_r_conditional(sqrt(case[1]), case[2], case[3],
