@@ -2,7 +2,7 @@
 ##  Figures for docs/1_from_behaviour.md and docs/2_how_it_calculates.md
 ##  Every figure is a simulation compared with a formula, so each claim in
 ##  the docs can be checked by running this file. The three priors keep the
-##  colours of validation/00: flat partial r blue, flat R orange, flat
+##  colours of the motivating simulation: flat partial r blue, flat R orange, flat
 ##  R-squared green.
 ##  Run from the project folder: Rscript docs/figures/make_figures.R
 ## =====================================================================

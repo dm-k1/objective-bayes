@@ -1,13 +1,13 @@
 ## =====================================================================
 ##  Study 10: how does each prior select variables?
-##  (validation/ADEMP.md, study 10; replaces old study 09)
+##  (docs/ADEMP.md, study 10; replaces old study 09)
 ##
 ##  Aims. Variable selection over all 2^12 = 4,096 subsets of twelve
 ##  candidate predictors, of which four matter: how many real predictors each
 ##  method misses and how many null ones it includes, and whether methods
 ##  differ in how well they rank real above null predictors or only in where
 ##  they cut.
-##  Data. Set C (validation/data_set_C.R): slopes 0.3, 0.2, 0.15, 0.1 and
+##  Data. Set C (R/data/data_set_C.R): slopes 0.3, 0.2, 0.15, 0.1 and
 ##  eight zeros; n in {50, 100, 200, 500}; predictor correlation 0 or .5.
 ##  Estimands, per method, prior over models and cell: the mean number of
 ##  real predictors missed (of 4) and of null predictors included (of 8) by
@@ -16,7 +16,7 @@
 ##  model are the true one; the mean inclusion probability of each real
 ##  predictor; the AUC of inclusion probabilities, real against null.
 ##  Methods. Whole-model Bayes factors against the intercept-only model
-##  (validation/comparison_methods.R): the three priors (flat partial r, flat
+##  (R/shared/comparison_methods.R): the three priors (flat partial r, flat
 ##  R, flat R-squared), JZS (scale 0.354) and Zellner-Siow (scale 1), BIC
 ##  (exp(-BIC/2) relative to the null), and the hyper-g/n prior of Liang et al.
 ##  (2008) from BAS (bas.lm, alpha = 3). bas.lm offers no robust or intrinsic
@@ -42,22 +42,22 @@
 ##         Beta(k/2, 1).
 ##    10.5 (old V5) W ~ Inverse-Gamma(b, 1/2) implies R-squared ~ Beta(1/2, b).
 ##
-##  Run from the project folder:  Rscript validation/R/10_variable_selection.R
+##  Run from the project folder:  Rscript R/studies/10_variable_selection.R
 ##  Smoke test (n = 50, correlation 0, 10 datasets):
-##    VALIDATION_SMOKE=1 Rscript validation/R/10_variable_selection.R
+##    VALIDATION_SMOKE=1 Rscript R/studies/10_variable_selection.R
 ##  Raw results are cached in cache/study_10/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_10.rds.
+##  tables and checks are saved to results/study_10.rds.
 ## =====================================================================
 library(SimDesign)
 library(BAS)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # log_bayes_factor_model(), draw_lkj_correlation_matrix()
-source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion(), smoke_mode
-source("validation/R/data_sets.R")            # with_stream_of()
-source("validation/R/data_set_C.R")           # design_C(), generate_C(), true_slopes_C
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # log_bayes_factor_model(), draw_lkj_correlation_matrix()
+source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion(), smoke_mode
+source("R/data/data_sets.R")            # with_stream_of()
+source("R/data/data_set_C.R")           # design_C(), generate_C(), true_slopes_C
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_10_smoke" else "study_10")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

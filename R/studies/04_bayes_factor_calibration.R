@@ -1,12 +1,12 @@
 ## =====================================================================
 ##  Study 4: is the Bayes factor calibrated?
-##  (validation/ADEMP.md, study 4; replaces part 1 of the old study 10)
+##  (docs/ADEMP.md, study 4; replaces part 1 of the old study 10)
 ##
 ##  Aims. On data drawn from each prior, the share of true nulls among
 ##  datasets with a given BF10 equals the posterior probability of the null,
 ##  1 / (1 + BF10), with equal prior odds (Schad et al., 2023); on data drawn
 ##  from another prior (JZS), it does not.
-##  Data. Set B (validation/data_set_B.R): k = 3 and 8, n = 50 and 200;
+##  Data. Set B (R/data/data_set_B.R): k = 3 and 8, n = 50 and 200;
 ##  generating priors the three and JZS; half of each cell's datasets have x1
 ##  null (odd replications), half draw it from the prior.
 ##  Estimands. The observed share of nulls per bin of log BF10, against the
@@ -20,7 +20,7 @@
 ##  SE. (The SBC package's miscalibration test of Dimitriadis et al. needs the
 ##  package monotone, which is not in renv.lock; its Brier-score test is
 ##  one-sided and misses underconfidence, so neither is used.)
-##  n_sim. 20,000 datasets per cell (validation/precision.R, bf_calibration):
+##  n_sim. 20,000 datasets per cell (R/shared/precision.R, bf_calibration):
 ##  bins holding at least 625 datasets have shares with MCSE <= .02.
 ##
 ##  Checks:
@@ -29,20 +29,20 @@
 ##        the logistic slope is within 3 SE of 1, in every cell.
 ##    4.2 (old P2) On JZS data, each test's miscalibration shows (p < .001).
 ##
-##  Run from the project folder:  Rscript validation/R/04_bayes_factor_calibration.R
-##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/R/04_bayes_factor_calibration.R
+##  Run from the project folder:  Rscript R/studies/04_bayes_factor_calibration.R
+##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/04_bayes_factor_calibration.R
 ##  Raw results are cached in cache/study_04/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_04.rds.
+##  tables and checks are saved to results/study_04.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # contenders
-source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion()
-source("validation/R/data_sets.R")            # with_stream_of()
-source("validation/R/data_set_B.R")           # generate_B(), sample_partial_r()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # contenders
+source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion()
+source("R/data/data_sets.R")            # with_stream_of()
+source("R/data/data_set_B.R")           # generate_B(), sample_partial_r()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_04_smoke" else "study_04")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

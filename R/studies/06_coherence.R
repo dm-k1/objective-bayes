@@ -1,12 +1,12 @@
 ## =====================================================================
 ##  Study 6: is the test of one coefficient coherent with one model?
-##  (validation/ADEMP.md, study 6; replaces parts 2 and 3 of the old study 10)
+##  (docs/ADEMP.md, study 6; replaces parts 2 and 3 of the old study 10)
 ##
 ##  Aims. For each prior: does the conditional test of x1 equal the Bayes
 ##  factor of the full model against its restriction by conditioning on x1's
 ##  partial correlation being zero (the Savage-Dickey ratio), and is that
 ##  restriction a proper model?
-##  Data. Part 1: set B (validation/data_set_B.R), data from flat partial r or
+##  Data. Part 1: set B (R/data/data_set_B.R), data from flat partial r or
 ##  flat R-squared with x1's t-value set to 0, 1, 1.5, 2 or 2.5 (cycling over
 ##  the replications); k = 3 and 8, n = 50 and 200. Part 2: prior draws only.
 ##  Estimands. Part 1: the mean log difference between the conditional test and
@@ -44,20 +44,20 @@
 ##        R^2 ~ Beta((k - 1)/2, 3/2) (stan_lm's prior with eta = 3/2 on k - 1
 ##        predictors): KS distance below its .01 critical value.
 ##
-##  Run from the project folder:  Rscript validation/R/06_coherence.R
-##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/R/06_coherence.R
+##  Run from the project folder:  Rscript R/studies/06_coherence.R
+##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/06_coherence.R
 ##  Raw results are cached in cache/study_06/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_06.rds.
+##  tables and checks are saved to results/study_06.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # contenders
-source("validation/R/precision.R")            # n_sim_of()
-source("validation/R/data_sets.R")            # with_stream_of()
-source("validation/R/data_set_B.R")           # generate_B(), sample_partial_r(), sd_given_others()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # contenders
+source("R/shared/precision.R")            # n_sim_of()
+source("R/data/data_sets.R")            # with_stream_of()
+source("R/data/data_set_B.R")           # generate_B(), sample_partial_r(), sd_given_others()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_06_smoke" else "study_06")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

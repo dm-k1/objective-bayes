@@ -1,5 +1,5 @@
 ## =====================================================================
-##  The shared data sets of the validation (validation/ADEMP.md)
+##  The shared data sets of the validation (docs/ADEMP.md)
 ##
 ##  Every dataset has an ID: the data set, its design cell and its
 ##  replication. Its random numbers come from its own L'Ecuyer-CMRG stream,

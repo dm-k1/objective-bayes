@@ -66,7 +66,7 @@ but it was built study by study:
    [dm-k1/flatcor](https://github.com/dm-k1/flatcor), and this repository
    validates a fixed release of it (v1.0.0, pinned in `renv.lock`). The
    validation loads it with `library(flatcor)`; the internal functions some
-   checks need are taken from its namespace in `validation/R/settings.R`.
+   checks need are taken from its namespace in `R/shared/settings.R`.
 
 ## The new structure
 
@@ -107,7 +107,7 @@ SimDesign for repeated simulation, `n_sim_of()` targets, Monte Carlo SE on
 every estimate, checks relative to it, per-dataset streams from
 `with_stream_of()`, cache in `cache/study_NN/`, own SimDesign resume file),
 and every one runs end to end in smoke mode, through `run_all.R` and through
-the notebook. Smoke mode: `VALIDATION_SMOKE=1 Rscript validation/R/NN_*.R`
+the notebook. Smoke mode: `VALIDATION_SMOKE=1 Rscript R/studies/NN_*.R`
 (a corner of the design, 10 datasets; checks are shown but do not stop the
 run, and results and figures go to `cache/`).
 
@@ -149,37 +149,45 @@ package, which is read-only in an Apptainer image.
 
 ## Layout (built)
 
+The whole repository is the validation, so there is no `validation/` folder;
+the code is split by what it does.
+
 ```
-validation/
-  R/                all code: settings, precision, comparison methods, data sets,
-                    studies 01-10, and present.R (the notebook's helpers)
-  results/          one study_NN.rds per study: its tables, checks, figures and
+R/
+  shared/           settings, precision targets, comparison methods
+  data/             the shared data sets A (and A with factors), B, C, D
+  studies/          the ten studies, 01-10
+  notebook/         present.R, the notebook's helpers (they compute nothing)
+results/            one study_NN.rds per study: its tables, checks, figures and
                     the run's setup (tracked); run_summary.md from run_all.R
-  figures/          every figure as .png (tracked)
-  validation.ipynb  the notebook (R kernel): per study, its question, a PASS/FAIL
+figures/            every figure as .png (tracked)
+validation.ipynb    the notebook (R kernel): per study, its question, a PASS/FAIL
                     table of its checks, its main tables (gt) and figures; a
                     setting at the top chooses "results" (read the .rds only),
                     "cached" (rerun, reuse cache/) or "fresh" (clear the cache
                     and rerun), and smoke (the smoke test instead)
-  run_all.R         the same without the notebook, one study after another
-  slurm_array.sh    one study per SLURM array task (see CLUSTER.md)
-  CLUSTER.md        running on a cluster, with the Docker image under Apptainer
+run_all.R           the same without the notebook, one study after another
+cluster/            Dockerfile, slurm_array.sh (one study per SLURM array task)
+                    and README.md (running on a cluster, the image under Apptainer)
+docs/               the documents, ADEMP.md (the study designs) and this plan
 cache/              raw per-dataset results, logs, smoke results (gitignored)
 ```
 
+Every script runs from the project folder (`Rscript R/studies/07_one_coefficient.R`).
 Each study script separates computing from presenting: it ends with
-`save_study_results()`, which writes `validation/results/study_NN.rds`; the
+`save_study_results()`, which writes `results/study_NN.rds`; the
 notebook only presents. The notebook needs `gt` and `IRkernel` (both in
 `renv.lock`; `IRkernel::installspec()` registers the `ir` kernel for R 4.6;
-Positron's own R kernel also runs it).
+Positron's own R kernel also runs it). The old report (`report.qmd`,
+`report.html`) is removed: the notebook replaces it, and it remains on `main`.
 
-The old figures in `validation/results/figures/` belong to the old studies:
+The old figures in `results/figures/` belong to the old studies:
 the README and the docs still show them, so they stay until the docs are
 rewritten from the new results (step 6).
 
-`slurm_array.sh` is tested here only with mock SLURM variables (one smoke
-task); the Apptainer commands of `CLUSTER.md` are untested, as there is no
-Apptainer on this machine.
+`cluster/slurm_array.sh` is tested here only with mock SLURM variables (one
+smoke task); the Apptainer commands of `cluster/README.md` are untested, as
+there is no Apptainer on this machine.
 
 ## References
 

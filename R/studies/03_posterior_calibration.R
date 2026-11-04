@@ -1,11 +1,11 @@
 ## =====================================================================
 ##  Study 3: is the posterior calibrated?
-##  (validation/ADEMP.md, study 3; replaces the SBC part of the old study 01)
+##  (docs/ADEMP.md, study 3; replaces the SBC part of the old study 01)
 ##
 ##  Aims. Simulation-based calibration (Talts et al., 2018) of flatcor's Stan
 ##  model under each prior, with the SBC package: if the sampler is right, the
 ##  rank of each true value among its posterior draws is uniform.
-##  Data. Set B (validation/data_set_B.R): parameters and data drawn from each
+##  Data. Set B (R/data/data_set_B.R): parameters and data drawn from each
 ##  prior, with the model's proper stand-ins for the intercept (N(0, 10)) and
 ##  the noise SD (lognormal(0, 1)); k = 8, n = 60, and k = 3, n = 50.
 ##  Estimands. The ranks of the true R-squared, the first coefficient b[1] and
@@ -23,20 +23,20 @@
 ##        sigma are uniform: chi-square over 20 bins, p > .01.
 ##    The coefficient-coordinates contrast is reported, not checked.
 ##
-##  Run from the project folder:  Rscript validation/R/03_posterior_calibration.R
-##  Smoke test: VALIDATION_SMOKE=1 Rscript validation/R/03_posterior_calibration.R
+##  Run from the project folder:  Rscript R/studies/03_posterior_calibration.R
+##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/03_posterior_calibration.R
 ##  Raw results are cached in cache/study_03/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_03.rds.
+##  tables and checks are saved to results/study_03.rds.
 ## =====================================================================
 library(SBC)
 library(patchwork)
 library(dplyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # contenders
-source("validation/R/precision.R")            # n_sim_of()
-source("validation/R/data_sets.R")            # with_stream_of()
-source("validation/R/data_set_B.R")           # generate_B()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # contenders
+source("R/shared/precision.R")            # n_sim_of()
+source("R/data/data_sets.R")            # with_stream_of()
+source("R/data/data_set_B.R")           # generate_B()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_03_smoke" else "study_03")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

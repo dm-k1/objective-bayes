@@ -7,7 +7,7 @@
 ##  prior: it draws correlation matrices of (y, x1 ... xk) with every valid
 ##  matrix equally likely, and looks at what k does. Only then does it show
 ##  the three intuitive ways of deciding what should stay flat, which are the
-##  three priors the validation (validation/) compares. It explains the
+##  three priors the validation (R/studies/) compares. It explains the
 ##  project and validates nothing, so it lives here with the code behind the
 ##  docs.
 ##
@@ -44,8 +44,8 @@
 ## =====================================================================
 library(ggplot2)
 library(patchwork)
-source("validation/R/settings.R")             # parallel_map(), save_figure(), record_check()
-source("validation/R/comparison_methods.R")   # draw_lkj_correlation_matrix()
+source("R/shared/settings.R")             # parallel_map(), save_figure(), record_check()
+source("R/shared/comparison_methods.R")   # draw_lkj_correlation_matrix()
 figures_folder <- file.path("docs", "figures")   # save_figure() writes here, next to the docs' figures
 
 set.seed(2026)

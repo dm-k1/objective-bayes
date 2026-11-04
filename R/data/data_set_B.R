@@ -1,9 +1,9 @@
 ## =====================================================================
-##  Data set B: data drawn from each prior (validation/ADEMP.md)
+##  Data set B: data drawn from each prior (docs/ADEMP.md)
 ##
 ##  Used by study 3 (calibration of the posterior), study 4 (calibration of
 ##  the Bayes factor) and study 6 (coherence with the joint model). Needs
-##  validation/data_sets.R (with_stream_of()) and flatcor.
+##  R/data/data_sets.R (with_stream_of()) and flatcor.
 ##
 ##  One dataset: predictors with equal correlation .3 (centred, then held
 ##  fixed: the model conditions on them); the intercept from N(0, 10) and the

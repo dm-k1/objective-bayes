@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 2: are the Bayes factors computed correctly?
-##  (validation/ADEMP.md, study 2; replaces part A of the old study 02 and
+##  (docs/ADEMP.md, study 2; replaces part A of the old study 02 and
 ##  the old study 05)
 ##
 ##  Aims. Every Bayes factor flatcor reports equals the integral it stands
@@ -62,17 +62,17 @@
 ##    2.16 the block test against integrate() [C10]
 ##    2.17 the block likelihood ratio from the data themselves [C11]
 ##
-##  Run from the project folder:  Rscript validation/R/02_bayes_factors.R
+##  Run from the project folder:  Rscript R/studies/02_bayes_factors.R
 ##  Smoke test (small grids, few draws, a few minutes):
-##    VALIDATION_SMOKE=1 Rscript validation/R/02_bayes_factors.R
+##    VALIDATION_SMOKE=1 Rscript R/studies/02_bayes_factors.R
 ##  Needs cmdstanr with CmdStan (check 2.6), Rmpfr and bridgesampling.
 ##  Raw results are cached in cache/study_02/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_02.rds.
+##  tables and checks are saved to results/study_02.rds.
 ## =====================================================================
 library(dplyr)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), parallel_map()
-source("validation/R/comparison_methods.R")   # draw_lkj_correlation_matrix(), partial_correlation_of()
-source("validation/R/precision.R")            # precision_targets, smoke_mode
+source("R/shared/settings.R")             # flatcor, cores, record_check(), parallel_map()
+source("R/shared/comparison_methods.R")   # draw_lkj_correlation_matrix(), partial_correlation_of()
+source("R/shared/precision.R")            # precision_targets, smoke_mode
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_02_smoke" else "study_02")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

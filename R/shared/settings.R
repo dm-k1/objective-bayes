@@ -4,9 +4,17 @@
 ##               or VALIDATION_CORES if set
 ##   - caching:  simulation results and Stan fits are saved in cache/
 ##               (gitignored) and reused when nothing changed
-##   - figures:  saved to validation/figures/ (tracked)
+##   - figures:  saved to figures/ (tracked)
 ##   - checks:   record_check() and report_checks() for pass/fail summaries
 ## =====================================================================
+
+## ---- Text encoding ------------------------------------------------------------------
+## A cluster job or a Jupyter kernel may start R in an ASCII locale; the checks
+## contain names such as Kucharský, so use UTF-8 (the results files then read
+## back without warnings anywhere)
+if (!isTRUE(l10n_info()$`UTF-8`))
+  for (locale in c("C.UTF-8", "en_US.UTF-8", "en_GB.UTF-8"))
+    if (nzchar(suppressWarnings(Sys.setlocale("LC_CTYPE", locale)))) break
 
 ## ---- The package under test ------------------------------------------------------
 ## flatcor lives in its own repository (https://github.com/dm-k1/flatcor) and is
@@ -77,16 +85,16 @@ parallel_map <- function(items, work) {
 }
 
 ## ---- Folders -------------------------------------------------------------------
-## Tracked: validation/results/ (one study_NN.rds per study, the run summary)
-## and validation/figures/. Everything that can be recomputed goes to cache/.
-## Smoke mode (VALIDATION_SMOKE=1, see validation/R/precision.R) writes its
+## Tracked: results/ (one study_NN.rds per study, the run summary)
+## and figures/. Everything that can be recomputed goes to cache/.
+## Smoke mode (VALIDATION_SMOKE=1, see R/shared/precision.R) writes its
 ## results and figures to cache/ as well: they are tests of the code, not
 ## results.
 smoke_mode     <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
 cache_folder   <- "cache"
 fits_folder    <- file.path(cache_folder, "fits")
-results_folder <- if (smoke_mode) file.path(cache_folder, "smoke_results") else file.path("validation", "results")
-figures_folder <- if (smoke_mode) file.path(cache_folder, "smoke_figures") else file.path("validation", "figures")
+results_folder <- if (smoke_mode) file.path(cache_folder, "smoke_results") else "results"
+figures_folder <- if (smoke_mode) file.path(cache_folder, "smoke_figures") else "figures"
 for (folder in c(fits_folder, results_folder, figures_folder))
   dir.create(folder, recursive = TRUE, showWarnings = FALSE)
 
@@ -156,7 +164,7 @@ report_checks <- function() {
   cat("\n")
   print(check_results, right = FALSE, row.names = FALSE)
   number_failed <- sum(!check_results$passed)
-  ## in smoke mode (validation/precision.R) the datasets are too few for the
+  ## in smoke mode (R/shared/precision.R) the datasets are too few for the
   ## checks to mean anything: they are shown, but do not stop the run
   if (isTRUE(get0("smoke_mode", ifnotfound = FALSE))) {
     cat(sprintf("\nSmoke mode: %d of %d checks would fail; with this few datasets that means nothing.\n",
@@ -168,9 +176,9 @@ report_checks <- function() {
 }
 
 ## ---- The study's results file ----------------------------------------------------
-## save_study_results("07", list(...)) writes validation/results/study_07.rds:
+## save_study_results("07", list(...)) writes results/study_07.rds:
 ## the study's tables, its checks, the figures it saved and the setup of the
-## run. The notebook (validation/validation.ipynb) presents only these files.
+## run. The notebook (validation.ipynb) presents only these files.
 save_study_results <- function(study, tables) {
   git_commit <- tryCatch(system2("git", c("rev-parse", "--short", "HEAD"), stdout = TRUE, stderr = FALSE),
                          error = function(e) NA_character_, warning = function(w) NA_character_)

@@ -1,11 +1,11 @@
 ## =====================================================================
 ##  Study 9: how good are the estimates?
-##  (validation/ADEMP.md, study 9; replaces old study 07_estimation)
+##  (docs/ADEMP.md, study 9; replaces old study 07_estimation)
 ##
 ##  Aims. Bias, interval coverage and prediction error of the Stan posterior
 ##  under each prior, against ordinary least squares and the BayesFactor
 ##  posteriors (JZS, Zellner-Siow), on the same datasets as study 7.
-##  Data. A subset of set A (validation/data_sets.R, generate_A, so the
+##  Data. A subset of set A (R/data/data_sets.R, generate_A, so the
 ##  datasets are exactly study 7's for these cells): k in {2, 10}, n in
 ##  {50, 200}, predictor correlation in {0, .7}, the other slopes sparse or
 ##  dense, slope of x1 0.2. That is 16 cells.
@@ -22,7 +22,7 @@
 ##  Performance. Relative bias and coverage with their Monte Carlo SE from
 ##  rsimsum (the posterior SD, or OLS's standard error, as the model SE);
 ##  the prediction-error ratio with a paired bootstrap SE over datasets.
-##  n_sim. 475 datasets per cell (validation/precision.R, coverage_per_cell):
+##  n_sim. 475 datasets per cell (R/shared/precision.R, coverage_per_cell):
 ##  coverage near .95 then has MCSE <= .01.
 ##
 ##  Checks, set relative to the Monte Carlo error:
@@ -36,11 +36,11 @@
 ##  reported (flat partial r's coverage of at least .916, better than OLS in
 ##  every cell), 9.3 its count of divergent transitions.
 ##
-##  Run from the project folder:  Rscript validation/R/09_estimation.R
+##  Run from the project folder:  Rscript R/studies/09_estimation.R
 ##  Smoke test (2 cells, 10 datasets, short chains):
-##    VALIDATION_SMOKE=1 Rscript validation/R/09_estimation.R
+##    VALIDATION_SMOKE=1 Rscript R/studies/09_estimation.R
 ##  Raw results are cached in cache/study_09/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_09.rds. Each fit of
+##  tables and checks are saved to results/study_09.rds. Each fit of
 ##  fit_regression() runs its 4 chains in parallel, so SimDesign uses one
 ##  worker per 4 cores.
 ## =====================================================================
@@ -49,10 +49,10 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(rsimsum)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # contenders, method_scales()
-source("validation/R/precision.R")            # n_sim_of()
-source("validation/R/data_sets.R")            # generate_A(), cell_id_A(), slopes_A(), with_stream_of()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # contenders, method_scales()
+source("R/shared/precision.R")            # n_sim_of()
+source("R/data/data_sets.R")            # generate_A(), cell_id_A(), slopes_A(), with_stream_of()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_09_smoke" else "study_09")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

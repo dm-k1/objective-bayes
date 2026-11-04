@@ -16,12 +16,11 @@ becoming more accurate. At 20 predictors all three rank datasets identically, ye
 leaves 92% of true nulls undecided while flat partial r confirms 88%. Only
 flat partial r's conditional test is also the Bayes factor of one joint model (the full model against its restriction by conditioning, as the Savage–Dickey ratio assumes).
 
-![What each test says about one coefficient as predictors are added](validation/results/figures/06_outcomes.png)
+![What each test says about one coefficient as predictors are added](results/figures/06_outcomes.png)
 
 [`docs/findings.md`](docs/findings.md) gives the evidence on one page. All
 three priors are built and validated side by side against criteria from the
-literature (137 of 138 checks pass; see the [report](validation/report.html)
-and the [details](docs/4_validation.md)). The comparison, and the
+literature (137 of 138 checks pass; see the [details](docs/4_validation.md)). The comparison, and the
 recommendation of flat partial r with its costs, are in
 [`docs/3_comparison.md`](docs/3_comparison.md).
 
@@ -78,7 +77,7 @@ of the three priors, and the arguments behind the recommendation.
 
 To run the validation, restore the environment with `renv::restore()` (it
 installs flatcor at the pinned version, with the other packages), or build the
-container from `validation/Dockerfile`; `docs/4_validation.md` explains how to
+container from `cluster/Dockerfile`; `docs/4_validation.md` explains how to
 run it on any machine.
 
 ## What's where
@@ -95,9 +94,17 @@ run it on any machine.
 | `docs/relation_to_others.md` | Which priors drift with the number of predictors; flat partial r as `stan_lm`'s prior; why this is not R2-D2 |
 | `docs/motivating_simulation.R` | The motivating simulation: why there are three priors (not part of the validation) |
 | `docs/figures/make_figures.R` | Makes every figure in the docs (each a simulation compared with a formula) |
-| `validation/` | Study 00 (the first result: the fork), then for each prior whether the Stan model gets prior and posterior right, whether the Bayes factor is right, and how it behaves; `run_all.R` runs everything; see `docs/4_validation.md` |
-| `validation/report.qmd`, `report.html` | The validation report: every figure and check, with what each score means (open `report.html` in a browser; rebuild with `quarto render validation/report.qmd`) |
-| `renv.lock`, `validation/Dockerfile` | The pinned environment: the R packages, and R with packages and CmdStan as a container |
+| `docs/ADEMP.md` | The design of the ten validation studies (aims, data, estimands, methods, performance; the number of datasets from a target Monte Carlo SE) |
+| `docs/REDESIGN.md` | The working plan of the validation redesign, with its status |
+| `R/shared/` | The settings, precision targets and comparison methods every study uses |
+| `R/data/` | The shared simulated data sets (A to D), each dataset with its own random stream |
+| `R/studies/` | The ten validation studies: correctness (01-04), formal properties (05-06), behaviour (07-10) |
+| `R/notebook/` | The notebook's helpers: they present the results, they compute nothing |
+| `validation.ipynb` | The validation notebook (R kernel): per study its question, checks, tables and figures; it reads `results/` or reruns the studies |
+| `run_all.R` | Runs the studies one after another, without the notebook |
+| `results/`, `figures/` | Each study's tables and checks (`study_NN.rds`) and figures, tracked; `results/figures/` still holds the figures of the old studies, which the docs show |
+| `cluster/` | Running the validation on a cluster: a SLURM array script and how to use the container with Apptainer |
+| `renv.lock`, `cluster/Dockerfile` | The pinned environment: the R packages, and R with packages and CmdStan as a container |
 
 ## Scope
 

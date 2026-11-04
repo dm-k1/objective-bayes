@@ -1,11 +1,11 @@
 ## =====================================================================
-##  Data set C: variable selection (validation/ADEMP.md)
+##  Data set C: variable selection (docs/ADEMP.md)
 ##
 ##  Twelve candidate predictors, of which four matter (slopes 0.3, 0.2, 0.15
 ##  and 0.1); the other eight are null. Predictors are multivariate normal with
 ##  unit variances and equal correlation rho; noise SD 1, so slopes are in
 ##  units of the noise SD. Each dataset has its own random stream from its ID
-##  (with_stream_of() in validation/data_sets.R).
+##  (with_stream_of() in R/data/data_sets.R).
 ## =====================================================================
 
 true_slopes_C <- c(0.3, 0.2, 0.15, 0.1, rep(0, 8))

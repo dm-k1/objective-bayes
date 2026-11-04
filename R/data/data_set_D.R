@@ -1,13 +1,13 @@
 ## =====================================================================
 ##  Data set D: the number of predictors k grows with the sample size n
-##  (validation/ADEMP.md; used by study 5)
+##  (docs/ADEMP.md; used by study 5)
 ##
 ##  Two growth rates, k = n / 4 and k = sqrt(n), at n = 50 ... 2,000.
 ##    Under the null (no predictor matters) only R-squared is needed, and it
 ##    is exactly Beta(k / 2, (n - k - 1) / 2), so it is drawn directly.
 ##    With a small true model (3 slopes of 0.3, noise SD 1, the other k - 3
 ##    predictors null) full datasets are drawn: standard normal predictors.
-##  Every draw has its own random stream from its ID (validation/data_sets.R).
+##  Every draw has its own random stream from its ID (R/data/data_sets.R).
 ## =====================================================================
 
 design_D <- function() {

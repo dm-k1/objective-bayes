@@ -1,13 +1,13 @@
 ## =====================================================================
 ##  Study 7: how does the test of one coefficient behave?
-##  (validation/ADEMP.md, study 7; replaces studies 03, 04 and 06)
+##  (docs/ADEMP.md, study 7; replaces studies 03, 04 and 06)
 ##
 ##  Aims. How often each test supports the null (BF01 > 3), supports an
 ##  effect (BF10 > 3) or stays undecided about one coefficient (x1); how that
 ##  depends on the number of predictors k; and whether differences between
 ##  priors are differences in accuracy (how datasets are ranked) or only in
 ##  where the test decides.
-##  Data. Set A (validation/data_sets.R): 72 designs (k, n, predictor
+##  Data. Set A (R/data/data_sets.R): 72 designs (k, n, predictor
 ##  correlation, the other slopes) at slopes of x1 of 0, 0.1, 0.2 and 0.3.
 ##  Estimands, per method and design cell: the share of each answer; the AUC
 ##  for separating slope 0 from slope 0.1 and its difference from JZS.
@@ -16,7 +16,7 @@
 ##  datasets.
 ##  Performance. Shares with their Monte Carlo SE sqrt(p (1 - p) / n_sim);
 ##  AUC differences from JZS with a paired bootstrap SE.
-##  n_sim. 625 datasets per cell (validation/precision.R): every per-cell share
+##  n_sim. 625 datasets per cell (R/shared/precision.R): every per-cell share
 ##  has MCSE <= .02, and shares pooled over the 18 cells at each k <= .005.
 ##
 ##  Checks, set relative to the Monte Carlo error:
@@ -28,20 +28,20 @@
 ##    7.3 Flat R confirms fewer true nulls at k = 20 than at k = 2: the drop
 ##        exceeds .05, judged by its 95% Monte Carlo interval.
 ##
-##  Run from the project folder:  Rscript validation/R/07_one_coefficient.R
+##  Run from the project folder:  Rscript R/studies/07_one_coefficient.R
 ##  Smoke test (a corner of the design, 10 datasets per cell, about a minute):
-##    VALIDATION_SMOKE=1 Rscript validation/R/07_one_coefficient.R
+##    VALIDATION_SMOKE=1 Rscript R/studies/07_one_coefficient.R
 ##  Raw results are cached in cache/study_07/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_07.rds.
+##  tables and checks are saved to results/study_07.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # the methods, log_bayes_factors_one_coefficient()
-source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion()
-source("validation/R/data_sets.R")            # design_A(), generate_A()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # the methods, log_bayes_factors_one_coefficient()
+source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion()
+source("R/data/data_sets.R")            # design_A(), generate_A()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_07_smoke" else "study_07")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

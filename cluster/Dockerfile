@@ -5,12 +5,12 @@
 # the container runs, so results are written straight into it.
 #
 # Build once (20-40 minutes: packages and CmdStan compile from source):
-#   docker build -f validation/Dockerfile -t flatcor-validation .
-# (from the project folder; Docker reads validation/Dockerfile.dockerignore
+#   docker build -f cluster/Dockerfile -t flatcor-validation .
+# (from the project folder; Docker reads cluster/Dockerfile.dockerignore
 # next to this file, which needs BuildKit, the default since Docker 23)
-# Run every study, or a selection (see validation/run_all.R):
+# Run every study, or a selection (see run_all.R):
 #   docker run --rm -v "$PWD":/project flatcor-validation
-#   docker run --rm -v "$PWD":/project flatcor-validation Rscript validation/run_all.R quick
+#   docker run --rm -v "$PWD":/project flatcor-validation Rscript run_all.R quick
 #   docker run --rm -v "$PWD":/project -e VALIDATION_CORES=32 flatcor-validation
 
 # R version as recorded in renv.lock
@@ -40,4 +40,4 @@ ENV CMDSTAN=/opt/cmdstan/cmdstan-${CMDSTAN_VERSION}
 RUN git config --system --add safe.directory /project
 
 WORKDIR /project
-CMD ["Rscript", "validation/run_all.R"]
+CMD ["Rscript", "run_all.R"]

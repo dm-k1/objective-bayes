@@ -4,19 +4,19 @@
 ##
 ##  Submit from the project folder (the logs folder must exist first):
 ##    mkdir -p cache/logs
-##    sbatch validation/slurm_array.sh                 all ten studies
-##    sbatch --array=7,9 validation/slurm_array.sh     a selection
-##    VALIDATION_IMAGE=$PWD/flatcor-validation.sif sbatch validation/slurm_array.sh
+##    sbatch cluster/slurm_array.sh                 all ten studies
+##    sbatch --array=7,9 cluster/slurm_array.sh     a selection
+##    VALIDATION_IMAGE=$PWD/flatcor-validation.sif sbatch cluster/slurm_array.sh
 ##                                                     inside the container
 ##  Without VALIDATION_IMAGE the studies run with the cluster's own R (which
 ##  then needs the packages of renv.lock and CmdStan). With it, they run in
-##  the Apptainer image built from validation/Dockerfile (validation/CLUSTER.md).
+##  the Apptainer image built from cluster/Dockerfile (cluster/README.md).
 ##
-##  Each task runs validation/R/NN_*.R with VALIDATION_CORES set to the cores
+##  Each task runs R/studies/NN_*.R with VALIDATION_CORES set to the cores
 ##  of its allocation, so the study uses exactly those. The numbers do not
 ##  depend on the number of cores (every dataset has its own random stream).
 ##  A task writes cache/logs/NN_*.log; the study writes its tables and checks
-##  to validation/results/study_NN.rds and its figures to validation/figures/.
+##  to results/study_NN.rds and its figures to figures/.
 ##  When all tasks have finished, the notebook (setting "results") shows them.
 ##
 ##  The resources below are one setting for every task. Study 9 is the
@@ -55,9 +55,9 @@ if [[ -n "${VALIDATION_IMAGE:-}" ]]; then
   apptainer exec --no-home --bind "$PWD":/project --pwd /project \
     --env VALIDATION_CORES="$VALIDATION_CORES",VALIDATION_SMOKE="$VALIDATION_SMOKE" \
     --env R_USER_CACHE_DIR=/project/cache/r_user_cache/task_$SLURM_ARRAY_TASK_ID \
-    "$VALIDATION_IMAGE" Rscript "validation/R/$study.R" > "$log" 2>&1 || status=$?
+    "$VALIDATION_IMAGE" Rscript "R/studies/$study.R" > "$log" 2>&1 || status=$?
 else
-  Rscript "validation/R/$study.R" > "$log" 2>&1 || status=$?
+  Rscript "R/studies/$study.R" > "$log" 2>&1 || status=$?
 fi
 echo "$(date '+%F %T') $study finished: exit $status;" \
      "$(grep -c '^\[PASS\]' "$log" || true) checks passed, $(grep -c '^\[FAIL\]' "$log" || true) failed"

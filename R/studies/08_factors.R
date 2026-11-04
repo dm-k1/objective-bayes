@@ -1,13 +1,13 @@
 ## =====================================================================
 ##  Study 8: how does the test behave for factors?
-##  (validation/ADEMP.md, study 8; replaces study 11)
+##  (docs/ADEMP.md, study 8; replaces study 11)
 ##
 ##  Aims. The block conditional test (a term of q columns, a factor with
 ##  q + 1 levels) against the joint test and JZS: how often each supports the
 ##  null, supports an effect or stays undecided, how well each separates a
 ##  null factor from a small one, and whether its evidence depends on what the
 ##  other predictors explain (it should not: the conditional Lindley paradox).
-##  Data. Data set A extended with a factor (validation/data_set_A_factors.R):
+##  Data. Data set A extended with a factor (R/data/data_set_A_factors.R):
 ##  q = 2 to 5, n = 50, 200, 1,000, 2 or 10 other predictors, factor effect
 ##  Cohen's f^2 = 0, .02, .15. Each dataset is analysed three times, with the
 ##  others explaining R-squared 0, .5 and .9; the predictors, factor and noise
@@ -22,7 +22,7 @@
 ##  1, joint). All on the same datasets.
 ##  Performance. Shares with their Monte Carlo SE; AUC differences from JZS
 ##  and the slopes with paired bootstrap SEs.
-##  n_sim. 625 datasets per cell (validation/precision.R, rate_per_cell):
+##  n_sim. 625 datasets per cell (R/shared/precision.R, rate_per_cell):
 ##  every per-cell share has MCSE <= .02.
 ##
 ##  Checks:
@@ -39,21 +39,21 @@
 ##        what the others explain is within 2 MCSE of zero for each
 ##        conditional test.
 ##
-##  Run from the project folder:  Rscript validation/R/08_factors.R
+##  Run from the project folder:  Rscript R/studies/08_factors.R
 ##  Smoke test (one corner, 10 datasets per cell):
-##    VALIDATION_SMOKE=1 Rscript validation/R/08_factors.R
+##    VALIDATION_SMOKE=1 Rscript R/studies/08_factors.R
 ##  Raw results are cached in cache/study_08/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_08.rds.
+##  tables and checks are saved to results/study_08.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # contenders, log_bayes_factor_model(), method_scales()
-source("validation/R/precision.R")            # n_sim_of(), mcse_of_proportion()
-source("validation/R/data_sets.R")            # with_stream_of()
-source("validation/R/data_set_A_factors.R")   # design_A_factors(), generate_A_factors()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # contenders, log_bayes_factor_model(), method_scales()
+source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion()
+source("R/data/data_sets.R")            # with_stream_of()
+source("R/data/data_set_A_factors.R")   # design_A_factors(), generate_A_factors()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_08_smoke" else "study_08")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

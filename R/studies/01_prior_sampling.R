@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 1: is the prior sampled correctly?
-##  (validation/ADEMP.md, study 1; replaces checks P1-P10 of the old study 01)
+##  (docs/ADEMP.md, study 1; replaces checks P1-P10 of the old study 01)
 ##
 ##  Aims. flatcor's Stan model (inst/stan/flatcor.stan in the installed
 ##  package, used by fit_regression()) samples R, with R-squared ~ Beta(a, 1),
@@ -10,7 +10,7 @@
 ##  stand-in priors on the intercept and the noise. The predictors are fixed
 ##  designs (n = 60): one predictor, three correlated predictors
 ##  (correlation .4) and eight uncorrelated ones, each drawn once from its own
-##  stream (validation/data_sets.R).
+##  stream (R/data/data_sets.R).
 ##  Estimands. The distribution of R-squared, of the correlation (k = 1) and of
 ##  each coefficient's partial correlation, against its exact form.
 ##  Methods. The Stan model for flat_r (a = 1/2), flat_partial_r (a = k/2) and
@@ -23,7 +23,7 @@
 ##  worth.
 ##  n_sim. Enough iterations that every checked quantity reaches an ESS of
 ##  n_sim_of("ks_draws") = 26,569 (critical distance <= .01;
-##  validation/precision.R): the chains are lengthened until it does.
+##  R/shared/precision.R): the chains are lengthened until it does.
 ##
 ##  Checks (old number in brackets):
 ##    1.1  flat_r, k = 1: the correlation is flat on (-1, 1)              (P1)
@@ -41,16 +41,16 @@
 ##  The old threshold was a fixed KS distance of 0.03; each check now passes
 ##  when the distance is below the critical value for its ESS.
 ##
-##  Run from the project folder:  Rscript validation/R/01_prior_sampling.R
+##  Run from the project folder:  Rscript R/studies/01_prior_sampling.R
 ##  Smoke test (ESS target 500, about a minute):
-##    VALIDATION_SMOKE=1 Rscript validation/R/01_prior_sampling.R
+##    VALIDATION_SMOKE=1 Rscript R/studies/01_prior_sampling.R
 ##  Raw results are cached in cache/study_01/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_01.rds.
+##  tables and checks are saved to results/study_01.rds.
 ## =====================================================================
 library(posterior)
-source("validation/R/settings.R")             # flatcor, cores, record_check()
-source("validation/R/precision.R")            # n_sim_of(), smoke_mode
-source("validation/R/data_sets.R")            # with_stream_of()
+source("R/shared/settings.R")             # flatcor, cores, record_check()
+source("R/shared/precision.R")            # n_sim_of(), smoke_mode
+source("R/data/data_sets.R")            # with_stream_of()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_01_smoke" else "study_01")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)

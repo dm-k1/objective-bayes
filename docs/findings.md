@@ -12,7 +12,7 @@ identically, and the drifting ones simply leave more of them undecided.
 The numbers below come from the validation run of 4 November 2026 (commit
 21d42dc), in which 137 of 138 checks passed. Each number names the study
 that produced it; full results are in [`4_validation.md`](4_validation.md)
-and [`../validation/report.html`](../validation/report.html).
+and in the report of that run (`validation/report.html` on the `main` branch).
 
 ---
 
@@ -95,7 +95,7 @@ that is because it rarely calls anything null. It finds a 0.1 effect about as
 often as flat R-squared (.21) and JZS (.24), and more often than flat partial
 r (.15); what it lacks is the ability to confirm a null.
 
-![Study 06: what each test says, as k grows](../validation/results/figures/06_outcomes.png)
+![Study 06: what each test says, as k grows](../results/figures/06_outcomes.png)
 
 ## 4. Only flat partial r corresponds to one coherent model (study 10)
 
@@ -123,7 +123,7 @@ model's posterior with the Savage–Dickey density ratio (Wagenmakers et al.,
   intercept-only model. Under flat partial r and flat R-squared, the same
   restriction leaves a proper model (study 10, P6).
 
-![Study 10: the conditional and joint tests against the joint model](../validation/results/figures/10_coherence.png)
+![Study 10: the conditional and joint tests against the joint model](../results/figures/10_coherence.png)
 
 ## 5. What flat partial r costs
 

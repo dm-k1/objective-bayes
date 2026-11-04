@@ -1,8 +1,8 @@
 ## =====================================================================
-##  Presenting the studies: the helpers of validation/validation.ipynb
+##  Presenting the studies: the helpers of validation.ipynb
 ##
 ##  In one sentence: run the studies (optionally), read each study's
-##  validation/results/study_NN.rds, and show its checks as a PASS/FAIL
+##  results/study_NN.rds, and show its checks as a PASS/FAIL
 ##  table, its main tables formatted with gt (every estimate with its Monte
 ##  Carlo SE in brackets), and its figures.
 ##
@@ -16,7 +16,7 @@ if (!isTRUE(l10n_info()$`UTF-8`))
   for (locale in c("C.UTF-8", "en_US.UTF-8", "en_GB.UTF-8"))
     if (nzchar(suppressWarnings(Sys.setlocale("LC_CTYPE", locale)))) break
 
-## The ten studies, in the order of validation/ADEMP.md
+## The ten studies, in the order of docs/ADEMP.md
 study_files <- c("01" = "01_prior_sampling", "02" = "02_bayes_factors",
                  "03" = "03_posterior_calibration", "04" = "04_bayes_factor_calibration",
                  "05" = "05_default_prior_criteria", "06" = "06_coherence",
@@ -34,12 +34,12 @@ study_questions <- c("01" = "Is the prior sampled correctly?",
                      "10" = "How does it select variables?")
 
 ## Where the results are: the tracked folder, or cache/ for the smoke test
-## (the same rule as validation/R/settings.R)
-results_folder_of <- function(smoke) if (smoke) file.path("cache", "smoke_results") else file.path("validation", "results")
+## (the same rule as R/shared/settings.R)
+results_folder_of <- function(smoke) if (smoke) file.path("cache", "smoke_results") else "results"
 cache_folder_of   <- function(study, smoke) file.path("cache", sprintf("study_%s%s", study, if (smoke) "_smoke" else ""))
 
 ## ---- Running ------------------------------------------------------------------------
-## Runs each study in its own R process, as validation/run_all.R does; with
+## Runs each study in its own R process, as run_all.R does; with
 ## fresh = TRUE its cache folder is deleted first. Returns one row per study.
 run_studies <- function(studies, fresh = FALSE, smoke = FALSE, cores = NA) {
   dir.create(file.path("cache", "logs"), recursive = TRUE, showWarnings = FALSE)
@@ -52,7 +52,7 @@ run_studies <- function(studies, fresh = FALSE, smoke = FALSE, cores = NA) {
     message(sprintf("[%s] study %s ...", format(Sys.time(), "%H:%M"), study))
     started <- Sys.time()
     status <- system2(file.path(R.home("bin"), "Rscript"),
-                      file.path("validation", "R", paste0(study_files[[study]], ".R")),
+                      file.path("R", "studies", paste0(study_files[[study]], ".R")),
                       stdout = log_file, stderr = log_file, env = environment)
     data.frame(study = study, exit_status = status,
                minutes = as.numeric(difftime(Sys.time(), started, units = "mins")),

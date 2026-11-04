@@ -1,6 +1,6 @@
 ## =====================================================================
 ##  Study 5: does each prior meet the default-prior criteria?
-##  (validation/ADEMP.md, study 5; replaces checks B1-B5 of the old study 02
+##  (docs/ADEMP.md, study 5; replaces checks B1-B5 of the old study 02
 ##  and the old study 08, growing k)
 ##
 ##  Aims. The criteria of Bayarri, Berger, Forte and Garcia-Donato (2012) for
@@ -9,7 +9,7 @@
 ##  growing number of predictors k. (Invariance is checked in study 2.)
 ##  Data. None for the formula checks; simulated R-squared values and datasets
 ##  for the rates (per-draw streams from their IDs); data set D for growing k
-##  (validation/data_set_D.R).
+##  (R/data/data_set_D.R).
 ##  Estimands.
 ##    Fixed k: the slope of the median log Bayes factor for the truth against
 ##    log n. Expected (asymptotically): a for the intercept-only model, with a
@@ -51,20 +51,20 @@
 ##    5.10 growing k, small model true: evidence for it grows; 95% lower
 ##        bound of the slope above 0.1 (old G2)
 ##
-##  Run from the project folder:  Rscript validation/R/05_default_prior_criteria.R
-##  Smoke test:  VALIDATION_SMOKE=1 Rscript validation/R/05_default_prior_criteria.R
+##  Run from the project folder:  Rscript R/studies/05_default_prior_criteria.R
+##  Smoke test:  VALIDATION_SMOKE=1 Rscript R/studies/05_default_prior_criteria.R
 ##  Raw results are cached in cache/study_05/ (delete them to rerun); the
-##  tables and checks are saved to validation/results/study_05.rds.
+##  tables and checks are saved to results/study_05.rds.
 ## =====================================================================
 library(SimDesign)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
-source("validation/R/settings.R")             # flatcor, cores, record_check(), save_figure()
-source("validation/R/comparison_methods.R")   # contenders, model_methods, log_bayes_factor_model()
-source("validation/R/precision.R")            # n_sim_of(), smoke_mode
-source("validation/R/data_sets.R")            # with_stream_of()
-source("validation/R/data_set_D.R")           # design_D(), generate_D_null(), generate_D_true()
+source("R/shared/settings.R")             # flatcor, cores, record_check(), save_figure()
+source("R/shared/comparison_methods.R")   # contenders, model_methods, log_bayes_factor_model()
+source("R/shared/precision.R")            # n_sim_of(), smoke_mode
+source("R/data/data_sets.R")            # with_stream_of()
+source("R/data/data_set_D.R")           # design_D(), generate_D_null(), generate_D_true()
 
 study_folder <- file.path(cache_folder, if (smoke_mode) "study_05_smoke" else "study_05")
 dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
