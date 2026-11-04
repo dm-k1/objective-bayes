@@ -26,41 +26,62 @@ become a density and a Bayes factor is described in
 
 ## Step 0. The first result: not everything can stay flat
 
-Study 00 (`motivating_simulation.R` in this folder) draws valid correlation
-matrices of $(y, x_1 \ldots x_k)$ for $k = 1 \ldots 10$, 200,000 per $k$. In
-each matrix it records three quantities: the **partial correlation** (= the
-correlation of $y$ with $x_1$ after removing the other predictors from both), $R$, and
-$R^2$.
+The motivating simulation (`motivating_simulation.R` in this folder) starts
+without choosing a prior. It draws correlation matrices of
+$(y, x_1 \ldots x_k)$ with every valid matrix equally likely (LKJ with
+η = 1), 200,000 per $k$, for $k = 1 \ldots 10$, 15, 20, 30, 40 and 50, and
+asks what adding predictors does. In each matrix it records four quantities:
+the **marginal correlation** of $y$ with $x_1$; the **partial correlation**
+(= the correlation of $y$ with $x_1$ after removing the other predictors from
+both); $R$; and $R^2$. With one predictor these are one quantity (partial
+$r = r$, $R = |r|$, $R^2 = r^2$). As $k$ grows they come apart:
 
-1. **Simulate.** Version A draws every valid correlation matrix with equal
-   probability (the vine method of Lewandowski, Kurowicka & Joe, 2009, with
-   η = 1). Versions B and C keep each matrix's predictor correlations and the
-   direction of $y$'s correlations with them, and only rescale the size of
-   $y$'s correlations, so that $R$ is flat (B) or $R^2$ is flat (C).
-   Rescaling keeps every matrix valid as long as $R < 1$.
-2. **Look.** In version A each partial correlation is flat on (−1, 1) for
-   every $k$, and $R^2$ moves towards 1. In versions B and C the total stays
-   where it was placed, and the partial correlation narrows towards 0 as $k$
-   grows:
+| $k$                        | 1   | 2   | 5   | 10  | 20  | 50  |
+| -------------------------- | --- | --- | --- | --- | --- | --- |
+| P(\|marginal r\| > .30)    | .70 | .62 | .47 | .32 | .16 | .03 |
+| P(\|partial r\| > .30)     | .70 | .70 | .70 | .70 | .70 | .70 |
+| P($R^2$ > .50)             | .29 | .50 | .82 | .97 | 1.00 | 1.00 |
 
-   | $k$                     | 1    | 2    | 3    | 5    | 10   |
-   | ------------------------- | ---- | ---- | ---- | ---- | ---- |
-   | A: P(\|partial r\| > .30) | .70 | .70 | .70 | .70 | .70 |
-   | A: P($R^2$ > .50)       | .29 | .50 | .65 | .82 | .97 |
-   | B: P(\|partial r\| > .30) | .70 | .50 | .41 | .32 | .22 |
-   | C: P(\|partial r\| > .30) | .91 | .70 | .60 | .50 | .36 |
+The marginal correlation narrows towards 0 (it is Beta($d/2$, $d/2$) on
+(−1, 1), with $d = k + 1$ variables), the partial correlation stays flat, and
+$R^2$ moves towards 1 (it is Beta($k/2$, 1)). The intuition of one predictor,
+a flat correlation, can therefore be kept for only one of these quantities.
+That leaves three intuitive choices of what should stay flat, whatever $k$:
 
-   Version B keeps P($R^2$ > .50) at .29 and version C keeps it at .50, for
-   every $k$.
-3. **Check.** Each version is flat on the scale it should be: A's partial
-   correlation, B's $R$ and C's $R^2$, compared with the flat distribution for
-   every $k$ (checks F1–F3, largest Kolmogorov–Smirnov (KS) distance
-   .0024–.0038).
+- **the partial correlation** (flat partial r): the matrices as drawn, so
+  $R^2$ grows with $k$;
+- **$R$** (flat R): the same matrices, with the size of $y$'s correlations
+  rescaled so that $R$ is flat on (0, 1);
+- **$R^2$** (flat R-squared): the same, with $R^2$ flat on (0, 1).
 
-The figure is `figures/motivation_partial_r_R_R2_by_k.png` (made
-by running the study). At $k = 1$, versions A and B are the same prior,
-Jeffreys' flat correlation; from $k = 2$ on they differ. Every later document
-therefore asks which of the three branches to use, and the studies compare
+The rescaling keeps the predictor correlations and the direction of $y$'s
+correlations with them, so every matrix stays valid ($R < 1$) and the three
+differ only in what is flat. Keeping the total flat makes the partial
+correlation narrow as $k$ grows:
+
+| $k$                                      | 1   | 2   | 5   | 10  | 20  | 50  |
+| ---------------------------------------- | --- | --- | --- | --- | --- | --- |
+| flat R: P(\|partial r\| > .30)           | .70 | .50 | .32 | .22 | .14 | .07 |
+| flat R-squared: P(\|partial r\| > .30)   | .91 | .70 | .49 | .36 | .25 | .14 |
+
+Flat R keeps P($R^2$ > .50) at .29 and flat R-squared keeps it at .50, for
+every $k$.
+
+**Checks.** The marginal correlation, the partial correlation and $R^2$
+follow their exact distributions at every $k$, and $R$ and $R^2$ are flat in
+the versions that keep them flat (largest Kolmogorov–Smirnov (KS) distance
+.0035, against critical distances of .0045–.0047 at the .01 level split over the
+values of $k$). The matrices are drawn as the correlation matrix of a Wishart
+draw, which is fast enough for $k = 50$; a two-sample KS test against the
+vine method of Lewandowski, Kurowicka and Joe (2009) at $k = 1$, 3 and 8
+finds no difference (smallest $p$ = .063).
+
+The figures are `figures/motivation_what_k_does.png` (the four quantities as
+$k$ grows), `figures/motivation_partial_r_R_R2_by_k.png` and
+`figures/motivation_three_versions_against_k.png` (the three choices). At
+$k = 1$, flat partial r and flat R are the same prior, Jeffreys' flat
+correlation; flat R-squared is not flat on $r$ even then. Every later document
+therefore asks which of the three choices to use, and the studies compare
 them on that question.
 
 ---

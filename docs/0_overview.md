@@ -12,35 +12,37 @@ of it. The finding itself is stated on one page in [`findings.md`](findings.md).
 
 ---
 
-## Where it started: study 00
+## Where it started: the motivating simulation
 
-The comparison started from a simulation (`motivating_simulation.R` in this folder).
-It draws valid correlation matrices of $(y, x_1 \ldots x_k)$, 200,000 per $k$,
-and follows one coefficient's partial correlation $r$ and the total $R^2$ as
-$k$ grows. The three versions start from the same matrices and differ only in
-what is kept flat:
+The comparison started from a simulation (`motivating_simulation.R` in this
+folder). It makes no choice of prior: it draws correlation matrices of
+$(y, x_1 \ldots x_k)$ with every valid matrix equally likely, 200,000 per $k$
+for $k$ = 1 to 50, and asks what adding predictors does. With one predictor
+the correlation $r$, the partial correlation, $R$ and $R^2$ are one quantity.
+As $k$ grows they come apart: the marginal correlation of $y$ with $x_1$
+narrows towards 0, the partial correlation stays flat, and $R^2$ moves
+towards 1 (P($R^2$ > .50) is .29 at $k = 1$, .82 at $k = 5$ and .97 at
+$k = 10$).
 
-- **A. partial r flat:** every valid correlation matrix is equally likely, so
-  each partial correlation is flat on (−1, 1);
-- **B. R flat:** the same matrices, with $R$ rescaled to be flat on (0, 1);
-- **C. R² flat:** the same matrices, with $R^2$ rescaled to be flat on (0, 1).
+A flat prior, the obvious choice for one predictor, can therefore stay flat
+for only one of these quantities. The three intuitive choices are the three
+priors:
 
-| $k$ | A: P(\|partial r\| > .30) | A: P($R^2$ > .50) | B: P(\|partial r\| > .30) | B: P($R^2$ > .50) | C: P(\|partial r\| > .30) | C: P($R^2$ > .50) |
-|---|---|---|---|---|---|---|
-| 1 | .70 | .29 | .70 | .29 | .91 | .50 |
-| 2 | .70 | .50 | .50 | .29 | .70 | .50 |
-| 3 | .70 | .65 | .41 | .29 | .60 | .50 |
-| 5 | .70 | .82 | .32 | .29 | .50 | .50 |
-| 10 | .70 | .97 | .22 | .29 | .36 | .50 |
+- **flat partial r:** the partial correlation stays flat, and $R^2$ grows
+  with $k$;
+- **flat R:** $R$ stays flat on (0, 1), and the partial correlation narrows
+  with $k$ (P(\|partial r\| > .30) falls from .70 at $k = 1$ to .22 at
+  $k = 10$);
+- **flat R²:** $R^2$ stays flat on (0, 1), and the partial correlation
+  narrows too (from .91 to .36).
 
-Keeping each partial correlation flat makes the total grow with $k$; keeping
-the total flat makes each partial correlation shrink with $k$. With one
-predictor, A and B coincide (Jeffreys' prior), while C is not flat on $r$
-even then. The figure `figures/motivation_partial_r_R_R2_by_k.png`
-(made by running study 00) shows the three distributions for each $k$, and
-the table is also written to `figures/motivation_table.md`.
+With one predictor, flat partial r and flat R coincide (Jeffreys' prior),
+while flat R² is not flat on $r$ even then. Step 0 of
+[`1_from_behaviour.md`](1_from_behaviour.md) gives the full tables and the
+checks; the figures are `figures/motivation_*.png`, and the table is also
+written to `figures/motivation_table.md`.
 
-Studies 01–11 test the three options this leaves.
+The validation tests the three options this leaves.
 
 ---
 
