@@ -51,7 +51,7 @@ library(tidyr)
 library(ggplot2)
 source("validation/settings.R")   # parallel_map(), caching, record_check()
 pkgload::load_all(".", quiet = TRUE)
-source("validation/comparison_methods.R")   # contenders, method_colours
+source("validation/comparison_methods.R")   # contenders
 
 
 ## ---- Shared: a fixed design and x1's partial correlation -----------------------

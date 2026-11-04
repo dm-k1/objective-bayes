@@ -48,7 +48,7 @@ library(tidyr)
 library(ggplot2)
 source("validation/settings.R")             # parallel_map(), caching, record_check()
 pkgload::load_all(".", quiet = TRUE)
-source("validation/comparison_methods.R")   # log_bayes_factor_model(), method_colours
+source("validation/comparison_methods.R")   # log_bayes_factor_model(), method_scales()
 
 ## ---- Design ----------------------------------------------------------------
 design <- expand_grid(
@@ -61,14 +61,9 @@ explained_by_others   <- c(0, 0.5, 0.9)
 cohen_f_squared       <- c(null = 0, small = 0.02, medium = 0.15)
 
 ## The three contenders, conditional (block) and joint, and the two references;
-## colours as in the common method set
+## colours and line types from method_scales()
 factor_methods <- c(paste(names(contenders), "conditional (block)"),
                     paste(names(contenders), "joint"), "JZS (lmBF)", "Zellner-Siow")
-method_colours <- c(setNames(method_colours[paste(names(contenders), "conditional")],
-                             paste(names(contenders), "conditional (block)")),
-                    method_colours[paste(names(contenders), "joint")],
-                    `JZS (lmBF)` = method_colours[["JZS default"]],
-                    `Zellner-Siow` = method_colours[["Zellner-Siow"]])
 
 ## Level means: equally spaced, centred, with mean square f^2 (equal-sized
 ## levels), so the factor's variance is f^2 times the noise variance
@@ -230,17 +225,17 @@ print_table("Median log BF10 for a null factor (n = 200), by what the others exp
 ## ---- Figures -------------------------------------------------------------------
 by_others <- facet_grid(other_predictors ~ explained_by_others,
   labeller = labeller(other_predictors    = function(v) paste(v, "other predictors"),
-                      explained_by_others = function(v) paste("others explain R² =", v)))
+                      explained_by_others = function(v) paste("others explain R-squared =", v)))
 averaged_over_q <- cell_summaries |>
   group_by(method, sample_size, other_predictors, explained_by_others) |>
   summarise(across(c(auc_null_vs_small, null_found, small_called_null), mean), .groups = "drop")
 
 save_figure(
-  ggplot(averaged_over_q, aes(sample_size, auc_null_vs_small, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(50, 200, 1000)) + scale_colour_manual(values = method_colours) +
-    by_others + theme(legend.position = "bottom") + guides(colour = guide_legend(nrow = 3)) +
-    labs(x = "sample size (log scale)", y = "AUC: null vs small factor (f² = 0.02)", colour = NULL,
+  ggplot(averaged_over_q, aes(sample_size, auc_null_vs_small, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(factor_methods) +
+    by_others +
+    labs(x = "sample size (log scale)", y = "AUC: null vs small factor (f-squared = 0.02)", colour = NULL,
          title = "Testing a factor: separating nulls from small effects (averaged over q = 2-5)"),
   "11_auc", width = 12, height = 7)
 
@@ -249,14 +244,15 @@ save_figure(
            pivot_longer(c(null_found, small_called_null), names_to = "rate", values_to = "value") |>
            mutate(rate = recode(rate, null_found = "true null confirmed (BF01 > 3)",
                                 small_called_null = "small effect called null (BF01 > 3)")),
-         aes(sample_size, value, colour = method, linetype = rate)) +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(50, 200, 1000)) + scale_colour_manual(values = method_colours) +
-    by_others + theme(legend.position = "bottom", legend.box = "vertical") +
-    guides(colour = guide_legend(nrow = 3)) +
-    labs(x = "sample size (log scale)", y = "proportion of datasets", colour = NULL, linetype = NULL,
+         aes(sample_size, value, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(factor_methods) +
+    facet_grid(rate + other_predictors ~ explained_by_others,
+      labeller = labeller(other_predictors    = function(v) paste(v, "other predictors"),
+                          explained_by_others = function(v) paste("others explain R-squared =", v))) +
+    labs(x = "sample size (log scale)", y = "proportion of datasets", colour = NULL,
          title = "Testing a factor: calibration at 3 (averaged over q = 2-5)",
          subtitle = "The conditional tests do not change along a row; the joint tests and JZS do (the conditional Lindley paradox)"),
-  "11_calibration", width = 12, height = 8)
+  "11_calibration", width = 12, height = 11)
 
 report_checks()

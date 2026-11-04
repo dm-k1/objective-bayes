@@ -105,9 +105,9 @@ save_figure(
                          question = "G2: 3-predictor model true, log BF(true vs full)")),
          aes(n, value, colour = method)) +
     geom_hline(yintercept = 0, linetype = "dotted") +
-    geom_line(linewidth = 0.9) + geom_point() +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     scale_x_log10(breaks = sample_sizes) +
-    scale_colour_manual(values = method_colours[model_methods]) +
+    method_scales(model_methods, linetype = FALSE) +
     facet_grid(question ~ growth, scales = "free_y") + theme(legend.position = "bottom") +
     labs(x = "n (log scale)", y = "median log Bayes factor for the truth", colour = NULL,
          title = "Consistency when the number of predictors grows with n",

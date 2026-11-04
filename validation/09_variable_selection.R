@@ -207,19 +207,18 @@ summaries <- runs |>
 print(as.data.frame(summaries), digits = 3)
 saveRDS(summaries, file.path(cache_folder, "variable_selection_summaries.rds"))
 
-method_colours <- method_colours[methods]
 long <- summaries |>
   pivot_longer(c(median_model_is_true, false_inclusions, missed),
                names_to = "measure", values_to = "value") |>
   mutate(measure = recode(measure,
-    median_model_is_true = "median probability model = true model (share)",
+    median_model_is_true = "true model chosen (share)",
     false_inclusions     = "false inclusions (of 8 null predictors)",
     missed               = "missed predictors (of 4 real ones)"))
 
 save_figure(
   ggplot(long, aes(sample_size, value, colour = method, linetype = factor(predictor_correlation))) +
-    geom_line(linewidth = 0.8) + geom_point() +
-    scale_x_log10(breaks = c(50, 100, 200, 500)) + scale_colour_manual(values = method_colours) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 100, 200, 500)) + method_scales(methods, linetype = FALSE) +
     facet_grid(measure ~ model_prior, scales = "free_y") +
     theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = NULL, colour = NULL, linetype = "correlation",
@@ -231,8 +230,8 @@ save_figure(
   ggplot(summaries |> pivot_longer(c(inclusion_true, inclusion_null), names_to = "kind", values_to = "value") |>
            mutate(kind = recode(kind, inclusion_true = "real predictors", inclusion_null = "null predictors")),
          aes(sample_size, value, colour = method, linetype = kind)) +
-    geom_line(linewidth = 0.8) + geom_point() +
-    scale_x_log10(breaks = c(50, 100, 200, 500)) + scale_colour_manual(values = method_colours) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 100, 200, 500)) + method_scales(methods, linetype = FALSE) +
     facet_grid(predictor_correlation ~ model_prior,
                labeller = labeller(predictor_correlation = function(v) paste("correlation =", v))) +
     theme(legend.position = "bottom") +
@@ -289,9 +288,9 @@ at_half <- curves |> filter(abs(cutoff - 0.5) < 1e-9)
 save_figure(
   ggplot(curves |> filter(model_prior == "beta-binomial"),
          aes(false_inclusions, missed, colour = method)) +
-    geom_path(linewidth = 0.7) +
+    geom_path(linewidth = 0.7, alpha = 0.8) +
     geom_point(data = at_half |> filter(model_prior == "beta-binomial"), size = 2) +
-    scale_colour_manual(values = method_colours) +
+    method_scales(methods, linetype = FALSE) +
     facet_grid(predictor_correlation ~ sample_size,
                labeller = labeller(predictor_correlation = function(v) paste("correlation =", v),
                                    sample_size = function(v) paste("n =", v))) +

@@ -51,6 +51,8 @@ dir.create(fits_folder,    recursive = TRUE, showWarnings = FALSE)
 dir.create(figures_folder, recursive = TRUE, showWarnings = FALSE)
 
 ## ---- Figures -------------------------------------------------------------------
+## A white background with a light grid, for every study's figures
+ggplot2::theme_set(ggplot2::theme_bw())
 ## Saves a ggplot to validation/results/figures/<name>.png, and also shows it
 ## when running interactively. (Under Rscript a printed plot would otherwise
 ## end up in Rplots.pdf in the project folder.)

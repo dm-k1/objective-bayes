@@ -102,7 +102,6 @@ print(as.data.frame(cell_summaries |>
 
 
 ## ---- Figures -------------------------------------------------------------------
-method_colours <- method_colours[one_coefficient_methods]
 by_k_and_correlation <- facet_grid(
   predictor_correlation ~ number_of_predictors,
   labeller = labeller(number_of_predictors  = function(v) paste("k =", v),
@@ -110,9 +109,9 @@ by_k_and_correlation <- facet_grid(
 
 save_figure(
   ggplot(filter(cell_summaries, other_coefficients == "sparse"),
-         aes(sample_size, auc_null_vs_0.1, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(50, 200, 1000)) + scale_colour_manual(values = method_colours) +
+         aes(sample_size, auc_null_vs_0.1, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(one_coefficient_methods) +
     by_k_and_correlation + theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = "AUC: null vs slope 0.1", colour = NULL,
          title = "Discrimination across designs (other coefficients sparse)"),
@@ -120,9 +119,9 @@ save_figure(
 
 save_figure(
   ggplot(filter(cell_summaries, other_coefficients == "dense"),
-         aes(sample_size, auc_null_vs_0.1, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(50, 200, 1000)) + scale_colour_manual(values = method_colours) +
+         aes(sample_size, auc_null_vs_0.1, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(one_coefficient_methods) +
     by_k_and_correlation + theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = "AUC: null vs slope 0.1", colour = NULL,
          title = "Discrimination across designs (other coefficients dense, all 0.1)"),
@@ -135,9 +134,9 @@ save_figure(
                                 small_called_null = "slope 0.1 called null (BF01 > 3)")) |>
            group_by(method, number_of_predictors, sample_size, rate) |>
            summarise(value = mean(value), .groups = "drop"),
-         aes(sample_size, value, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(50, 200, 1000)) + scale_colour_manual(values = method_colours) +
+         aes(sample_size, value, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(50, 200, 1000)) + method_scales(one_coefficient_methods) +
     facet_grid(rate ~ number_of_predictors,
                labeller = labeller(number_of_predictors = function(v) paste("k =", v))) +
     theme(legend.position = "bottom") +

@@ -152,11 +152,11 @@ facets_by_cell <- facet_grid(
                       predictor_correlation = function(v) paste("predictor correlation =", v)))
 sample_size_axis <- scale_x_log10(breaks = c(20, 100, 500))
 bottom_legend    <- theme(legend.position = "bottom")
-method_scale     <- scale_colour_manual(values = method_colours[one_coefficient_methods])
+method_scale     <- method_scales(one_coefficient_methods)
 
 save_figure(
-  ggplot(x1_summaries, aes(sample_size, correct_3, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
+  ggplot(x1_summaries, aes(sample_size, correct_3, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     sample_size_axis + method_scale + facets_by_cell + bottom_legend +
     labs(x = "sample size (log scale)", y = "P(BF > 3 for the true hypothesis)", colour = NULL,
          title = "x1: correct evidence",
@@ -164,8 +164,8 @@ save_figure(
   "03_correct_evidence_x1", width = 12, height = 6)
 
 save_figure(
-  ggplot(x1_summaries, aes(sample_size, misleading_3, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
+  ggplot(x1_summaries, aes(sample_size, misleading_3, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     sample_size_axis + method_scale + facets_by_cell + bottom_legend +
     labs(x = "sample size (log scale)", y = "P(BF > 3 for the wrong hypothesis)", colour = NULL,
          title = "x1: misleading evidence",
@@ -183,9 +183,9 @@ trade_off <- inner_join(
   by = c("predictor_correlation", "sample_size", "method"))
 
 save_figure(
-  ggplot(trade_off, aes(small_effect_called_null, null_found, colour = method)) +
-    geom_path(linewidth = 0.8) +
-    geom_point(aes(size = sample_size)) +
+  ggplot(trade_off, aes(small_effect_called_null, null_found, colour = method, linetype = method)) +
+    geom_path(linewidth = 0.8, alpha = 0.8) +
+    geom_point(aes(size = sample_size), alpha = 0.8) +
     scale_size_continuous(breaks = c(20, 100, 500), range = c(1, 4)) +
     method_scale +
     facet_wrap(~ predictor_correlation,

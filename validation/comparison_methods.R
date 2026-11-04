@@ -43,6 +43,37 @@ method_colours <- c(`flat partial r` = "#0072B2", `flat partial r conditional` =
                     `JZS default` = "grey25", `Zellner-Siow` = "grey60",
                     BIC = "#CC79A7", `ordinary (lm)` = "black")
 
+## Colour and line type for the figures: one colour per prior (its conditional
+## and joint tests share it: conditional solid, joint dashed); the references
+## in grey, dashed too where they sit next to conditional tests (they test
+## jointly). The legend lists each prior's tests together, then the references.
+## Names may carry a suffix ("flat R conditional (block)", "JZS (lmBF)").
+method_colour_of <- function(method)
+  if (startsWith(method, "flat partial r")) "#0072B2" else
+  if (startsWith(method, "flat R-squared")) "#009E73" else
+  if (startsWith(method, "flat R"))         "#D55E00" else
+  if (startsWith(method, "JZS"))            "grey25"  else
+  if (startsWith(method, "Zellner"))        "grey60"  else
+  if (startsWith(method, "BIC"))            "#CC79A7" else "black"
+
+method_scales <- function(methods, linetype = TRUE) {
+  methods <- unique(as.character(methods))
+  group <- match(sapply(methods, method_colour_of),
+                 c("#0072B2", "#D55E00", "#009E73", "grey25", "grey60", "#CC79A7", "black"))
+  methods <- methods[order(group, !grepl("conditional", methods))]
+  colours <- setNames(sapply(methods, method_colour_of), methods)
+  has_conditional <- any(grepl("conditional", methods))
+  dashed <- grepl("joint", methods) | (has_conditional & grepl("^(JZS|Zellner)", methods))
+  rows <- if (has_conditional) 2 else 1
+  legend <- guide_legend(nrow = rows, byrow = FALSE, override.aes = list(alpha = 1))
+  c(list(scale_colour_manual(values = colours, breaks = methods, name = NULL),
+         theme(legend.position = "bottom", legend.key.width = unit(2.5, "lines"))),
+    if (linetype) list(scale_linetype_manual(values = setNames(ifelse(dashed, "22", "solid"), methods),
+                                             breaks = methods, name = NULL),
+                       guides(colour = legend, linetype = legend))
+    else list(guides(colour = legend)))
+}
+
 
 ## ---- R-squared ~ Beta(a, 1) as a mixture of g-priors (a check) ---------------
 ## The g-prior mixture g/n = B * W, B ~ Beta(a, k/2 - a), W ~ Inverse-Gamma(1, 1/2),

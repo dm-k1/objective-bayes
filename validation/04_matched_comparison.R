@@ -53,10 +53,10 @@ discrimination <- x1_runs |>
 print(as.data.frame(discrimination), digits = 3)
 
 save_figure(
-  ggplot(discrimination, aes(sample_size, auc_null_vs_0.1, colour = method)) +
-    geom_line(linewidth = 0.9) + geom_point() +
+  ggplot(discrimination, aes(sample_size, auc_null_vs_0.1, colour = method, linetype = method)) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
     scale_x_log10(breaks = c(20, 100, 500)) +
-    scale_colour_manual(values = method_colours[one_coefficient_methods]) +
+    method_scales(one_coefficient_methods) +
     facet_wrap(~ predictor_correlation,
                labeller = labeller(predictor_correlation = function(v) paste("predictor correlation =", v))) +
     labs(x = "sample size (log scale)", y = "AUC: null vs slope 0.1", colour = NULL,

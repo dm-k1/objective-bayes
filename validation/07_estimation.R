@@ -41,7 +41,7 @@ library(tidyr)
 library(ggplot2)
 source("validation/settings.R")   # results folder, save_figure()
 pkgload::load_all(".", quiet = TRUE)
-source("validation/comparison_methods.R")   # contenders, method_colours
+source("validation/comparison_methods.R")   # contenders, method_scales()
 
 cell_folder <- file.path(cache_folder, "estimation_three_priors")
 estimation_methods <- c(names(contenders), "JZS default", "Zellner-Siow", "ordinary (lm)")
@@ -197,7 +197,6 @@ print(as.data.frame(per_cell |>
 
 
 ## ---- Figures ---------------------------------------------------------------------
-method_colours <- method_colours[estimation_methods]
 cells_facet <- facet_grid(
   number_of_predictors + predictor_correlation ~ true_coefficients,
   labeller = labeller(number_of_predictors  = function(v) paste("k =", v),
@@ -206,8 +205,8 @@ cells_facet <- facet_grid(
 save_figure(
   ggplot(relative_error, aes(sample_size, relative_to_ordinary, colour = method)) +
     geom_hline(yintercept = 1, linetype = "dotted") +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(30, 60, 200)) + scale_colour_manual(values = method_colours) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(30, 60, 200)) + method_scales(estimation_methods, linetype = FALSE) +
     cells_facet + theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = "total squared error / ordinary least squares",
          colour = NULL, title = "Does the shrinkage pay off?",
@@ -217,8 +216,8 @@ save_figure(
 save_figure(
   ggplot(relative_prediction_error, aes(sample_size, relative_to_ordinary, colour = method)) +
     geom_hline(yintercept = 1, linetype = "dotted") +
-    geom_line(linewidth = 0.9) + geom_point() +
-    scale_x_log10(breaks = c(30, 60, 200)) + scale_colour_manual(values = method_colours) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(30, 60, 200)) + method_scales(estimation_methods, linetype = FALSE) +
     cells_facet + theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = "excess prediction error / ordinary least squares",
          colour = NULL, title = "Does the shrinkage pay off for prediction?",
@@ -228,8 +227,8 @@ save_figure(
 save_figure(
   ggplot(per_cell, aes(sample_size, coverage, colour = method, linetype = kind)) +
     geom_hline(yintercept = 0.95, linetype = "dotted") +
-    geom_line(linewidth = 0.8) + geom_point() +
-    scale_x_log10(breaks = c(30, 60, 200)) + scale_colour_manual(values = method_colours) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(30, 60, 200)) + method_scales(estimation_methods, linetype = FALSE) +
     cells_facet + theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = "coverage of the 95% interval", colour = NULL,
          linetype = NULL, title = "Do the intervals contain the true coefficient?"),
@@ -238,8 +237,8 @@ save_figure(
 save_figure(
   ggplot(per_cell, aes(sample_size, bias, colour = method, linetype = kind)) +
     geom_hline(yintercept = 0, linetype = "dotted") +
-    geom_line(linewidth = 0.8) + geom_point() +
-    scale_x_log10(breaks = c(30, 60, 200)) + scale_colour_manual(values = method_colours) +
+    geom_line(linewidth = 0.8, alpha = 0.8) + geom_point(size = 1.3, alpha = 0.8) +
+    scale_x_log10(breaks = c(30, 60, 200)) + method_scales(estimation_methods, linetype = FALSE) +
     cells_facet + theme(legend.position = "bottom") +
     labs(x = "sample size (log scale)", y = "mean of (estimate - truth)", colour = NULL,
          linetype = NULL, title = "Bias: how far estimates are pulled toward zero"),
