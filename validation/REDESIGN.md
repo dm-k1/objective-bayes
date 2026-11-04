@@ -62,6 +62,11 @@ but it was built study by study:
    table in `docs/figures/`. It shows why there are three priors; it does
    not validate anything. *Done.*
 6. **Order: correctness, then formal properties, then behaviour.**
+7. **The package lives in its own repository**,
+   [dm-k1/flatcor](https://github.com/dm-k1/flatcor), and this repository
+   validates a fixed release of it (v1.0.0, pinned in `renv.lock`). The
+   validation loads it with `library(flatcor)`; the internal functions some
+   checks need are taken from its namespace in `validation/settings.R`.
 
 ## The new structure
 
@@ -101,8 +106,7 @@ but it was built study by study:
 
 - Whether the explaining docs (docs 0–4, `findings.md`) are still needed
   next to the report, or can be folded into it.
-- Whether the package and the validation should live in separate
-  repositories.
+
 - The target Monte Carlo standard error per quantity (step 2).
 - Whether `BAS` offers the robust and intrinsic priors for linear models.
 

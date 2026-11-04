@@ -34,7 +34,7 @@
 ##  Run from the project folder: Rscript validation/02_bayes_factor.R
 ##  A few minutes. No Stan needed.
 ## =====================================================================
-pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/settings.R")             # parallel cores, cache folders, record_check()
 source("validation/comparison_methods.R")   # log_bayes_factor_beta_r_squared() (A4)
 

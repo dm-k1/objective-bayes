@@ -1,9 +1,0 @@
-^renv$
-^renv\.lock$
-^docs$
-^validation$
-^cache$
-^LICENSE\.md$
-^\.git$
-^.*\.Rproj$
-^\.Rproj\.user$

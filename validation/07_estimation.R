@@ -40,7 +40,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 source("validation/settings.R")   # results folder, save_figure()
-pkgload::load_all(".", quiet = TRUE)
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/comparison_methods.R")   # contenders, method_scales()
 
 cell_folder <- file.path(cache_folder, "estimation_three_priors")

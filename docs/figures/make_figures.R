@@ -7,7 +7,7 @@
 ##  Run from the project folder: Rscript docs/figures/make_figures.R
 ## =====================================================================
 library(ggplot2)
-pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
+library(flatcor)   # the package under test, at the version in renv.lock
 
 figure_folder <- file.path("docs", "figures")
 save_doc_figure <- function(figure, name, width = 8, height = 4.5) {

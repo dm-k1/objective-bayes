@@ -4059,6 +4059,26 @@
       "Author": "Winston Chang [aut, cre], Posit Software, PBC [cph, fnd], Tessil [cph] (hopscotch_map library)",
       "Maintainer": "Winston Chang <winston@posit.co>",
       "Repository": "CRAN"
+    },
+    "flatcor": {
+      "Package": "flatcor",
+      "Version": "1.0.0",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteUsername": "dm-k1",
+      "RemoteRepo": "flatcor",
+      "RemoteRef": "v1.0.0",
+      "RemoteSha": "2ce169ade09215ec33b3a8c7bd1e5dadb7fcba8f",
+      "Requirements": [
+        "MASS",
+        "R",
+        "bayesplot",
+        "loo",
+        "posterior",
+        "stats",
+        "tools"
+      ]
     }
   }
 }

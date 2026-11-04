@@ -23,7 +23,7 @@ execute:
 ## The checks are read from the run's logs (cache/logs/), the outcome table
 ## from study 06's cache; the figures are validation/results/figures/.
 library(knitr)
-project <- if (file.exists("DESCRIPTION")) normalizePath(".") else normalizePath("..")
+project <- if (file.exists("validation/settings.R")) normalizePath(".") else normalizePath("..")
 figure <- function(name) include_graphics(file.path(project, "validation", "results", "figures",
                                                     paste0(name, ".png")))
 check_lines <- function(study) {

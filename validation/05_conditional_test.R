@@ -43,7 +43,7 @@
 ##  A few minutes.
 ## =====================================================================
 source("validation/settings.R")   # record_check()
-pkgload::load_all(".", quiet = TRUE)
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/comparison_methods.R")
 
 

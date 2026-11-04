@@ -26,7 +26,7 @@
 library(dplyr)
 library(ggplot2)
 source("validation/settings.R")   # parallel_map(), record_check(), save_figure()
-pkgload::load_all(".", quiet = TRUE)
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/comparison_methods.R")   # the common method set
 
 sample_sizes <- c(50, 100, 200, 500, 1000, 2000)

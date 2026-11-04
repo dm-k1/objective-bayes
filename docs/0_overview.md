@@ -127,7 +127,7 @@ by default:
 | [`relation_to_others.md`](relation_to_others.md) | How the three relate to JZS, `stan_lm`, R2-D2 and other priors; what is new here and what is not |
 | [`3_comparison.md`](3_comparison.md) | The three compared per criterion, from the validation results; the recommendation (flat partial r) |
 | [`4_validation.md`](4_validation.md) | Every check and simulation study, with its numbers |
-| [`example.R`](example.R) | The package used on one dataset, start to finish |
+| [`example.R`](https://github.com/dm-k1/flatcor/blob/main/inst/examples/example.R) (in flatcor) | The package used on one dataset, start to finish |
 
 ---
 
@@ -190,7 +190,7 @@ P4; see [`3_comparison.md`](3_comparison.md), section 5).
   recommendation (flat partial r) and its costs are in
   [`3_comparison.md`](3_comparison.md), section 8.
 - **Shrinkage at small $n$.** With several predictors and a small sample, the
-  prior pulls estimates towards zero. The example (`example.R`) prints this
+  prior pulls estimates towards zero. The example in flatcor ([`inst/examples/example.R`](https://github.com/dm-k1/flatcor/blob/main/inst/examples/example.R)) prints this
   pull next to the ordinary estimates.
 - **Flat R and flat R-squared make the conditional test cautious with many
   predictors.** These priors expect each coefficient to be a small share of

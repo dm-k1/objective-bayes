@@ -8,6 +8,19 @@
 ##   - checks:   record_check() and report_checks() for pass/fail summaries
 ## =====================================================================
 
+## ---- The package under test ------------------------------------------------------
+## flatcor lives in its own repository (https://github.com/dm-k1/flatcor) and is
+## installed at the version pinned in renv.lock. Some checks also call internal
+## functions; they are taken from the package namespace here, in one place.
+library(flatcor)
+flatcor_internals <- c("sample_r_squared", "prior_shape", "prior_cdf_of_f", "log_sum_exp",
+                       "log_sum_exp_per_row", "log_likelihood_ratio_block",
+                       "log_bayes_factor_from_prior_cdf_of_f",
+                       "log_bayes_factor_shape_vs_intercept_only",
+                       "log_bayes_factor_flat_r_vs_intercept_only")
+for (internal in flatcor_internals)
+  assign(internal, utils::getFromNamespace(internal, "flatcor"), envir = globalenv())
+
 ## ---- Parallel ----------------------------------------------------------------
 ## parallel_map(items, work) runs work(item) for every item on all cores but one.
 ## It forks the R session (fast, shares everything) where that is allowed: under
@@ -52,12 +65,11 @@ parallel_map <- function(items, work) {
   cluster <- parallel::makeCluster(number_of_cores)
   on.exit(parallel::stopCluster(cluster))
   parallel::clusterCall(cluster, setwd, getwd())
-  ## attach the same packages; flatcor itself is loaded from this folder with
-  ## load_all() (as the scripts do), so internal functions are there too
-  attached_packages <- setdiff(.packages(), "flatcor")
+  ## attach the same packages (flatcor among them); the internal functions the
+  ## checks use travel with the global objects below
+  attached_packages <- .packages()
   parallel::clusterCall(cluster, function(packages) {
     for (package in rev(packages)) library(package, character.only = TRUE)
-    if (file.exists("DESCRIPTION")) pkgload::load_all(".", quiet = TRUE)
     NULL
   }, attached_packages)
   parallel::clusterExport(cluster, ls(globalenv()), envir = globalenv())

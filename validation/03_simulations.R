@@ -24,7 +24,7 @@ library(purrr)
 library(tidyr)
 library(ggplot2)
 
-pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/settings.R")        # parallel cores, cached simulation runner, record_check()
 source("validation/comparison_methods.R")
 

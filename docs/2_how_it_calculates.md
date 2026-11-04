@@ -210,7 +210,7 @@ $\beta$ works poorly. Near $\beta = 0$ the density has the peak described in
 section 3, and a sampler that moves through $\beta$ steps over it without
 warning; with 8 predictors it draws far too few small effects.
 
-`inst/stan/flatcor.stan` therefore samples the parameters from which the prior
+[`inst/stan/flatcor.stan`](https://github.com/dm-k1/flatcor/blob/main/inst/stan/flatcor.stan) in flatcor therefore samples the parameters from which the prior
 is built:
 
 | Parameter | Prior | Factor |
@@ -366,7 +366,7 @@ settings ($R^2$ .01–.99, $n$ 10–10,000, $k$ 1–30) is $4 \times 10^{-5}$ on
 the log scale (`validation/02_bayes_factor.R`, check A1).
 
 In the code, this is `log_bayes_factor_flat_r_vs_intercept_only()` in
-`R/bayes_factor.R` (internal; `log_bayes_factor_vs_intercept_only(..., prior = "flat_r")`
+[`R/bayes_factor.R`](https://github.com/dm-k1/flatcor/blob/main/R/bayes_factor.R) in flatcor (internal; `log_bayes_factor_vs_intercept_only(..., prior = "flat_r")`
 calls it):
 
 | Code | Formula |
@@ -410,7 +410,7 @@ from $10^{-8}$ to $10^{8}$, where the likelihood ratio is broad (check B2b).
 - The block route reproduces the closed forms. With $a = ½$ it gives flat R's
   Bayes factor of steps 1 to 4, and with $a = k/2$ flat partial r's (section
   8), within $2\times10^{-4}$ on the log scale
-  (`tests/testthat/test-three-priors.R`; `validation/02`, A4). It therefore
+  ([`tests/testthat/test-three-priors.R`](https://github.com/dm-k1/flatcor/blob/main/tests/testthat/test-three-priors.R) in flatcor; `validation/02`, A4). It therefore
   serves as a check on the closed forms, and as the route for flat R-squared
   with one predictor, where no g-mixture exists (section 8). The closed forms
   are used wherever they exist, because they are faster.
@@ -676,7 +676,7 @@ column (signed, over the partial correlation) and
 `support_per_partial_r_squared()` for a term with any number of columns (over
 its partial $R^2$). It shows which effect sizes the data can and cannot tell
 apart from zero. The conditional Bayes factor is this curve averaged over the
-prior (`tests/testthat/test-support-curve.R`).
+prior ([`tests/testthat/test-support-curve.R`](https://github.com/dm-k1/flatcor/blob/main/tests/testthat/test-support-curve.R) in flatcor).
 
 ---
 

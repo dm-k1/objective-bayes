@@ -273,7 +273,7 @@ This is an argument, not a result of the studies.
   This follows from the prior, which keeps real weight near zero at every $k$,
   so a weak signal reads as "probably nothing". A BF₀₁ above 3 from this prior
   therefore does not rule out a small effect; report it together with the
-  support curve (`R/support_curve.R`), which shows the effect sizes the data
+  support curve ([`R/support_curve.R`](https://github.com/dm-k1/flatcor/blob/main/R/support_curve.R) in flatcor), which shows the effect sizes the data
   cannot distinguish from zero.
 - **It shrinks less, so it predicts somewhat worse** with many predictors and
   a small sample (prediction error 0.72–0.81 times that of OLS at $k = 8$ and

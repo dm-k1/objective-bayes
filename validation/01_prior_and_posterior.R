@@ -1,7 +1,7 @@
 ## =====================================================================
 ##  Validation 01: does the Stan model get the prior and the posterior right?
 ##
-##  inst/stan/flatcor.stan (used by fit_regression()) samples R, with
+##  the package's Stan model (inst/stan/flatcor.stan, used by fit_regression()) samples R, with
 ##  R-squared ~ Beta(a, 1), and a direction (uniform), and computes the
 ##  coefficients from them. This script checks that it gets the prior and the
 ##  posterior right, for each of the three priors (a = 1/2: flat_r; a = k/2:
@@ -35,7 +35,7 @@
 ##  Run from the project folder: Rscript validation/01_prior_and_posterior.R
 ##  About 8 minutes on 7 cores.
 ## =====================================================================
-pkgload::load_all(".", quiet = TRUE)   # the flatcor package, from this folder
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/settings.R")   # parallel cores, record_check()
 
 ## ---- Sampling helper: cmdstanr if installed, otherwise rstan ------------
@@ -61,10 +61,11 @@ sample_stan <- function(model, stan_data, chains, iter_warmup, iter_sampling, th
 coefficients_of <- function(draws) draws[, grep("^b\\[", colnames(draws)), drop = FALSE]
 
 ## ---- The two models ------------------------------------------------------
-## direction:    inst/stan/flatcor.stan (R and a direction as parameters)
+## direction:    the package's Stan model (R and a direction as parameters)
 ## coefficients: the same prior as a density on b (docs/2_how_it_calculates.md,
 ##               section 5), sampled directly
-direction_model <- compile_stan(paste(readLines("inst/stan/flatcor.stan"), collapse = "\n"))
+direction_model <- compile_stan(paste(readLines(system.file("stan", "flatcor.stan", package = "flatcor")),
+                                       collapse = "\n"))
 flat_r_density_code <- "
   // P(b) = P(total) x P(this combination | total) x unit conversion
   real flat_r_lpdf(vector b, real sigma, matrix predictor_covariance) {

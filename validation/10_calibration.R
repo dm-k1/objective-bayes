@@ -63,7 +63,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 source("validation/settings.R")   # parallel_map(), caching, record_check()
-pkgload::load_all(".", quiet = TRUE)
+library(flatcor)   # the package under test, at the version in renv.lock
 source("validation/comparison_methods.R")   # contenders
 
 

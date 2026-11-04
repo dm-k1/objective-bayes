@@ -131,7 +131,7 @@ model's posterior with the Savage–Dickey density ratio (Wagenmakers et al.,
   0.1 effects null (averaged over *n* = 50 to 1,000). A BF₀₁ above 3 from this prior
   therefore does not rule out a small effect, and is best reported together
   with the range of effects that the data cannot distinguish from zero (the
-  support curve in `R/support_curve.R`).
+  support curve in [`R/support_curve.R`](https://github.com/dm-k1/flatcor/blob/main/R/support_curve.R) in flatcor).
 - It shrinks the estimates less than flat R, so its predictions are
   somewhat worse with many predictors and a small sample: at *k* = 8 and
   *n* = 30 its prediction error is 0.72–0.81 times that of ordinary least
