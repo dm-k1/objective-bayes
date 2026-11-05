@@ -24,7 +24,7 @@ FROM rocker/r-ver:4.6.1
 # the list follows remotes::system_requirements() for the packages in
 # renv.lock) and git (run_all.R records the commit)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git make cmake g++ \
+      git curl make cmake g++ \
       libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev libuv1-dev \
       libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev \
       libpng-dev libjpeg-dev libtiff5-dev libx11-dev \
@@ -39,7 +39,8 @@ RUN Rscript -e 'install.packages("renv", repos = "https://cloud.r-project.org")'
 
 # CmdStan, the version the validation was last run with
 ENV CMDSTAN_VERSION=2.40.0
-RUN Rscript -e 'cmdstanr::install_cmdstan(dir = "/opt/cmdstan", version = Sys.getenv("CMDSTAN_VERSION"), cores = parallel::detectCores())'
+RUN mkdir -p /opt/cmdstan \
+ && Rscript -e 'cmdstanr::install_cmdstan(dir = "/opt/cmdstan", version = Sys.getenv("CMDSTAN_VERSION"), cores = parallel::detectCores())'
 ENV CMDSTAN=/opt/cmdstan/cmdstan-${CMDSTAN_VERSION}
 
 # git refuses to read a mounted repository owned by another user unless told
