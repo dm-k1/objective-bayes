@@ -222,6 +222,19 @@ How long the full run takes is measured, not guessed, by the workflow
 "Run-time estimate" (`.github/workflows/timing.yml`): every study in timing
 mode (full design, 2% and 5% of the datasets) on its own runner, scaled up by
 `cluster/estimate_run_time.R` (`cluster/README.md`, "How long it takes").
+The first estimate (run 42030390433, 5 November 2026, commit 3f9c104's
+method): about 120 core hours on GitHub's runners in all, almost all of it in
+four studies: 08 (39), 09 (33), 04 (22) and 07 (20); every other study takes
+under 2. On 4 runner cores that is about 30 hours, on 32 about 4. Apple-silicon
+cores are faster, so the Mac (7 cores) may manage it in roughly 12 hours; the
+plan is to run the studies in order, each where it fits, and look at each
+before the next. The timing logs show Stan's "proposal is about to be
+rejected" messages; they come from a chain's first two or three iterations
+(a step that takes R_magnitude to 1 or sigma to 0), with 0 divergent
+transitions, and can be silenced in a later flatcor release. In the timing
+run's study 06, check 6.1 (logspline and kernel Savage-Dickey agree) failed
+with a largest difference of 2.9 on the log scale: to look into before or with
+study 06's full run.
 
 ## References
 
