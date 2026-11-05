@@ -78,7 +78,7 @@
 ##  Smoke test (small grids, few draws, a few minutes):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/02_bayes_factors.R
 ##  Needs cmdstanr with CmdStan (check 2.6), Rmpfr and bridgesampling.
-##  Raw results are cached in cache/study_02/ (delete them to rerun); the
+##  Raw results are cached in cache/study_02/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_02.rds.
 ## =====================================================================
 library(dplyr)
@@ -86,8 +86,7 @@ source("R/shared/settings.R")             # flatcor, cores, record_check(), para
 source("R/shared/comparison_methods.R")   # draw_lkj_correlation_matrix(), partial_correlation_of()
 source("R/shared/precision.R")            # precision_targets, smoke_mode
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_02_smoke" else "study_02")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("02")
 
 priors <- c("flat_r", "flat_partial_r", "flat_r_squared")
 log_bf <- function(prior, r_squared, n, k) log_bayes_factor_vs_intercept_only(r_squared, n, k, prior)

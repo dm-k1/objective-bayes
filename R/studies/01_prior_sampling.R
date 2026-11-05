@@ -44,7 +44,7 @@
 ##  Run from the project folder:  Rscript R/studies/01_prior_sampling.R
 ##  Smoke test (ESS target 500, about a minute):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/01_prior_sampling.R
-##  Raw results are cached in cache/study_01/ (delete them to rerun); the
+##  Raw results are cached in cache/study_01/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_01.rds.
 ## =====================================================================
 library(posterior)
@@ -52,8 +52,7 @@ source("R/shared/settings.R")             # flatcor, cores, record_check()
 source("R/shared/precision.R")            # n_sim_of(), smoke_mode
 source("R/data/data_sets.R")            # with_stream_of()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_01_smoke" else "study_01")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("01")
 
 ## the ESS every checked quantity must reach (smoke mode: 500)
 target_ess <- if (smoke_mode) 500L else precision_targets$ks_draws$n_sim

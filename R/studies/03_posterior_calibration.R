@@ -25,7 +25,7 @@
 ##
 ##  Run from the project folder:  Rscript R/studies/03_posterior_calibration.R
 ##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/03_posterior_calibration.R
-##  Raw results are cached in cache/study_03/ (delete them to rerun); the
+##  Raw results are cached in cache/study_03/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_03.rds.
 ## =====================================================================
 library(SBC)
@@ -38,8 +38,7 @@ source("R/shared/precision.R")            # n_sim_of()
 source("R/data/data_sets.R")            # with_stream_of()
 source("R/data/data_set_B.R")           # generate_B()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_03_smoke" else "study_03")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("03")
 future::plan(future::multisession, workers = number_of_cores)
 
 n_fits <- n_sim_of("sbc_fits")

@@ -42,7 +42,7 @@
 ##  Run from the project folder:  Rscript R/studies/08_factors.R
 ##  Smoke test (one corner, 10 datasets per cell):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/08_factors.R
-##  Raw results are cached in cache/study_08/ (delete them to rerun); the
+##  Raw results are cached in cache/study_08/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_08.rds.
 ## =====================================================================
 library(SimDesign)
@@ -55,8 +55,7 @@ source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion()
 source("R/data/data_sets.R")            # with_stream_of()
 source("R/data/data_set_A_factors.R")   # design_A_factors(), generate_A_factors()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_08_smoke" else "study_08")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("08")
 
 design <- design_A_factors()
 if (smoke_mode) design <- subset(design, q == 2 & n == 50 & other_predictors == 2)

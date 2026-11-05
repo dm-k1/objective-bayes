@@ -31,7 +31,7 @@
 ##
 ##  Run from the project folder:  Rscript R/studies/04_bayes_factor_calibration.R
 ##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/04_bayes_factor_calibration.R
-##  Raw results are cached in cache/study_04/ (delete them to rerun); the
+##  Raw results are cached in cache/study_04/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_04.rds.
 ## =====================================================================
 library(SimDesign)
@@ -44,8 +44,7 @@ source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion()
 source("R/data/data_sets.R")            # with_stream_of()
 source("R/data/data_set_B.R")           # generate_B(), sample_partial_r()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_04_smoke" else "study_04")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("04")
 
 design <- createDesign(generating_prior = c(unname(contenders), "JZS"), k = c(3, 8), n = c(50, 200))
 if (smoke_mode) design <- subset(design, k == 3 & n == 50)

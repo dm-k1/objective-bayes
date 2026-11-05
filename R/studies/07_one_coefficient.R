@@ -31,7 +31,7 @@
 ##  Run from the project folder:  Rscript R/studies/07_one_coefficient.R
 ##  Smoke test (a corner of the design, 10 datasets per cell, about a minute):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/07_one_coefficient.R
-##  Raw results are cached in cache/study_07/ (delete them to rerun); the
+##  Raw results are cached in cache/study_07/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_07.rds.
 ## =====================================================================
 library(SimDesign)
@@ -43,8 +43,7 @@ source("R/shared/comparison_methods.R")   # the methods, log_bayes_factors_one_c
 source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion()
 source("R/data/data_sets.R")            # design_A(), generate_A()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_07_smoke" else "study_07")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("07")
 
 design <- design_A()
 if (smoke_mode) design <- subset(design, k %in% c(2, 20) & n == 50 & rho == 0 & others == "sparse")

@@ -52,7 +52,7 @@
 ##
 ##  Run from the project folder:  Rscript R/studies/06_coherence.R
 ##  Smoke test: VALIDATION_SMOKE=1 Rscript R/studies/06_coherence.R
-##  Raw results are cached in cache/study_06/ (delete them to rerun); the
+##  Raw results are cached in cache/study_06/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_06.rds.
 ## =====================================================================
 library(SimDesign)
@@ -65,8 +65,7 @@ source("R/shared/precision.R")            # n_sim_of()
 source("R/data/data_sets.R")            # with_stream_of()
 source("R/data/data_set_B.R")           # generate_B(), sample_partial_r(), sd_given_others()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_06_smoke" else "study_06")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("06")
 
 
 ## =====================================================================

@@ -53,7 +53,7 @@
 ##
 ##  Run from the project folder:  Rscript R/studies/05_default_prior_criteria.R
 ##  Smoke test:  VALIDATION_SMOKE=1 Rscript R/studies/05_default_prior_criteria.R
-##  Raw results are cached in cache/study_05/ (delete them to rerun); the
+##  Raw results are cached in cache/study_05/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_05.rds.
 ## =====================================================================
 library(SimDesign)
@@ -66,8 +66,7 @@ source("R/shared/precision.R")            # n_sim_of(), smoke_mode
 source("R/data/data_sets.R")            # with_stream_of()
 source("R/data/data_set_D.R")           # design_D(), generate_D_null(), generate_D_true()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_05_smoke" else "study_05")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("05")
 
 priors <- c("flat_r", "flat_partial_r", "flat_r_squared")
 log_bf <- function(prior, r_squared, n, k)

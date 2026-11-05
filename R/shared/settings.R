@@ -109,6 +109,32 @@ studies_results_folder <- file.path(results_folder, "studies")
 for (folder in c(fits_folder, studies_results_folder, figures_folder))
   dir.create(folder, recursive = TRUE, showWarnings = FALSE)
 
+## The build of flatcor under test: its commit when installed from GitHub (as
+## renv.lock pins it), otherwise a hash of its functions and Stan model (a
+## local install keeps the same version number while its code changes).
+flatcor_build <- local({
+  commit <- utils::packageDescription("flatcor")$RemoteSha
+  if (!is.null(commit)) return(substr(commit, 1, 7))
+  namespace <- asNamespace("flatcor")
+  code <- lapply(sort(ls(namespace, all.names = TRUE)), function(name) {
+    object <- get(name, envir = namespace)
+    if (is.function(object)) deparse(object) else NULL
+  })
+  stan_model <- readLines(system.file("stan", "flatcor.stan", package = "flatcor"))
+  paste0("local-", substr(digest::digest(list(code, stan_model)), 1, 7))
+})
+
+## A study's cache: cache/study_NN/flatcor_<build>/. The studies reuse a
+## cached file whenever it exists, so each build of flatcor gets its own
+## folder: results computed with another build are never reused. (A change to
+## a study's design or number of datasets still needs its folder deleted.)
+study_cache_folder <- function(study) {
+  folder <- file.path(cache_folder, sprintf("study_%s%s", study, if (smoke_mode) "_smoke" else ""),
+                      paste0("flatcor_", flatcor_build))
+  dir.create(folder, recursive = TRUE, showWarnings = FALSE)
+  folder
+}
+
 ## ---- Figures -------------------------------------------------------------------
 ## A white background with a light grid, for every study's figures
 ggplot2::theme_set(ggplot2::theme_bw())
@@ -211,6 +237,7 @@ save_study_results <- function(study, tables) {
                             commit = if (length(git_commit) == 1) git_commit else NA_character_,
                             R = R.version.string,
                             flatcor = as.character(utils::packageVersion("flatcor")),
+                            flatcor_build = flatcor_build,
                             CmdStan = cmdstan,
                             machine = paste(Sys.info()[["sysname"]], Sys.info()[["machine"]]),
                             processor = processor_name(),

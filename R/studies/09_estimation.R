@@ -39,7 +39,7 @@
 ##  Run from the project folder:  Rscript R/studies/09_estimation.R
 ##  Smoke test (2 cells, 10 datasets, short chains):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/09_estimation.R
-##  Raw results are cached in cache/study_09/ (delete them to rerun); the
+##  Raw results are cached in cache/study_09/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_09.rds. Each fit of
 ##  fit_regression() runs its 4 chains in parallel, so SimDesign uses one
 ##  worker per 4 cores.
@@ -54,8 +54,7 @@ source("R/shared/comparison_methods.R")   # contenders, method_scales()
 source("R/shared/precision.R")            # n_sim_of()
 source("R/data/data_sets.R")            # generate_A(), cell_id_A(), slopes_A(), with_stream_of()
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_09_smoke" else "study_09")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("09")
 
 design <- expand.grid(k = c(2, 10), n = c(50, 200), rho = c(0, 0.7),
                       others = c("sparse", "dense"), slope_x1 = 0.2, stringsAsFactors = FALSE)

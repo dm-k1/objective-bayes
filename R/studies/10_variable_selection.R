@@ -45,7 +45,7 @@
 ##  Run from the project folder:  Rscript R/studies/10_variable_selection.R
 ##  Smoke test (n = 50, correlation 0, 10 datasets):
 ##    VALIDATION_SMOKE=1 Rscript R/studies/10_variable_selection.R
-##  Raw results are cached in cache/study_10/ (delete them to rerun); the
+##  Raw results are cached in cache/study_10/flatcor_<build>/ (delete it to rerun); the
 ##  tables and checks are saved to results/studies/study_10.rds.
 ## =====================================================================
 library(SimDesign)
@@ -59,8 +59,7 @@ source("R/shared/precision.R")            # n_sim_of(), mcse_of_proportion(), sm
 source("R/data/data_sets.R")            # with_stream_of()
 source("R/data/data_set_C.R")           # design_C(), generate_C(), true_slopes_C
 
-study_folder <- file.path(cache_folder, if (smoke_mode) "study_10_smoke" else "study_10")
-dir.create(study_folder, recursive = TRUE, showWarnings = FALSE)
+study_folder <- study_cache_folder("10")
 
 design <- design_C()
 if (smoke_mode) design <- subset(design, n == 50 & rho == 0)
