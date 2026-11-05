@@ -223,7 +223,7 @@ How long the full run takes is measured, not guessed, by the workflow
 mode (full design, 2% and 5% of the datasets) on its own runner, scaled up by
 `cluster/estimate_run_time.R` (`cluster/README.md`, "How long it takes").
 The first estimate (run 42030390433, 5 November 2026, commit 3f9c104's
-method): about 120 core hours on GitHub's runners in all, almost all of it in
+method; the full table is `docs/working/run_time_estimate.md`): about 120 core hours on GitHub's runners in all, almost all of it in
 four studies: 08 (39), 09 (33), 04 (22) and 07 (20); every other study takes
 under 2. On 4 runner cores that is about 30 hours, on 32 about 4. Apple-silicon
 cores are faster, so the Mac (7 cores) may manage it in roughly 12 hours; the
