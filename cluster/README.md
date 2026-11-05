@@ -13,6 +13,27 @@ it is meant for a cluster. Two pieces make that work:
 The results do not depend on the number of cores: every simulated dataset has
 its own random stream, derived from its ID (`docs/appendix/C_study_design.md`).
 
+## How long it takes
+
+The workflow "Run-time estimate" (Actions > Run-time estimate > Run workflow;
+`.github/workflows/timing.yml`) measures this on GitHub's runners, for free on
+a public repository. Each study runs in timing mode: its full design and
+full-length chains, on 2% and 5% of its datasets, each on its own 4-core runner.
+`cluster/estimate_run_time.R` separates the fixed part of a study's cost from
+the part per dataset, and reads off the full run. The run's summary page shows
+a table with the CPU hours per study and the hours on 4, 8, 16 and 32 cores.
+That is enough to choose a machine, or the time limit of the SLURM tasks.
+
+The same can be run anywhere, a study at a time:
+
+```bash
+VALIDATION_TIMING=0.02 Rscript cluster/time_study.R 07
+VALIDATION_TIMING=0.05 Rscript cluster/time_study.R 07
+Rscript cluster/estimate_run_time.R
+```
+
+Timing mode writes only to `cache/timing/`, so it never mixes with a real run.
+
 ## 1. The Apptainer image
 
 Clusters run Apptainer (formerly Singularity) rather than Docker. The image

@@ -56,4 +56,14 @@ precision_targets <- list(
 ## every study runs end to end on a handful of datasets and a corner of its
 ## design, to show the code works before the full run. Results in smoke mode
 ## are not results, and go to cache/.
-n_sim_of <- function(target) if (smoke_mode) 10L else precision_targets[[target]]$n_sim
+## Timing mode (VALIDATION_TIMING=<fraction>; cluster/time_study.R) keeps the
+## full design but runs that fraction of the datasets, at least 10.
+## n_sim_used records what each target got, so the timing can be scaled up.
+n_sim_used <- list()
+n_sim_of <- function(target) {
+  full <- precision_targets[[target]]$n_sim
+  n_sim <- if (smoke_mode) 10L else
+           if (timing_mode) min(full, max(10L, as.integer(ceiling(full * timing_fraction)))) else full
+  n_sim_used[[target]] <<- c(used = n_sim, full = full)
+  n_sim
+}

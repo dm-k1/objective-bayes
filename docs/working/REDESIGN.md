@@ -217,6 +217,11 @@ November 2026, 22 minutes) is public and can be pulled without logging in.
 task), and the Apptainer commands of `cluster/README.md` have not yet run on a
 real cluster: the first smoke run there confirms them.
 
+How long the full run takes is measured, not guessed, by the workflow
+"Run-time estimate" (`.github/workflows/timing.yml`): every study in timing
+mode (full design, 2% and 5% of the datasets) on its own runner, scaled up by
+`cluster/estimate_run_time.R` (`cluster/README.md`, "How long it takes").
+
 ## References
 
 - Chalmers, R. P., & Adkins, M. C. (2020). Writing effective and reliable

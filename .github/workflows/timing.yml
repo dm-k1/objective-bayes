@@ -1,0 +1,82 @@
+# Estimates how long the full validation takes, before renting anything for it.
+#
+# Every study runs in timing mode (R/shared/settings.R) inside the published
+# image: the full design and full-length chains, on two fractions of its
+# datasets, each on its own runner (4 cores). cluster/estimate_run_time.R then
+# fits the fixed part and the part per dataset and reads off the full run; the
+# table appears on the run's summary page and as the artifact run-time-estimate.
+# Studies 01 and 02 do not depend on the number of datasets and run in full.
+#
+# Run it from Actions > "Run-time estimate" > Run workflow. On a public
+# repository the runners are free; it takes about as long as the slowest job.
+name: Run-time estimate
+
+on:
+  workflow_dispatch:
+    inputs:
+      fractions:
+        description: Fractions of the datasets to time each study at (JSON list)
+        default: '["0.02", "0.05"]'
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  time:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        study: ["03", "04", "05", "06", "07", "08", "09", "10"]
+        fraction: ${{ fromJSON(inputs.fractions) }}
+        include:
+          - study: "01"
+            fraction: "1"
+          - study: "02"
+            fraction: "1"
+    name: study ${{ matrix.study }} at ${{ matrix.fraction }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Time the study
+        run: |
+          docker run --rm -v "$PWD":/project \
+            -e VALIDATION_TIMING=${{ matrix.fraction }} -e VALIDATION_CORES=4 \
+            ghcr.io/${{ github.repository_owner }}/flatcor-validation:${{ github.ref_name }} \
+            Rscript cluster/time_study.R ${{ matrix.study }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: time-${{ matrix.study }}-at-${{ matrix.fraction }}
+          path: cache/timing/time_*.rds
+          if-no-files-found: ignore
+
+  estimate:
+    needs: time
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: time-*
+          path: timing
+          merge-multiple: true
+
+      - name: Scale up to the full run
+        run: |
+          docker run --rm -v "$PWD":/project \
+            ghcr.io/${{ github.repository_owner }}/flatcor-validation:${{ github.ref_name }} \
+            Rscript cluster/estimate_run_time.R timing | tee run_time_estimate.md
+          cat run_time_estimate.md >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: run-time-estimate
+          path: |
+            run_time_estimate.md
+            timing/

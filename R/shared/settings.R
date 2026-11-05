@@ -91,11 +91,20 @@ parallel_map <- function(items, work) {
 ## Smoke mode (VALIDATION_SMOKE=1, see R/shared/precision.R) writes its
 ## results and figures to cache/ as well: they are tests of the code, not
 ## results.
-smoke_mode     <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
-cache_folder   <- "cache"
+## Timing mode (VALIDATION_TIMING=<fraction>, see cluster/time_study.R) runs
+## the full design with full-length chains on that fraction of the datasets,
+## to measure what the full run costs. Everything it writes, caches included,
+## goes to cache/timing/<fraction>/, so it never mixes with a real run or with
+## a timing run at another fraction.
+smoke_mode      <- identical(Sys.getenv("VALIDATION_SMOKE"), "1")
+timing_fraction <- suppressWarnings(as.numeric(Sys.getenv("VALIDATION_TIMING", NA)))
+timing_mode     <- !smoke_mode && !is.na(timing_fraction)
+cache_folder   <- if (timing_mode) file.path("cache", "timing", timing_fraction) else "cache"
 fits_folder    <- file.path(cache_folder, "fits")
-results_folder <- if (smoke_mode) file.path(cache_folder, "smoke_results") else "results"
-figures_folder <- if (smoke_mode) file.path(cache_folder, "smoke_figures") else "figures"
+results_folder <- if (smoke_mode) file.path(cache_folder, "smoke_results") else
+                  if (timing_mode) file.path(cache_folder, "results") else "results"
+figures_folder <- if (smoke_mode) file.path(cache_folder, "smoke_figures") else
+                  if (timing_mode) file.path(cache_folder, "figures") else "figures"
 studies_results_folder <- file.path(results_folder, "studies")
 for (folder in c(fits_folder, studies_results_folder, figures_folder))
   dir.create(folder, recursive = TRUE, showWarnings = FALSE)
@@ -168,8 +177,9 @@ report_checks <- function() {
   number_failed <- sum(!check_results$passed)
   ## in smoke mode (R/shared/precision.R) the datasets are too few for the
   ## checks to mean anything: they are shown, but do not stop the run
-  if (isTRUE(get0("smoke_mode", ifnotfound = FALSE))) {
-    cat(sprintf("\nSmoke mode: %d of %d checks would fail; with this few datasets that means nothing.\n",
+  if (isTRUE(get0("smoke_mode", ifnotfound = FALSE)) || isTRUE(get0("timing_mode", ifnotfound = FALSE))) {
+    cat(sprintf("\n%s mode: %d of %d checks would fail; with this few datasets that means nothing.\n",
+                if (isTRUE(get0("smoke_mode", ifnotfound = FALSE))) "Smoke" else "Timing",
                 number_failed, nrow(check_results)))
     return(invisible(check_results))
   }
@@ -189,6 +199,7 @@ save_study_results <- function(study, tables) {
                             commit = if (length(git_commit) == 1) git_commit else NA_character_,
                             R = R.version.string,
                             flatcor = as.character(utils::packageVersion("flatcor")),
-                            cores = number_of_cores, smoke = smoke_mode)),
+                            cores = number_of_cores, smoke = smoke_mode,
+                            timing = if (timing_mode) timing_fraction else NA)),
           file.path(studies_results_folder, sprintf("study_%s.rds", study)))
 }
