@@ -64,7 +64,7 @@ but it was built study by study:
 6. **Order: correctness, then formal properties, then behaviour.**
 7. **The package lives in its own repository**,
    [dm-k1/flatcor](https://github.com/dm-k1/flatcor), and this repository
-   validates a fixed release of it (v1.0.1, pinned in `renv.lock`; 1.0.1 fixes the sampler with one predictor, see "Status"). The
+   validates a fixed release of it (v1.0.2, pinned in `renv.lock`; 1.0.1 fixed the sampler with one predictor and 1.0.2 the conditional test near r = 1, see "Status"). The
    validation loads it with `library(flatcor)`; the internal functions some
    checks need are taken from its namespace in `R/shared/settings.R`.
 
@@ -161,6 +161,13 @@ construction) by more than 2 MCSE; k = 3 is reported.
   nine bridge-sampling fits has a divergent transition. All ten studies run
   in smoke mode with 1.0.1; nothing changes for k > 1 (the same draws for
   the same seed).
+- **flatcor 1.0.2** (pinned in `renv.lock` since 5 November 2026): the
+  conditional test no longer stops under flat R or flat R-squared when the
+  partial correlation is so near 1 that f > 100, and with n - k < 10 it adds
+  a wide grid (error against adaptive integration 0.02 -> 2.5e-4); models
+  without an intercept stop with a message. Each study now caches per
+  flatcor build (cache/study_NN/flatcor_<build>/), so the full run cannot
+  reuse results from 1.0.1. Study 2 runs in smoke mode with the change.
 
 Known pitfalls, already handled in the ports: SimDesign masks a function named
 `summarise` and reserves all-capital names; give every `runSimulation()` its

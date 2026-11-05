@@ -6,7 +6,7 @@ ADEMP form of Morris, White and Crowther (2019) as adapted for psychology by
 Siepe et al. (2024): **A**ims, **D**ata-generating mechanisms, **E**stimands,
 **M**ethods and **P**erformance measures. Every number of simulated datasets
 (*n*<sub>sim</sub>) is derived from a target Monte Carlo standard error (MCSE), fixed
-here before anything is run. The package under test is flatcor 1.0.1
+here before anything is run. The package under test is flatcor 1.0.2
 ([dm-k1/flatcor](https://github.com/dm-k1/flatcor), pinned in `renv.lock`).
 
 Notation: *n* is the sample size of one simulated dataset, *k* the number of

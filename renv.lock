@@ -4061,14 +4061,14 @@
     },
     "flatcor": {
       "Package": "flatcor",
-      "Version": "1.0.1",
+      "Version": "1.0.2",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteUsername": "dm-k1",
       "RemoteRepo": "flatcor",
-      "RemoteRef": "v1.0.1",
-      "RemoteSha": "fcc93d14e44a397ebf5871d53861b0321ef12f1b",
+      "RemoteRef": "v1.0.2",
+      "RemoteSha": "c102b30eec17dace4677a59301382d74da214c02",
       "Requirements": [
         "MASS",
         "R",
