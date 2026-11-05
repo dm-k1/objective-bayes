@@ -1,0 +1,85 @@
+# Builds the validation's container image (cluster/Dockerfile: R, the packages
+# of renv.lock and CmdStan), runs every study in smoke mode inside it, and only
+# then publishes it to the GitHub container registry as
+#   ghcr.io/dm-k1/flatcor-validation:<branch>   (and :sha-<commit>; :latest on main)
+# so that a cluster can pull it with Apptainer (cluster/README.md).
+#
+# It runs when the environment changes (the Dockerfile, renv.lock, this file)
+# and on demand (Actions > "Validation image" > Run workflow).
+name: Validation image
+
+on:
+  push:
+    branches: [main, validation-redesign]
+    paths:
+      - cluster/Dockerfile
+      - cluster/Dockerfile.dockerignore
+      - renv.lock
+      - .github/workflows/image.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  image:
+    runs-on: ubuntu-latest   # x86_64, the architecture of most clusters
+    timeout-minutes: 300     # the first build compiles every package and CmdStan
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/flatcor-validation
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: cluster/Dockerfile
+          load: true
+          tags: flatcor-validation:test
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test every study inside the image
+        # Each study runs end to end on a corner of its design and 10 datasets.
+        # A study that stops with an error fails the job; checks that fail are
+        # expected in smoke mode and do not.
+        run: |
+          docker run --rm -v "$PWD":/project -e VALIDATION_SMOKE=1 -e VALIDATION_CORES=4 \
+            flatcor-validation:test bash -c '
+              set -e
+              for study in R/studies/[0-9][0-9]_*.R; do
+                echo "::group::$study"
+                Rscript "$study"
+                echo "::endgroup::"
+              done'
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: cluster/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha

@@ -4,7 +4,10 @@
 # The image holds only the environment; the project folder is mounted when
 # the container runs, so results are written straight into it.
 #
-# Build once (20-40 minutes: packages and CmdStan compile from source):
+# GitHub Actions builds, smoke-tests and publishes this image as
+# ghcr.io/dm-k1/flatcor-validation (.github/workflows/image.yml; pull it
+# with Apptainer as in cluster/README.md). To build it yourself (20-40
+# minutes: packages and CmdStan compile from source):
 #   docker build -f cluster/Dockerfile -t flatcor-validation .
 # (from the project folder; Docker reads cluster/Dockerfile.dockerignore
 # next to this file, which needs BuildKit, the default since Docker 23)
@@ -17,12 +20,15 @@
 FROM rocker/r-ver:4.6.1
 
 # System libraries that the R packages compile against (graphics, fonts,
-# networking) and git (run_all.R records the commit)
+# networking; GMP and MPFR for Rmpfr; libnode for V8; ZeroMQ for pbdZMQ;
+# the list follows remotes::system_requirements() for the packages in
+# renv.lock) and git (run_all.R records the commit)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-      git make g++ \
-      libcurl4-openssl-dev libssl-dev libxml2-dev \
+      git make cmake g++ \
+      libcurl4-openssl-dev libssl-dev libxml2-dev libicu-dev libuv1-dev \
       libfontconfig1-dev libfreetype6-dev libharfbuzz-dev libfribidi-dev \
-      libpng-dev libjpeg-dev libtiff5-dev \
+      libpng-dev libjpeg-dev libtiff5-dev libx11-dev \
+      libgmp-dev libmpfr-dev libnode-dev libzmq3-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # R packages at the versions in renv.lock, into the image's site library

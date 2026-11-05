@@ -5,34 +5,49 @@ it is meant for a cluster. Two pieces make that work:
 
 - `cluster/slurm_array.sh` runs one study per SLURM array task, with
   `VALIDATION_CORES` set from the task's allocation;
-- the Docker image of `cluster/Dockerfile` (R 4.6.1, the packages of
-  `renv.lock`, CmdStan 2.40.0), converted to an Apptainer image, gives every
-  task the same environment as a run anywhere else.
+- the container image of `cluster/Dockerfile` (R 4.6.1, the packages of
+  `renv.lock`, CmdStan 2.40.0), built and smoke-tested by GitHub Actions and
+  pulled with Apptainer, gives every task the same environment as a run
+  anywhere else.
 
 The results do not depend on the number of cores: every simulated dataset has
 its own random stream, derived from its ID (`docs/appendix/C_study_design.md`).
 
 ## 1. The Apptainer image
 
-Clusters run Apptainer (formerly Singularity) rather than Docker. Apptainer
-can convert the Docker image, but it cannot build from the Dockerfile itself,
-so build the Docker image first on a machine with Docker:
+Clusters run Apptainer (formerly Singularity) rather than Docker. The image
+is built by GitHub Actions ([`.github/workflows/image.yml`](../.github/workflows/image.yml))
+whenever the environment changes: it builds `cluster/Dockerfile` on an
+`x86_64` runner, runs every study in smoke mode inside it, and only then
+publishes it to the GitHub container registry. On the cluster, pull it once:
+
+```bash
+apptainer pull flatcor-validation.sif docker://ghcr.io/dm-k1/flatcor-validation:validation-redesign
+```
+
+The tag is the branch the image was built from (`validation-redesign` now;
+`latest` once the branch is merged into `main`). The workflow's run on GitHub
+(Actions > "Validation image") shows whether the image for the current
+`renv.lock` passed its smoke test. If the pull asks for credentials, the
+package is still private: make it public in its settings on GitHub
+(Packages > flatcor-validation > Package settings), or set
+`APPTAINER_DOCKER_USERNAME` and `APPTAINER_DOCKER_PASSWORD` (a token with
+`read:packages`) before pulling.
+
+To build the image yourself instead, on an `x86_64` machine with Docker (an
+image built on Apple silicon is `arm64` and will not run on an `x86_64`
+cluster):
 
 ```bash
 docker build -f cluster/Dockerfile -t flatcor-validation .
 docker save flatcor-validation -o flatcor-validation.tar
 ```
 
-Copy `flatcor-validation.tar` to the cluster and convert it there:
+then copy `flatcor-validation.tar` to the cluster and convert it there:
 
 ```bash
 apptainer build flatcor-validation.sif docker-archive://flatcor-validation.tar
 ```
-
-(If the image is pushed to a registry instead, `apptainer pull
-flatcor-validation.sif docker://<registry>/<name>:<tag>` does the same.)
-Build the image on an `x86_64` machine if the cluster is `x86_64`: an image built
-on Apple silicon is `arm64` and will not run there.
 
 To run a single study in the image by hand, from the project folder:
 

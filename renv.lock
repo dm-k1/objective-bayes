@@ -5030,6 +5030,154 @@
       "Author": "Hadley Wickham [aut], Jim Hester [aut], Jeroen Ooms [aut, cre], Posit Software, PBC [cph, fnd], R Foundation [ctb] (Copy of R-project homepage cached as example)",
       "Maintainer": "Jeroen Ooms <jeroenooms@gmail.com>",
       "Repository": "CRAN"
+    },
+    "Brobdingnag": {
+      "Package": "Brobdingnag",
+      "Version": "1.2-9",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Very Large Numbers in R",
+      "Authors@R": "person(given=c(\"Robin\", \"K. S.\"), family=\"Hankin\", role = c(\"aut\",\"cre\"), email=\"hankin.robin@gmail.com\", comment = c(ORCID = \"0000-0001-5982-0415\"))",
+      "Maintainer": "Robin K. S. Hankin <hankin.robin@gmail.com>",
+      "Depends": [
+        "R (>= 2.13.0)",
+        "methods",
+        "Matrix (>= 1.5-0)"
+      ],
+      "Description": "Very large numbers in R.  Real numbers are held using their natural logarithms, plus a logical flag indicating sign.  Functionality for complex numbers is also provided.  The package includes a vignette that gives a step-by-step introduction to using S4 methods.",
+      "Suggests": [
+        "cubature",
+        "testthat"
+      ],
+      "License": "GPL",
+      "Repository": "CRAN",
+      "URL": "https://github.com/RobinHankin/Brobdingnag",
+      "NeedsCompilation": "no",
+      "Author": "Robin K. S. Hankin [aut, cre] (<https://orcid.org/0000-0001-5982-0415>)"
+    },
+    "Rmpfr": {
+      "Package": "Rmpfr",
+      "Version": "1.1-2",
+      "Source": "Repository",
+      "Title": "Interface R to MPFR - Multiple Precision Floating-Point Reliable",
+      "VersionNote": "Last CRAN: 1.1-1 on 2025-07-18; 1.1-0 on 2025-05-08; 1.0-0 on 2024-11-15",
+      "Date": "2025-10-21",
+      "Type": "Package",
+      "Authors@R": "c(person(\"Martin\",\"Maechler\", role = c(\"aut\",\"cre\"), email = \"maechler@stat.math.ethz.ch\", comment = c(ORCID=\"0000-0002-8685-9910\")) , person(c(\"Richard\", \"M.\"), \"Heiberger\", role = \"ctb\", email=\"rmh@temple.edu\", comment = \"formatHex(), *Bin, *Dec\") , person(c(\"John\", \"C.\"), \"Nash\", role = \"ctb\", email=\"nashjc@uottawa.ca\", comment = \"hjkMpfr(), origin of unirootR()\") , person(c(\"Hans\", \"W.\"), \"Borchers\", role = \"ctb\", email=\"hwborchers@googlemail.com\", comment = \"optimizeR(*, \\\"GoldenRatio\\\"); origin of hjkMpfr()\") , person(\"Mikael\", \"Jagan\", role = \"ctb\", comment = c(\"safer convert.c; configure.ac etc\", ORCID = \"0000-0002-3542-2938\")) )",
+      "Description": "Arithmetic (via S4 classes and methods) for arbitrary precision floating point numbers, including transcendental (\"special\") functions.  To this end, the package interfaces to the 'LGPL' licensed 'MPFR' (Multiple Precision Floating-Point Reliable) Library which itself is based on the 'GMP' (GNU Multiple Precision) Library.",
+      "SystemRequirements": "gmp (>= 4.2.3), mpfr (>= 3.2.0), pdfcrop (part of TexLive) is required to rebuild the vignettes.",
+      "SystemRequirementsNote": "'MPFR' (MP Floating-Point Reliable Library, https://www.mpfr.org/) and 'GMP' (GNU Multiple Precision library, https://gmplib.org/), see >> README.md",
+      "Depends": [
+        "gmp (>= 0.6-1)",
+        "R (>= 3.6.0)"
+      ],
+      "Imports": [
+        "stats",
+        "utils",
+        "methods"
+      ],
+      "Suggests": [
+        "DPQmpfr",
+        "MASS",
+        "Bessel",
+        "polynom",
+        "sfsmisc (>= 1.1-14)"
+      ],
+      "SuggestsNote": "MASS, polynom, sfsmisc: only for vignette;",
+      "Enhances": [
+        "dfoptim",
+        "pracma",
+        "DPQ"
+      ],
+      "EnhancesNote": "mentioned in Rd xrefs | used in example",
+      "URL": "https://rmpfr.r-forge.r-project.org/",
+      "BugReports": "https://r-forge.r-project.org/tracker/?group_id=386",
+      "License": "GPL (>= 2)",
+      "Encoding": "UTF-8",
+      "NeedsCompilation": "yes",
+      "Author": "Martin Maechler [aut, cre] (ORCID: <https://orcid.org/0000-0002-8685-9910>), Richard M. Heiberger [ctb] (formatHex(), *Bin, *Dec), John C. Nash [ctb] (hjkMpfr(), origin of unirootR()), Hans W. Borchers [ctb] (optimizeR(*, \"GoldenRatio\"); origin of hjkMpfr()), Mikael Jagan [ctb] (safer convert.c; configure.ac etc, ORCID: <https://orcid.org/0000-0002-3542-2938>)",
+      "Maintainer": "Martin Maechler <maechler@stat.math.ethz.ch>",
+      "Repository": "CRAN"
+    },
+    "bridgesampling": {
+      "Package": "bridgesampling",
+      "Version": "1.2-1",
+      "Source": "Repository",
+      "Type": "Package",
+      "Title": "Bridge Sampling for Marginal Likelihoods and Bayes Factors",
+      "Authors@R": "c(person(given=\"Quentin F.\", family=\"Gronau\", role=c(\"aut\", \"cre\"), email=\"Quentin.F.Gronau@gmail.com\", comment=c(ORCID=\"0000-0001-5510-6943\")), person(given=\"Henrik\", family=\"Singmann\", role=\"aut\", comment=c(ORCID=\"0000-0002-4842-3657\")), person(given=\"Jonathan J.\", family=\"Forster\", role=\"ctb\"), person(given=\"Eric-Jan\", family=\"Wagenmakers\", role=\"ths\"), person(family=\"The JASP Team\", role=\"ctb\"), person(\"Jiqiang\", \"Guo\", role = \"ctb\"), person(\"Jonah\", \"Gabry\", role = \"ctb\"), person(\"Ben\", \"Goodrich\", role = c(\"ctb\")), person(\"Kees\", \"Mulder\", role = c(\"ctb\")), person(\"Perry\", \"de Valpine\", role = c(\"ctb\")), person(given=\"Aki\", family=\"Vehtari\", role = c(\"ctb\")), person(given=\"Giorgio\", family=\"Micaletto\", role = c(\"ctb\")) )",
+      "Depends": [
+        "R (>= 3.0.0)"
+      ],
+      "Imports": [
+        "mvtnorm",
+        "Matrix",
+        "Brobdingnag",
+        "stringr",
+        "coda",
+        "parallel",
+        "scales",
+        "utils",
+        "methods"
+      ],
+      "Suggests": [
+        "testthat",
+        "Rcpp",
+        "RcppEigen",
+        "R2jags",
+        "rjags",
+        "runjags",
+        "knitr",
+        "rmarkdown",
+        "R.rsp",
+        "BayesFactor",
+        "rstan",
+        "rstanarm",
+        "nimble",
+        "MCMCpack",
+        "cmdstanr (>= 0.6.0)"
+      ],
+      "Description": "Provides functions for estimating marginal likelihoods, Bayes factors, posterior model probabilities, and normalizing constants in general, via different versions of bridge sampling (Meng & Wong, 1996,  <https://www3.stat.sinica.edu.tw/statistica/j6n4/j6n43/j6n43.htm>). Gronau, Singmann, & Wagenmakers (2020) <doi:10.18637/jss.v092.i10>.",
+      "Additional_repositories": "https://stan-dev.r-universe.dev/",
+      "License": "GPL (>= 2)",
+      "LazyData": "true",
+      "RoxygenNote": "7.3.3",
+      "Encoding": "UTF-8",
+      "VignetteBuilder": "knitr, R.rsp",
+      "URL": "https://github.com/quentingronau/bridgesampling",
+      "NeedsCompilation": "no",
+      "Author": "Quentin F. Gronau [aut, cre] (ORCID: <https://orcid.org/0000-0001-5510-6943>), Henrik Singmann [aut] (ORCID: <https://orcid.org/0000-0002-4842-3657>), Jonathan J. Forster [ctb], Eric-Jan Wagenmakers [ths], The JASP Team [ctb], Jiqiang Guo [ctb], Jonah Gabry [ctb], Ben Goodrich [ctb], Kees Mulder [ctb], Perry de Valpine [ctb], Aki Vehtari [ctb], Giorgio Micaletto [ctb]",
+      "Maintainer": "Quentin F. Gronau <Quentin.F.Gronau@gmail.com>",
+      "Repository": "CRAN"
+    },
+    "gmp": {
+      "Package": "gmp",
+      "Version": "0.7-5.1",
+      "Source": "Repository",
+      "Date": "2024-08-23",
+      "Title": "Multiple Precision Arithmetic",
+      "Authors@R": "c(person(\"Antoine\",\"Lucas\",role = c(\"aut\",\"cre\"), email = \"antoinelucas@gmail.com\", comment = c(ORCID=\"0000-0002-8059-9767\")), person(\"Immanuel\",\"Scholz\", role= \"aut\"), person(\"Rainer\",\"Boehme\", role = \"ctb\", email= \"rb-gmp@reflex-studio.de\"), person(\"Sylvain\",\"Jasson\", role = \"ctb\", email= \"Sylvain.Jasson@inrae.fr\"), person(\"Martin\", \"Maechler\", role = \"ctb\", email=\"maechler@stat.math.ethz.ch\"))",
+      "Maintainer": "Antoine Lucas <antoinelucas@gmail.com>",
+      "Description": "Multiple Precision Arithmetic (big integers and rationals, prime number tests, matrix computation), \"arithmetic without limitations\" using the C library GMP (GNU Multiple Precision Arithmetic).",
+      "Depends": [
+        "R (>= 3.5.0)"
+      ],
+      "Imports": [
+        "methods"
+      ],
+      "Suggests": [
+        "Rmpfr",
+        "MASS",
+        "round"
+      ],
+      "SystemRequirements": "gmp (>= 4.2.3)",
+      "License": "GPL (>= 2)",
+      "BuildResaveData": "no",
+      "LazyDataNote": "not available, as we use data/*.R *and* our classes",
+      "NeedsCompilation": "yes",
+      "URL": "https://forgemia.inra.fr/sylvain.jasson/gmp",
+      "Author": "Antoine Lucas [aut, cre] (ORCID: <https://orcid.org/0000-0002-8059-9767>), Immanuel Scholz [aut], Rainer Boehme [ctb], Sylvain Jasson [ctb], Martin Maechler [ctb]",
+      "Repository": "CRAN"
     }
   }
 }

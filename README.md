@@ -190,8 +190,9 @@ a fixed release of flatcor (the version pinned in `renv.lock`), the comparison
 of the three priors, and the arguments behind the recommendation.
 
 To run the validation, restore the environment with `renv::restore()` (it
-installs flatcor at the pinned version, with the other packages), or build the
-container from `cluster/Dockerfile`. Then open
+installs flatcor at the pinned version, with the other packages), or use the
+container image of `cluster/Dockerfile`, which GitHub Actions builds and
+publishes as `ghcr.io/dm-k1/flatcor-validation`. Then open
 [`validation.ipynb`](validation.ipynb), or run `Rscript run_all.R`;
 [`cluster/README.md`](cluster/README.md) describes a run on a cluster.
 
