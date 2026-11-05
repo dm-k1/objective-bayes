@@ -209,9 +209,13 @@ The earlier run's figures, summary and session information are in
 README still shows one of its figures until the docs are rewritten from the
 new results (step 6).
 
-`cluster/slurm_array.sh` is tested here only with mock SLURM variables (one
-smoke task); the Apptainer commands of `cluster/README.md` are untested, as
-there is no Apptainer on this machine.
+The container image is built by GitHub Actions (`.github/workflows/image.yml`)
+and published as `ghcr.io/dm-k1/flatcor-validation` only after all ten
+studies have run in smoke mode inside it; the first successful build (5
+November 2026, 22 minutes) is public and can be pulled without logging in.
+`cluster/slurm_array.sh` is tested only with mock SLURM variables (one smoke
+task), and the Apptainer commands of `cluster/README.md` have not yet run on a
+real cluster: the first smoke run there confirms them.
 
 ## References
 
