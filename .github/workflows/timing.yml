@@ -7,11 +7,16 @@
 # table appears on the run's summary page and as the artifact run-time-estimate.
 # Studies 01 and 02 do not depend on the number of datasets and run in full.
 #
-# Run it from Actions > "Run-time estimate" > Run workflow. On a public
-# repository the runners are free; it takes about as long as the slowest job.
+# It runs when this file changes on validation-redesign, and from Actions >
+# "Run-time estimate" > Run workflow once it is on main (GitHub offers that
+# button only for workflows on the default branch). On a public repository the
+# runners are free; it takes about as long as the slowest job.
 name: Run-time estimate
 
 on:
+  push:
+    branches: [validation-redesign]
+    paths: [.github/workflows/timing.yml]
   workflow_dispatch:
     inputs:
       fractions:
@@ -30,7 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         study: ["03", "04", "05", "06", "07", "08", "09", "10"]
-        fraction: ${{ fromJSON(inputs.fractions) }}
+        fraction: ${{ fromJSON(inputs.fractions || '["0.02", "0.05"]') }}
         include:
           - study: "01"
             fraction: "1"
