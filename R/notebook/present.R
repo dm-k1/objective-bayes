@@ -72,11 +72,14 @@ overview_of <- function(studies, smoke = FALSE) {
     result <- read_study(study, smoke)
     if (is.null(result))
       return(data.frame(study = study, question = study_questions[[study]], passed = NA_integer_,
-                        failed = NA_integer_, finished = "not run", commit = "", cores = NA_integer_))
+                        failed = NA_integer_, finished = "not run", commit = "", machine = "",
+                        cores = NA_integer_, minutes = NA_real_))
     data.frame(study = study, question = study_questions[[study]],
                passed = sum(result$checks$passed), failed = sum(!result$checks$passed),
                finished = result$setup$finished, commit = result$setup$commit,
-               cores = as.integer(result$setup$cores))
+               machine = result$setup$processor %||% result$setup$machine %||% "",
+               cores = as.integer(result$setup$cores),
+               minutes = as.numeric(result$setup$minutes %||% NA))
   }))
 }
 
@@ -218,8 +221,10 @@ show_study <- function(study, tables = list(), smoke = FALSE) {
                       study, results_folder_of(smoke), study))
     return(invisible(NULL))
   }
-  show_text(sprintf("Run of %s, commit %s, flatcor %s, %s cores%s.", result$setup$finished,
+  show_text(sprintf("Run of %s, commit %s, flatcor %s, %s cores%s%s%s.", result$setup$finished,
                     result$setup$commit, result$setup$flatcor, result$setup$cores,
+                    if (is.na(result$setup$processor %||% NA)) "" else paste0(" of ", result$setup$processor),
+                    if (is.null(result$setup$minutes)) "" else sprintf(", %.0f minutes", result$setup$minutes),
                     if (isTRUE(result$setup$smoke)) ", **smoke test**" else ""))
   show_checks(result)
   for (title in names(tables)) {

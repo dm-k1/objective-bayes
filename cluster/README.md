@@ -145,3 +145,10 @@ the cluster), and open `validation.ipynb` with the setting
 tables and figures. `Rscript run_all.R` on a single large machine
 does the same as the array, one study after the other, and also writes
 `results/run_summary.md`.
+
+The studies need not run in one go or on one machine: run them in order, each
+where it fits (`Rscript run_all.R 03` on a laptop, a cloud machine for 07,
+`sbatch --array=8` here), and copy each study's `results/studies/study_NN.rds`,
+`results/session_info/study_NN.txt` and figures into the repository. Every
+study records its own processor, cores and minutes, and `run_summary.md`
+covers every study present.

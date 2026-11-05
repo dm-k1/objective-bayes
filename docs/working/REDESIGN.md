@@ -181,8 +181,9 @@ R/
   studies/          the ten studies, 01-10
   notebook/         present.R, the notebook's helpers (they compute nothing)
 results/            studies/ holds one study_NN.rds per study: its tables,
-                    checks, figures and the run's setup (tracked); run_all.R
-                    adds run_summary.md and session_info.txt
+                    checks, figures and where, when and how long it ran
+                    (tracked); session_info/ holds each study's package
+                    versions; run_all.R adds run_summary.md over all studies
 figures/            every figure as .png (tracked)
 validation.ipynb    the notebook (R kernel): per study, its question, a PASS/FAIL
                     table of its checks, its main tables (gt) and figures; a

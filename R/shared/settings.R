@@ -191,15 +191,35 @@ report_checks <- function() {
 ## save_study_results("07", list(...)) writes results/studies/study_07.rds:
 ## the study's tables, its checks, the figures it saved and the setup of the
 ## run. The notebook (validation.ipynb) presents only these files.
+## The studies may run on different machines (cluster/README.md), so each
+## records its own: the processor, the cores it used, CmdStan and how long it took.
+study_started <- Sys.time()
+processor_name <- function() {
+  name <- tryCatch(
+    if (Sys.info()[["sysname"]] == "Darwin")
+      system2("sysctl", c("-n", "machdep.cpu.brand_string"), stdout = TRUE, stderr = FALSE) else
+      sub(".*:\\s*", "", grep("model name", readLines("/proc/cpuinfo"), value = TRUE)[1]),
+    error = function(e) NA_character_, warning = function(w) NA_character_)
+  if (length(name) == 1) name else NA_character_
+}
 save_study_results <- function(study, tables) {
   git_commit <- tryCatch(system2("git", c("rev-parse", "--short", "HEAD"), stdout = TRUE, stderr = FALSE),
                          error = function(e) NA_character_, warning = function(w) NA_character_)
+  cmdstan <- tryCatch(as.character(cmdstanr::cmdstan_version()), error = function(e) NA_character_)
   saveRDS(list(study = study, tables = tables, checks = check_results, figures = saved_figures,
                setup = list(finished = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
                             commit = if (length(git_commit) == 1) git_commit else NA_character_,
                             R = R.version.string,
                             flatcor = as.character(utils::packageVersion("flatcor")),
-                            cores = number_of_cores, smoke = smoke_mode,
+                            CmdStan = cmdstan,
+                            machine = paste(Sys.info()[["sysname"]], Sys.info()[["machine"]]),
+                            processor = processor_name(),
+                            cores = number_of_cores,
+                            minutes = round(as.numeric(difftime(Sys.time(), study_started, units = "mins")), 1),
+                            smoke = smoke_mode,
                             timing = if (timing_mode) timing_fraction else NA)),
           file.path(studies_results_folder, sprintf("study_%s.rds", study)))
+  session_folder <- file.path(results_folder, "session_info")
+  dir.create(session_folder, showWarnings = FALSE)
+  writeLines(capture.output(sessionInfo()), file.path(session_folder, sprintf("study_%s.txt", study)))
 }

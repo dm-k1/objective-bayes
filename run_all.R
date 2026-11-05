@@ -16,11 +16,12 @@
 ##  (e.g. VALIDATION_CORES=32 on a cloud machine).
 ##
 ##  The studies are R/studies/NN_*.R; each saves its tables and checks to
-##  results/studies/study_NN.rds and its figures to figures/.
+##  results/studies/study_NN.rds and its figures to figures/, and its R and package
+##  versions to results/session_info/study_NN.txt.
 ##  This script writes the full output of each study to cache/logs/<study>.log
 ##  (gitignored), and to results/:
-##    run_summary.md      the setup, one row per study, and every failed check
-##    session_info.txt    R and package versions of this run
+##    run_summary.md      every study in results/studies/ (its checks, and
+##                        where, when and how long it ran), then this run
 ##  The notebook validation.ipynb presents the same results.
 ##  A study that fails does not stop the others. VALIDATION_SMOKE=1 runs every
 ##  study on a corner of its design and 10 datasets, to test the code; its
@@ -71,7 +72,6 @@ setup <- c(
   cores    = cores,
   studies  = paste(substr(studies, 1, 2), collapse = " "),
   smoke    = if (smoke_mode) "yes (results are not results)" else "no")
-writeLines(capture.output(sessionInfo()), file.path(results_folder, "session_info.txt"))
 
 ## ---- Run each study in its own process -----------------------------------------
 ## A fresh process per study: no objects carried over, as when run by hand.
@@ -95,12 +95,42 @@ outcomes <- list()
 for (study in studies) outcomes[[study]] <- run_study(study)
 
 ## ---- Summary --------------------------------------------------------------------
+## The studies may run at different times and on different machines
+## (cluster/README.md), so the summary covers every study whose results file is
+## in results/studies/, each with its own setup; this run's setup and outcomes
+## follow below it.
 study_status <- function(outcome)
   if (is.na(outcome$exit_status)) "skipped" else
   if (outcome$exit_status == 0 && length(outcome$failed) == 0) "pass" else "FAIL"
+saved <- lapply(sort(list.files(file.path(results_folder, "studies"), pattern = "^study_[0-9]+[.]rds$",
+                                full.names = TRUE)), readRDS)
+or_blank <- function(value) if (is.null(value) || is.na(value)) "" else as.character(value)
+saved_rows <- vapply(saved, function(result) {
+  setup <- result$setup
+  sprintf("| %s | %s | %d | %d | %s | %s | %s | %s | %s |", result$study,
+          if (all(result$checks$passed)) "pass" else "FAIL",
+          sum(result$checks$passed), sum(!result$checks$passed), or_blank(setup$finished),
+          or_blank(setup$commit), or_blank(setup$processor %||% setup$machine),
+          or_blank(setup$cores), or_blank(setup$minutes))
+}, character(1))
+saved_failed <- unlist(lapply(saved, function(result) {
+  failed <- result$checks[!result$checks$passed, , drop = FALSE]
+  if (nrow(failed)) sprintf("%s: %s (%s)", result$study, failed$check, failed$details)
+}))
 summary_lines <- c(
-  "# Validation run",
+  "# Validation results",
   "",
+  "One row per study in `results/studies/`, with where and when it ran.",
+  "",
+  "| Study | Status | Checks passed | Checks failed | Finished | Commit | Processor | Cores | Minutes |",
+  "|---|---|---|---|---|---|---|---|---|",
+  saved_rows,
+  "",
+  "Every check is judged relative to its Monte Carlo error (docs/appendix/C_study_design.md).",
+  "Package versions per study: `session_info/`.")
+if (length(saved_failed) > 0)
+  summary_lines <- c(summary_lines, "", "## Failed checks", "", paste0("- ", saved_failed))
+summary_lines <- c(summary_lines, "", "## The last run", "",
   paste0("- **", names(setup), ":** ", setup),
   "",
   "| Study | Status | Minutes | Checks passed | Checks failed |",
@@ -108,11 +138,7 @@ summary_lines <- c(
   vapply(outcomes, function(o) sprintf("| %s | %s | %.1f | %d | %d |", o$study, study_status(o),
                                        o$minutes, o$passed, length(o$failed)), character(1)),
   "",
-  "Every check is judged relative to its Monte Carlo error (docs/appendix/C_study_design.md).",
-  "Full output: `cache/logs/`.")
-all_failed <- unlist(lapply(outcomes, function(o) if (length(o$failed)) paste0(o$study, ": ", o$failed)))
-if (length(all_failed) > 0)
-  summary_lines <- c(summary_lines, "", "## Failed", "", paste0("- ", all_failed))
+  "Full output: `cache/logs/` on the machine that ran it.")
 writeLines(summary_lines, file.path(results_folder, "run_summary.md"))
 cat("\n", paste(summary_lines, collapse = "\n"), "\n", sep = "")
 
